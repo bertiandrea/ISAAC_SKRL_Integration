@@ -13,7 +13,7 @@
 2. Avvia il training:
 
    ```bash
-   python -m satellite.train
+   python -m satellite.train --reward-fn test
    ```
 
 ---
@@ -25,7 +25,7 @@
 Esegui lo script `run_remote_vnc.sh` specificando il numero di display (es: `1`) e l'environment (es: rlgpu):
 
 ```bash
-./run_remote_vnc.sh 1 rlgpu
+./run_remote_vnc.sh 1 rlgpu test
 ```
 
 ---
