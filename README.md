@@ -63,6 +63,34 @@ Accederai al desktop GNOME remoto per monitorare l’allenamento.
 
 ---
 
+## 📊 Monitoraggio con TensorBoard
+
+### ✅ Avvio di TensorBoard sul server remoto
+
+Assicurati che il training scriva i log in `./runs`, quindi avvia TensorBoard:
+
+```bash
+tensorboard --logdir ./runs --port 6006
+```
+
+### 🔁 Accesso remoto a TensorBoard da Windows (PowerShell)
+
+Apri PowerShell e crea un tunnel SSH:
+
+```powershell
+ssh -L 59001:localhost:6006 -C -N -J betajump andreaberti@192.168.1.3
+```
+
+Poi apri il browser e visita:
+
+```
+http://localhost:59001
+```
+
+Vedrai la dashboard di TensorBoard in esecuzione sul server remoto.
+
+---
+
 ## ⚙️ Installazione Miniconda & Isaac Gym
 
 ### ✅ Prerequisiti
@@ -113,5 +141,3 @@ python joint_monkey.py
 ```
 
 Se lo script si avvia correttamente, l’installazione è andata a buon fine.
-
----
