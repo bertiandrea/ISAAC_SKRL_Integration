@@ -23,7 +23,7 @@ import torch
 
 class SatelliteVec(VecTask):
     def __init__(self, cfg: SatelliteConfig, rl_device: Any, sim_device: Any, graphics_device_id: int, headless: bool, 
-                 virtual_screen_capture: bool = False, force_render: bool = False):
+                 virtual_screen_capture: bool = False, force_render: bool = False, reward_fn: RewardFunction = None):
         self.cfg = class_to_dict(cfg)
         self._cfg = cfg
 
@@ -56,8 +56,11 @@ class SatelliteVec(VecTask):
         self.goal_ang_vel = torch.zeros((self._cfg.env.num_envs, 3), dtype=torch.float32, device=self._cfg.env.device)
         self.goal_ang_acc = torch.zeros((self._cfg.env.num_envs, 3), dtype=torch.float32, device=self._cfg.env.device)
 
-        self.reward_fn: RewardFunction = TestReward()
-        
+        if reward_fn is None:
+            self.reward_fn: RewardFunction = TestReward()
+        else:
+            self.reward_fn = reward_fn
+                    
     def create_sim(self) -> None:
         self.sim = super().create_sim(self.device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
         self.create_envs(self._cfg.env.env_spacing, int(np.sqrt(self._cfg.env.num_envs)))

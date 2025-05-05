@@ -2,22 +2,24 @@
 
 # Verifica che un numero di display sia stato fornito
 if [ -z "$1" ]; then
-    echo "Usage: $0 <display number> [conda_env_name]"
+    echo "Usage: $0 <display number> [conda_env_name] [reward_fn]"
     exit 1
 fi
 
 DISPLAY_NUM=$1
-CONDA_ENV=${2:-rlgpu}  # Nome dell'ambiente Conda, predefinito a rlgpu
+CONDA_ENV=${2:-rlgpu}           # Nome dell'ambiente Conda, default "rlgpu"
+REWARD_FN=${3:-test}            # Reward function da passare, default "test"
 
 export DISPLAY=:$DISPLAY_NUM
 
 echo "Using DISPLAY=$DISPLAY"
 echo "Using Conda environment: $CONDA_ENV"
+echo "Using reward function: $REWARD_FN"
 
 SCREEN_RES="1920x1080x24"
 
 # Verifica se il display è già in uso
-if [ -e /tmp/.X$DISPLAY_NUM-lock ]; then
+if [ -e /tmp/.X${DISPLAY_NUM}-lock ]; then
     echo "Display :$DISPLAY_NUM is already in use!"
     exit 1
 fi
@@ -66,8 +68,8 @@ else
     exit 1
 fi
 
-# Avvia il training
-python -m satellite.train
+# Avvia il training con la reward function scelta
+python -m satellite.train --reward-fn "$REWARD_FN"
 
 # Mantieni lo script attivo fino alla chiusura di Xvfb
 wait $XVFB_PID

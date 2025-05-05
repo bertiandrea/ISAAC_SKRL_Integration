@@ -4,6 +4,14 @@ import os
 from satellite.configs.satellite_config import SatelliteConfig
 from satellite.envs.satellite_vec import SatelliteVec
 from satellite.models.custom_model import Policy, Value
+from satellite.rewards.satellite_reward import (
+    TestReward,
+    WeightedSumReward,
+    TwoPhaseReward,
+    ExponentialStabilizationReward,
+    ContinuousDiscreteEffortReward,
+    ShapingReward,
+)
 
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.memories.torch import RandomMemory
@@ -11,6 +19,36 @@ from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Training con reward function selezionabile")
+    parser.add_argument(
+        "--reward-fn",
+        choices=[
+            "test",
+            "weighted_sum",
+            "two_phase",
+            "exp_stabilization",
+            "continuous_discrete_effort",
+            "shaping"
+        ],
+        default="test",
+        help="Which RewardFunction?"
+    )
+    return parser.parse_args()
+
+# parsing degli argomenti da CLI
+args = parse_args()
+
+reward_map = {
+    "test": TestReward,
+    "weighted_sum": WeightedSumReward,
+    "two_phase": TwoPhaseReward,
+    "exp_stabilization": ExponentialStabilizationReward,
+    "continuous_discrete_effort": ContinuousDiscreteEffortReward,
+    "shaping": ShapingReward,
+}
+reward_fn = reward_map[args.reward_fn]()
 
 # fissiamo il seed per la riproducibilità
 set_seed(42)
@@ -22,7 +60,9 @@ env          = SatelliteVec(cfg=env_cfg,
                             rl_device="cuda:0",
                             sim_device="cuda:0",
                             graphics_device_id=0,
-                            headless=headless)
+                            headless=headless,
+                            reward_fn=reward_fn
+)
 
 print(f"Envs: {env.num_envs}, \
         state_space: {env.state_space}, \
