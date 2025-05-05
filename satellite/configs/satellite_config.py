@@ -32,8 +32,8 @@ class SatelliteConfig(BaseConfig):
 
         threshold_ang_goal = 0.01745        # soglia in radianti per orientamento
         threshold_vel_goal = 0.01745        # soglia in rad/sec per la differenza di velocità
-        overspeed_ang_vel = 3.141          # soglia in rad/sec per l'overspeed
-        episode_length_s = 30              # soglia in secondi per la terminazione di una singola simulazione
+        overspeed_ang_vel = 3.141           # soglia in rad/sec per l'overspeed
+        episode_length_s = 30               # soglia in secondi per la terminazione di una singola simulazione
         
         #clipActions = 1
         #clipObservations = 1
@@ -46,7 +46,7 @@ class SatelliteConfig(BaseConfig):
         file = "satellite.urdf"
         name = "satellite"
 
-        init_pos_p = [0, 0, 0] # posizione iniziale del satellite [x,y,z]
+        init_pos_p = [0, 0, 0]    # posizione iniziale del satellite [x,y,z]
         init_pos_r = [0, 0, 0, 1] # attitude iniziale del satellite [x,y,z,w]
 
     class sim:

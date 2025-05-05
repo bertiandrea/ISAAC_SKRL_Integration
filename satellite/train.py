@@ -38,7 +38,7 @@ def parse_args():
     )
     return parser.parse_args()
 
-# parsing degli argomenti da CLI
+# parsing degli argomenti
 args = parse_args()
 
 reward_map = {
@@ -74,11 +74,11 @@ print(f"Envs: {env.num_envs}, \
 # 2) PPO config
 cfg_ppo = PPO_DEFAULT_CONFIG.copy()
 cfg_ppo.update({
-    # raccolta rollouts e mini\u2010batch
+    # environment
     "rollouts":                   16,
     "learning_epochs":            8,
     "mini_batches":               4,
-    # hyper\u2010parametri base
+    # agent
     "discount_factor":            0.99,
     "lambda":                     0.95,
     "learning_rate":              1e-3,
@@ -92,12 +92,12 @@ cfg_ppo.update({
     "value_loss_scale":           1.0,
     "kl_threshold":               0,
     "rewards_shaper":             lambda rewards, timestep, timesteps: rewards * 0.01,
-    # normalizzazione degli input
+    # preprocessing
     "state_preprocessor":         RunningStandardScaler,
     "state_preprocessor_kwargs":  {"size": env.state_space,   "device": env.device},
     "value_preprocessor":         RunningStandardScaler,
     "value_preprocessor_kwargs":  {"size": 1, "device": env.device},
-    # rollout iniziali senza esplorazione randomizzata
+    # training
     "random_timesteps":           0,
     "learning_starts":            0
 })
