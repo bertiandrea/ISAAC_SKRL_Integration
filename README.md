@@ -134,3 +134,5 @@ python joint_monkey.py
 ```
 
 Se lo script si avvia correttamente, l’installazione è andata a buon fine.
+
+---
