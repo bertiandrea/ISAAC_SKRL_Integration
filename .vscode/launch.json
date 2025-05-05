@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug train.py",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "satellite.train",
+            "console": "integratedTerminal",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}"
+            },
+            "args": [],
+            "justMyCode": true
+        }
+    ]
+}

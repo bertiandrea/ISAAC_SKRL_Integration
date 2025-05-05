@@ -1,0 +1,165 @@
+\documentclass[a4paper,oneside]{book}
+\linespread{1.5}
+\usepackage[left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb,amsmath,color}
+\usepackage{cite}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{algorithmicx}
+\usepackage{pdfpages}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyfoot[C]{\thepage}
+
+\tolerance=1
+\emergencystretch=\maxdimen
+\hyphenpenalty=10000
+\hbadness=10000
+
+\usepackage{underscore}
+\setlength\parindent{0pt}
+
+\usepackage{seqsplit}
+\usepackage{tcolorbox}
+\usepackage{listings}
+
+\usepackage{color}
+
+\graphicspath{{./figs/}}
+
+\usepackage{hyperref}
+\hypersetup{
+     colorlinks=true,
+     linkcolor=black,
+     urlcolor=blue,
+}
+
+\newtcolorbox{redbox}[1]{
+colback=red!5!white,
+colframe=red!75,
+fonttitle=\bfseries,
+title=#1,
+}
+
+
+\definecolor{lightgray}{gray}{0.95}
+
+\lstset{
+basicstyle=\ttfamily\footnotesize,
+showspaces=false,
+showstringspaces=false,
+columns=flexible,
+breaklines=true,
+breakatwhitespace=true,
+tabsize=4,
+backgroundcolor=\color{lightgray},
+numbersep=5pt
+}
+
+\begin{document}
+
+%%%%%% ABSTRACT %%%%%%%%%%
+
+\begin{center}
+	\chapter*{}
+	\thispagestyle{empty}
+	{\Huge\textbf{Abstract}}\\
+	\vspace{15mm}
+\end{center}
+
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\tableofcontents\thispagestyle{empty}
+\listoffigures\thispagestyle{empty}
+
+%%%%%% INTRODUZIONE %%%%%%%%%%
+
+
+
+
+\chapter*{Introduzione}
+\addcontentsline{toc}{chapter}{Introduzione}
+\section*{Motivazioni}
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+
+\section*{Contributi}
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+
+\section*{Organizzazione}
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+
+
+
+
+
+\newpage
+\chapter{Chapter}
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+
+\section{Section}
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.65\textwidth]{figs/fig.png}
+    \caption{BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline}
+\end{figure}
+\newpage
+
+\subsection{SubSection}
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+\begin{itemize}
+    \item BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+    \item BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+    \item BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+\end{itemize}
+
+\begin{lstlisting}
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla;
+
+    BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla;
+\end{lstlisting}
+
+\chapter{Conclusione}
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+BlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla BlaBlaBla Bla.\newline
+
+\bibliography{bibliografia}
+\bibliographystyle{IEEEtran}
+\addcontentsline{toc}{chapter}{Bibliografia}
+
+
+\end{document}
