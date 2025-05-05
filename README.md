@@ -1,12 +1,5 @@
 # ISAAC_SKRL_Integration
 
-## 📦 Requisiti
-
-* Python 3.8 o superiore
-* Ambiente Conda (predefinito: `rlgpu`)
-* VNC Viewer (per accesso remoto)
-* Accesso SSH con port forwarding abilitato
-
 ---
 
 ## 🖥️ Esecuzione Locale
@@ -14,7 +7,7 @@
 1. Attiva l’ambiente Conda:
 
    ```bash
-   conda activate rlgpu38
+   conda activate rlgpu
    ```
 
 2. Avvia il training:
