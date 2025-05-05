@@ -7,7 +7,7 @@ if [ -z "$1" ]; then
 fi
 
 DISPLAY_NUM=$1
-CONDA_ENV=${2:-rlgpu38}  # Nome dell'ambiente Conda, predefinito a rlgpu38
+CONDA_ENV=${2:-rlgpu}  # Nome dell'ambiente Conda, predefinito a rlgpu
 
 export DISPLAY=:$DISPLAY_NUM
 
