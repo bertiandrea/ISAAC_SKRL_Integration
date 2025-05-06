@@ -111,7 +111,27 @@ tar -xf IsaacGym_Preview_4_Package.tar.gz
 
 Estrai il pacchetto nella directory corrente.
 
-### 3️⃣ Installazione dell’Ambiente Isaac Gym
+### 3️⃣ Edit: rlgpu_conda_env.yml
+
+```bash
+ name: rlgpu
+ channels:
+   - pytorch
+   - conda-forge
+   - defaults
+ dependencies:
+-  - python=3.7
++  - python=3.8
+   - pytorch=1.8.1
+   - torchvision=0.9.1
+   - cudatoolkit=11.1
+   - pyyaml>=5.3.1
+   - scipy>=1.5.0
+   - tensorboard>=2.2.1
++  - mkl=2024.0
+```
+
+### 4️⃣ Installazione dell’Ambiente Isaac Gym
 
 ```bash
 cd isaacgym
@@ -120,13 +140,25 @@ cd isaacgym
 
 Lo script creerà l’ambiente Conda `rlgpu` e installerà tutte le dipendenze necessarie.
 
-### 4️⃣ Attivazione dell’Ambiente
+### 5️⃣ Attivazione dell’Ambiente
 
 ```bash
 conda activate rlgpu
 ```
 
-### 5️⃣ Verifica dell’Installazione
+## ⚙️ Installazione SKRL
+
+```bash
+pip install skrl["torch"]
+```
+
+### ⚙️ Optional
+
+```bash
+export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
+```
+
+### ⚙️ Verifica dell’Installazione
 
 ```bash
 cd isaacgym/python/examples
