@@ -75,23 +75,23 @@ print(f"Envs: {env.num_envs}, \
 cfg_ppo = PPO_DEFAULT_CONFIG.copy()
 cfg_ppo.update({
     # environment
-    "rollouts":                   1024,
+    "rollouts":                   16,
     "learning_epochs":            8,
-    "mini_batches":               32,
+    "mini_batches":               4,
     # agent
     "discount_factor":            0.99,
     "lambda":                     0.95,
-    "learning_rate":              1e-4,
+    "learning_rate":              1e-3,
     "learning_rate_scheduler":    KLAdaptiveRL,
     "learning_rate_scheduler_kwargs": {"kl_threshold": 0.016},
-    "grad_norm_clip":             0.5,
-    "ratio_clip":                 0.1,
+    "grad_norm_clip":             1.0,
+    "ratio_clip":                 0.2,
     "value_clip":                 0.2,
-    "clip_predicted_values":      False,
-    "entropy_loss_scale":         0.01,
+    "clip_predicted_values":      True,
+    "entropy_loss_scale":         0.00,
     "value_loss_scale":           1.0,
     "kl_threshold":               0,
-    "rewards_shaper":             lambda rewards, timestep, timesteps: rewards * 0.1,
+    "rewards_shaper":             lambda rewards, timestep, timesteps: rewards * 0.01,
     # preprocessing
     "state_preprocessor":         RunningStandardScaler,
     "state_preprocessor_kwargs":  {"size": env.state_space,   "device": env.device},
@@ -113,7 +113,7 @@ cfg_ppo["experiment"] = {
 }
 
 cfg_trainer = {
-    "timesteps": 100000,
+    "timesteps": 8000,
     "headless":  headless
 }
 
