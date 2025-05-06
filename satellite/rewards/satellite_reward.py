@@ -72,6 +72,12 @@ class WeightedSumReward(RewardFunction):
                               .clamp(-1.0, 1.0).abs())
         omega_err = torch.norm(ang_vels - goal_ang_vel, dim=1)
         acc_err = torch.norm(ang_accs - goal_ang_acc, dim=1)
+
+        print("[compute_reward] compute_reward:")
+        print(f"  angle_diff[0]={math.degrees(q_err[0].item()):.2f}°")
+        print(f"  ang_vel_diff[0]={math.degrees(omega_err[0].item()):.2f}°/s")
+        print(f"  ang_acc_diff[0]={math.degrees(acc_err[0].item()):.2f}°/s²")
+        
         base = - (self.alpha_q * q_err
                 + self.alpha_omega * omega_err
                 + self.alpha_acc * acc_err)
