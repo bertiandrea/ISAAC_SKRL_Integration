@@ -25,10 +25,7 @@ class TestReward(RewardFunction):
         ang_vel_diff = torch.norm(ang_vels - goal_ang_vel, dim=1)
         ang_acc_diff = torch.norm(ang_accs - goal_ang_acc, dim=1)
 
-        print("[compute_reward]")
-        print(f"angle_diff[0]={math.degrees(angle_diff[0].item()):.2f}°  \
-              ang_vel_diff[0]={math.degrees(ang_vel_diff[0].item()):.2f}°/s  \
-              ang_acc_diff[0]={math.degrees(ang_acc_diff[0].item()):.2f}°/s²")
+        print(f"[compute_reward]: angle_diff[0]={math.degrees(angle_diff[0].item()):.2f}° ang_vel_diff[0]={math.degrees(ang_vel_diff[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(ang_acc_diff[0].item()):.2f}°/s²")
 
         return - (angle_diff + ang_vel_diff + ang_acc_diff)
 
@@ -72,10 +69,7 @@ class WeightedSumReward(RewardFunction):
         omega_err = torch.norm(ang_vels - goal_ang_vel, dim=1)
         acc_err = torch.norm(ang_accs - goal_ang_acc, dim=1)
 
-        print("[compute_reward]")
-        print(f"angle_diff[0]={math.degrees(q_err[0].item()):.2f}°  \
-              ang_vel_diff[0]={math.degrees(omega_err[0].item()):.2f}°/s  \
-              ang_acc_diff[0]={math.degrees(acc_err[0].item()):.2f}°/s²")
+        print(f"[compute_reward]: angle_diff[0]={math.degrees(q_err[0].item()):.2f}° ang_vel_diff[0]={math.degrees(omega_err[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(acc_err[0].item()):.2f}°/s²")
         
         base = - (self.alpha_q * q_err
                 + self.alpha_omega * omega_err
