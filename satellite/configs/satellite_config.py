@@ -37,9 +37,6 @@ class SatelliteConfig(BaseConfig):
         
         #clipActions = 1
         #clipObservations = 1
-                
-    class normalization:
-        max_torque = 50.0          # [N·m] De-normalization
 
     class asset:
         root = str(Path(__file__).resolve().parent.parent)
