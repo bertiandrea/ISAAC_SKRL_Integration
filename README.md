@@ -149,10 +149,11 @@ conda activate rlgpu
 ## ⚙️ Installazione SKRL
 
 ```bash
+conda activate rlgpu
 pip install skrl["torch"]
 ```
 
-## ⚙️ Optional
+## ⚙️ Optional for GPU
 
 ```bash
 export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
@@ -161,10 +162,18 @@ export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
 ## ⚙️ Verifica dell’Installazione
 
 ```bash
+conda activate rlgpu
 cd isaacgym/python/examples
 python joint_monkey.py
 ```
 
 Se lo script si avvia correttamente, l’installazione è andata a buon fine.
 
+## ⚙️ Opt. Installa tensoroboard nell'environment base
+
+```bash
+conda activate base
+pip install tensorboard
+pip install standard-imghdr
+```
 ---
