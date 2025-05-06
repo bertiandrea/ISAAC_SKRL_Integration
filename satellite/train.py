@@ -113,7 +113,7 @@ cfg_ppo["experiment"] = {
 }
 
 cfg_trainer = {
-    "timesteps": 8000,
+    "timesteps": 100000,
     "headless":  headless
 }
 
