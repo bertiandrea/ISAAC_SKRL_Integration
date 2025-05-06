@@ -21,10 +21,10 @@ class TestReward(RewardFunction):
                 quats, ang_vels, ang_accs,
                 goal_quat, goal_ang_vel, goal_ang_acc,
                 actions):
-        angle_diff = 2 * torch.acos(torch.sum(quats * goal_quat, dim=1).abs().clamp(0.0, 1.0)) / torch.pi
-        ang_vel_diff = torch.norm(ang_vels - goal_ang_vel, dim=1) / 2 * torch.pi
-        ang_acc_diff = torch.norm(ang_accs - goal_ang_acc, dim=1) / 4 * torch.pi
-        
+        angle_diff = 2 * torch.acos(torch.sum(quats * goal_quat, dim=1).abs().clamp(-1.0, 1.0))
+        ang_vel_diff = torch.norm(ang_vels - goal_ang_vel, dim=1)
+        ang_acc_diff = torch.norm(ang_accs - goal_ang_acc, dim=1)
+
         print("[compute_reward] compute_reward:")
         print(f"  angle_diff[0]={math.degrees(angle_diff[0].item()):.2f}°")
         print(f"  ang_vel_diff[0]={math.degrees(ang_vel_diff[0].item()):.2f}°/s")
@@ -68,8 +68,7 @@ class WeightedSumReward(RewardFunction):
                 quats, ang_vels, ang_accs,
                 goal_quat, goal_ang_vel, goal_ang_acc,
                 actions):
-        q_err = 2 * torch.acos(torch.sum(quats * goal_quat, dim=1)
-                              .clamp(-1.0, 1.0).abs())
+        q_err = 2 * torch.acos(torch.sum(quats * goal_quat, dim=1).clamp(-1.0, 1.0).abs())
         omega_err = torch.norm(ang_vels - goal_ang_vel, dim=1)
         acc_err = torch.norm(ang_accs - goal_ang_acc, dim=1)
 
