@@ -272,8 +272,8 @@ class VecTask(Env):
 
         self.control_steps += 1
         
-        print(f"[step] states_buf (velocities and accelerations):\n{self.states_buf[:, 4:]}")
-        print(f"[step] reward_buf:\n{self.reward_buf.view(-1, 1)}")
+        #print(f"[step] states_buf (velocities and accelerations):\n{self.states_buf[:, 4:]}")
+        #print(f"[step] reward_buf:\n{self.reward_buf.view(-1, 1)}")
         print(f"[step] reset_buf (any): {self.reset_buf.view(-1, 1).any()}")
         print(f"[step] timeout_buf (any): {self.timeout_buf.view(-1, 1).any()}")
 
