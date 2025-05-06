@@ -159,13 +159,13 @@ class SatelliteVec(VecTask):
                                              size=actions.shape, device=self._cfg.env.device)
         self.actions = torch.clamp(actions, -self.clip_actions, self.clip_actions)
         
-        print (f"[apply_torque] actions[0]: {actions[0] * self._cfg.normalization.max_torque}") 
-
+        print(f"[apply_torque] actions[0]={actions[0].tolist()}")
+        
         ################# SIM #################
         torque_tensor = torch.zeros((self.num_bodies * self._cfg.env.num_envs, 3), device=self._cfg.env.device)
         root_indices = torch.arange(self._cfg.env.num_envs, device=self._cfg.env.device, dtype=torch.long) * self.num_bodies
-        torque_tensor[root_indices] = actions * self._cfg.normalization.max_torque
-        
+        torque_tensor[root_indices] = actions
+
         self.gym.apply_rigid_body_force_tensors(
             self.sim,
             gymtorch.unwrap_tensor(torch.zeros_like(torque_tensor)),  
