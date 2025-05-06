@@ -45,11 +45,12 @@ class SatelliteVec(VecTask):
         ########################################
 
         self.prev_angvel = self.satellite_angvels.clone()
-        
+        self.satellite_angacc = (self.satellite_angvels - self.prev_angvel) / self._cfg.sim.dt
+
         self.initial_root_states = self.root_states.clone()
 
-        self.states_buf = torch.cat((self.satellite_quats, (self.satellite_angvels - self.prev_angvel) / self._cfg.sim.dt, self.satellite_angvels), dim=-1)
-        self.obs_buf = torch.cat((self.satellite_quats, (self.satellite_angvels - self.prev_angvel) / self._cfg.sim.dt), dim=-1)
+        self.states_buf = torch.cat((self.satellite_quats, self.satellite_angacc, self.satellite_angvels), dim=-1)
+        self.obs_buf = torch.cat((self.satellite_quats, self.satellite_angacc), dim=-1)
 
         #self.goal_quat = sample_random_quaternion_batch(self._cfg.env.device, self._cfg.env.num_envs)
         self.goal_quat = torch.tensor( [0, 1, 0, 0], dtype=torch.float32, device=self._cfg.env.device).repeat((self._cfg.env.num_envs, 1))
@@ -111,9 +112,10 @@ class SatelliteVec(VecTask):
         ########################################
 
         self.prev_angvel[ids] = self.satellite_angvels[ids].clone()
+        self.satellite_angacc[ids] = (self.satellite_angvels[ids] - self.prev_angvel[ids]) / self._cfg.sim.dt
 
-        self.states_buf[ids] = torch.cat((self.satellite_quats[ids], (self.satellite_angvels[ids] - self.prev_angvel[ids]) / self._cfg.sim.dt, self.satellite_angvels[ids]), dim=-1)
-        self.obs_buf[ids] = torch.cat((self.satellite_quats[ids], (self.satellite_angvels[ids] - self.prev_angvel[ids]) / self._cfg.sim.dt), dim=-1)
+        self.states_buf[ids] = torch.cat((self.satellite_quats[ids], self.satellite_angacc[ids], self.satellite_angvels[ids]), dim=-1)
+        self.obs_buf[ids] = torch.cat((self.satellite_quats[ids], self.satellite_angacc[ids]), dim=-1)
         
         #self.goal_quat[ids] = sample_random_quaternion_batch(self._cfg.env.device, len(ids))
         self.goal_quat[ids] = torch.tensor([0, 1, 0, 0], dtype=torch.float32, device=self._cfg.env.device).repeat((len(ids), 1))
@@ -136,8 +138,10 @@ class SatelliteVec(VecTask):
         self.satellite_angvels = self.root_states[:, 10:13]
         ########################################
 
-        self.states_buf = torch.cat((self.satellite_quats, (self.satellite_angvels - self.prev_angvel) / self._cfg.sim.dt, self.satellite_angvels), dim=-1)
-        self.obs_buf = torch.cat((self.satellite_quats, (self.satellite_angvels - self.prev_angvel) / self._cfg.sim.dt), dim=-1)
+        self.satellite_angacc = (self.satellite_angvels - self.prev_angvel) / self._cfg.sim.dt
+
+        self.states_buf = torch.cat((self.satellite_quats, self.satellite_angacc, self.satellite_angvels), dim=-1)
+        self.obs_buf = torch.cat((self.satellite_quats, self.satellite_angacc), dim=-1)
         
         if self._cfg.env.sensor_noise_std > 0.0:
             self.obs_buf = self.obs_buf + torch.normal(mean=0.0, std=self._cfg.env.sensor_noise_std, 
@@ -170,15 +174,15 @@ class SatelliteVec(VecTask):
     
     def compute_reward(self) -> None:
         self.reward_buf = self.reward_fn.compute(
-            self.satellite_quats, self.satellite_angvels, (self.satellite_angvels - self.prev_angvel) / self._cfg.sim.dt,
+            self.satellite_quats, self.satellite_angvels, self.satellite_angacc,
             self.goal_quat, self.goal_ang_vel, self.goal_ang_acc,
             self.actions
         )
 
     def check_termination(self) -> None:
         self.angle_diff = 2 * torch.acos(torch.sum(self.satellite_quats * self.goal_quat, dim=1).abs().clamp(0.0, 1.0))
-        self.ang_vel_diff = torch.norm(self.satellite_angvels - self.goal_ang_vel, dim=1)
-        self.ang_acc_diff = torch.norm(((self.satellite_angvels - self.prev_angvel) / self._cfg.sim.dt) - self.goal_ang_acc, dim=1)
+        self.ang_vel_diff = torch.norm((self.satellite_angvels - self.goal_ang_vel), dim=1)
+        self.ang_acc_diff = torch.norm((self.satellite_angacc - self.goal_ang_acc), dim=1)
         
         timeout = self.progress_buf >= self.max_episode_length
         overspeed = torch.norm(self.satellite_angvels, dim=1) >= self._cfg.env.overspeed_ang_vel
@@ -192,4 +196,4 @@ class SatelliteVec(VecTask):
             print(f"[check_termination] TIMEOUT or OVERSPEED in envs: {timeout_ids.tolist()}")
         reset_ids = torch.nonzero(self.reset_buf, as_tuple=False).flatten()
         if len(reset_ids) > 0:
-            print(f"[check_termination] RESET or GOAL envs: {reset_ids.tolist()}")
+            print(f"[check_termination] GOAL envs: {reset_ids.tolist()}")
