@@ -11,8 +11,8 @@ class SatelliteConfig(BaseConfig):
     physics_engine = 'physx'
 
     class env:
-        numEnvs = 4
-        num_envs = 4
+        numEnvs = 256
+        num_envs = 256
 
         numObservations = 7 # [x,y,z,w, ax,ay,az]
         num_observations = 7 # [x,y,z,w, ax,ay,az]
