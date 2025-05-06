@@ -285,7 +285,6 @@ class VecTask(Env):
 
     def reset(self):
         ids = torch.arange(self._cfg.env.num_envs, device=self._cfg.env.device)
-        print(f"[reset] Reset envs: {ids.tolist()}")
         self.reset_idx(ids)
         
         return self.states_buf.to(self.rl_device).clone(), {}
