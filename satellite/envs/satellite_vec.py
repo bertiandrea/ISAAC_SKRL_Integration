@@ -88,8 +88,8 @@ class SatelliteVec(VecTask):
     ################################################################################################################################
     def termination(self) -> None:
         ids = torch.nonzero(self.reset_buf | self.timeout_buf, as_tuple=False).flatten()
-        print(f"[termination] Reset envs: {ids.tolist()}")
-        self.reset_idx(ids)
+        if ids.numel() != 0:
+            self.reset_idx(ids)
         
     def reset_idx(self, ids: torch.Tensor) -> None:      
         print(f"[reset_idx] Reset envs: {ids.tolist()}")
