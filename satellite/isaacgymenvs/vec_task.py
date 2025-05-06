@@ -145,7 +145,7 @@ class VecTask(Env):
             (self.num_envs, self.num_states), device=self.device, dtype=torch.float)
         self.reward_buf = torch.zeros(
             self.num_envs, device=self.device, dtype=torch.float)
-        self.reset_buf = torch.ones(
+        self.reset_buf = torch.zeros(
             self.num_envs, device=self.device, dtype=torch.long)
         self.timeout_buf = torch.zeros(
              self.num_envs, device=self.device, dtype=torch.long)
