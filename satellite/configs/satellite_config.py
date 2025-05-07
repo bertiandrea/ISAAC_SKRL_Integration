@@ -11,16 +11,30 @@ class SatelliteConfig(BaseConfig):
     physics_engine = 'physx'
 
     class env:
-        numEnvs = 1024
-        num_envs = 1024
+        epoch_length = 2048
+        # lunghezza del rollout per ciascun ambiente: numero di passi di simulazione che ciascun env
+        # compie prima di aggiornare i pesi dell’agente (qui 2048 passi totali divisi equamente tra gli env)
 
-        numObservations = 7 # [x,y,z,w, ax,ay,az]
+        n_mini_epochs    = 4
+        # passate di ottimizzazione (SGD) per aggiornamento: quante volte il PPO
+        # riesamina e riutilizza i dati raccolti durante il rollout per affinare i gradienti
+
+        minibatch_size = 256
+        # dimensione del minibatch: numero di transizioni campionate casualmente dai dati del rollout
+        # usate in ogni singolo passo di calcolo del gradiente
+
+        n_epochs     = 2000
+        # numero totale di aggiornamenti dell’agente: quante volte (cicli) si esegue il
+        # processo di rollout + ottimizzazione lungo l’intero training
+
+        num_envs = 1024
+        # numero di ambienti paralleli: quante istanze indipendenti dell’ambiente vengono eseguite simultaneamente 
+        # per raccogliere dati in parallelo e aumentare l’efficienza
+        
         num_observations = 7 # [x,y,z,w, ax,ay,az]
 
-        numStates = 10 # [x,y,z,w, vx,vy,vz, ax,ay,az]
         num_states = 10 # [x,y,z,w, vx,vy,vz, ax,ay,az]
 
-        numActions = 3
         num_actions = 3
         
         env_spacing = [4.0, 4.0, 4.0]
@@ -35,8 +49,8 @@ class SatelliteConfig(BaseConfig):
         overspeed_ang_vel = 3.141           # soglia in rad/sec per l'overspeed
         episode_length_s = 30               # soglia in secondi per la terminazione di una singola simulazione
         
-        #clipActions = 1
-        #clipObservations = 1
+        #clip_actions = 1
+        #clip_observations = 1
 
         #badly_terminated_envs_penalty = 5.0
 

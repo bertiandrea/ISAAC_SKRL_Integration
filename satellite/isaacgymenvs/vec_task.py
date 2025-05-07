@@ -45,34 +45,39 @@ class Env(ABC):
 
         self.headless = headless
 
-        enable_camera_sensors = config["env"].get("enableCameraSensors", False)
+        enable_camera_sensors = config["env"].get("enable_camera_sensors", False)
         self.graphics_device_id = graphics_device_id    # SIM CREATION
         if enable_camera_sensors == False and self.headless == True:
             self.graphics_device_id = -1
 
-        self.num_envs = config["env"]["numEnvs"]
-        self.num_agents = config["env"].get("numAgents", 1)
+        self.num_envs = config["env"]["num_envs"]
+        self.num_agents = config["env"].get("num_agents", 1)
         
-        self.num_observations = config["env"].get("numObservations", 0)
-        self.num_states = config["env"].get("numStates", 0)
-        self.num_actions = config["env"]["numActions"]
+        self.num_observations = config["env"].get("num_observations", 0)
+        self.num_states = config["env"].get("num_states", 0)
+        self.num_actions = config["env"]["num_actions"]
 
         self.obs_space = spaces.Box(np.ones(self.num_observations) * -np.Inf, np.ones(self.num_observations) * np.Inf)
         self.state_space = spaces.Box(np.ones(self.num_states) * -np.Inf, np.ones(self.num_states) * np.Inf)
         self.act_space = spaces.Box(np.ones(self.num_actions) * -1., np.ones(self.num_actions) * 1.)
 
-        self.control_freq_inv = config["env"].get("controlFrequencyInv", 1)
+        self.control_freq_inv = config["env"].get("control_frequency_inv", 1)
 
-        self.clip_obs = config["env"].get("clipObservations", np.Inf)
-        self.clip_actions = config["env"].get("clipActions", np.Inf)
+        self.clip_obs = config["env"].get("clip_observations", np.Inf)
+        self.clip_actions = config["env"].get("clip_actions", np.Inf)
 
         self.control_steps: int = 0
 
-        self.render_fps: int = config["env"].get("renderFPS", -1)
+        self.render_fps: int = config["env"].get("render_FPS", -1)
         self.last_frame_time: float = 0.0
 
         self.record_frames: bool = False
         self.record_frames_dir = join("recorded_frames", datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
+
+        self.epoch_length: int = config["env"].get("epoch_length", 0)
+        self.n_mini_epochs: int = config["env"].get("n_mini_epochs", 0)
+        self.minibatch_size: int = config["env"].get("minibatch_size", 0)
+        self.n_epochs: int = config["env"].get("n_epochs", 0)
 
 
 class VecTask(Env):

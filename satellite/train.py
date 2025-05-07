@@ -71,29 +71,18 @@ print(f"Envs: {env.num_envs}, \
         act_space: {env.act_space}, \
         device: {env.device}")
 
-num_actors     = env.num_envs           # numero di ambienti paralleli
-horizon_length = 2048 // num_actors     # lunghezza della sequenza di rollouts
-mini_epochs    = 4                      # numero di passate SGD per aggiornamento
-minibatch_size = 256                    # dimensione del minibatch su cui calcolare un gradiente
-max_epochs     = 2000                   # numero di cicli di aggiornamento (ogni ciclo usa horizon_length passi)
-
-print(f"num_actors: {num_actors}, \
-        horizon_length: {horizon_length}, \
-        mini_epochs: {mini_epochs}, \
-        minibatch_size: {minibatch_size}, \
-        max_epochs: {max_epochs} \
-        rollouts: {horizon_length}, \
-        learning_epochs: {mini_epochs}, \
-        mini_batches: {horizon_length * num_actors / minibatch_size}, \
-        timesteps: {horizon_length * max_epochs}")
+print(f"rollouts: {env.epoch_length}, \
+        learning_epochs: {env.n_mini_epochs}, \
+        mini_batches: {env.epoch_length * env.num_envs / env.minibatch_size}, \
+        timesteps: {env.epoch_length * env.n_epochs}")
 
 # 2) PPO config
 cfg_ppo = PPO_DEFAULT_CONFIG.copy()
 cfg_ppo.update({
     # environment
-    "rollouts":                   horizon_length,
-    "learning_epochs":            mini_epochs,
-    "mini_batches":               horizon_length * num_actors / minibatch_size,
+    "rollouts":                   env.epoch_length,
+    "learning_epochs":            env.n_mini_epochs,
+    "mini_batches":               env.epoch_length * env.num_envs / env.minibatch_size,
     # agent
     "discount_factor":            0.99,
     "lambda":                     0.95,
@@ -129,7 +118,7 @@ cfg_ppo["experiment"] = {
 }
 
 cfg_trainer = {
-    "timesteps": horizon_length * max_epochs,
+    "timesteps": env.epoch_length * env.n_epochs,
     "headless":  headless
 }
 
