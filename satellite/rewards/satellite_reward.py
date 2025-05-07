@@ -27,7 +27,8 @@ class TestReward(RewardFunction):
 
         print(f"[compute_reward]: angle_diff[0]={math.degrees(angle_diff[0].item()):.2f}° ang_vel_diff[0]={math.degrees(ang_vel_diff[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(ang_acc_diff[0].item()):.2f}°/s²")
 
-        return - (angle_diff + ang_vel_diff + ang_acc_diff)
+        # Angular accelerration and velocity only matter when close to the target
+        return - (angle_diff +  (1/(1+angle_diff)) * (ang_vel_diff + ang_acc_diff))
 
 class WeightedSumReward(RewardFunction):
     """

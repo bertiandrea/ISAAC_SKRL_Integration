@@ -87,6 +87,7 @@ class SatelliteVec(VecTask):
         return asset
 
     ################################################################################################################################
+    
     def termination(self) -> None:
         ids = torch.nonzero(self.reset_buf | self.timeout_buf, as_tuple=False).flatten()
         if ids.numel() != 0:
@@ -99,7 +100,7 @@ class SatelliteVec(VecTask):
         self.root_states[ids] = self.initial_root_states[ids].clone()
 
         self.gym.set_actor_root_state_tensor_indexed(
-            self.sim, gymtorch.unwrap_tensor(self.root_states), gymtorch.unwrap_tensor(ids.int()), len(ids.int())
+            self.sim, gymtorch.unwrap_tensor(self.root_states), gymtorch.unwrap_tensor(ids.to(dtype=torch.int32)), len(ids.to(dtype=torch.int32))
         )
         #######################################
 
@@ -125,6 +126,7 @@ class SatelliteVec(VecTask):
         self.progress_buf[ids] = 0
         self.reset_buf[ids] = False
         self.timeout_buf[ids] = False
+
         self.reward_buf[ids] = 0.0
 
     def compute_observations(self) -> None:
@@ -182,13 +184,12 @@ class SatelliteVec(VecTask):
         )
 
     def check_termination(self) -> None:
-        self.angle_diff = 2 * torch.acos(torch.sum(self.satellite_quats * self.goal_quat, dim=1).abs().clamp(0.0, 1.0))
-        self.ang_vel_diff = torch.norm((self.satellite_angvels - self.goal_ang_vel), dim=1)
-        self.ang_acc_diff = torch.norm((self.satellite_angacc - self.goal_ang_acc), dim=1)
+        angle_diff = 2 * torch.acos(torch.sum(self.satellite_quats * self.goal_quat, dim=1).abs().clamp(0.0, 1.0))
+        ang_vel_diff = torch.norm((self.satellite_angvels - self.goal_ang_vel), dim=1)
         
         timeout = self.progress_buf >= self.max_episode_length
         overspeed = torch.norm(self.satellite_angvels, dim=1) >= self._cfg.env.overspeed_ang_vel
-        goal = ((self.angle_diff < self._cfg.env.threshold_ang_goal) & (self.ang_vel_diff < self._cfg.env.threshold_vel_goal)) 
+        goal = ((angle_diff < self._cfg.env.threshold_ang_goal) & (ang_vel_diff < self._cfg.env.threshold_vel_goal)) 
 
         self.timeout_buf = (timeout | overspeed).to(torch.bool)
         self.reset_buf = (goal).to(torch.bool)
@@ -196,6 +197,8 @@ class SatelliteVec(VecTask):
         timeout_ids = torch.nonzero(timeout, as_tuple=False).flatten()
         if len(timeout_ids) > 0:
             print(f"[check_termination] TIMEOUT or OVERSPEED in envs: {timeout_ids.tolist()}")
+        
         reset_ids = torch.nonzero(self.reset_buf, as_tuple=False).flatten()
         if len(reset_ids) > 0:
             print(f"[check_termination] GOAL envs: {reset_ids.tolist()}")
+        

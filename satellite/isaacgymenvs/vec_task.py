@@ -96,8 +96,7 @@ class VecTask(Env):
         elif self.cfg["physics_engine"] == "flex":
             self.physics_engine = gymapi.SIM_FLEX       # SIM CREATION
         else:
-            msg = f"Invalid physics engine backend: {self.cfg['physics_engine']}"
-            raise ValueError(msg)
+            raise ValueError(f"Invalid physics engine backend: {self.cfg['physics_engine']}")
 
         self.dt: float = self.sim_params.dt
 
@@ -241,19 +240,22 @@ class VecTask(Env):
 
         return sim_params
 
-    def pre_physics_step(self, actions: torch.Tensor) -> None:
+    def pre_physics_step(self, actions: torch.Tensor) -> None:        
         self.termination()
-        
+
         self.apply_torque(actions)
 
-    def post_physics_step(self) -> None:      
+    def post_physics_step(self) -> None:  
+        self.progress_buf += 1
+    
         self.compute_observations()
 
         self.compute_reward()
 
         self.check_termination()
-
-        self.progress_buf += 1
+        
+        # Fixed Penalty for badly terminated envs:
+        #self.reward_buf = torch.where(self.timeout_buf, torch.ones_like(self.reward_buf) * self._cfg.env.badly_terminated_envs_penalty, self.reward_buf)
 
     def step(self, actions: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, Dict[str, Any]]:
         self.pre_physics_step(actions)
