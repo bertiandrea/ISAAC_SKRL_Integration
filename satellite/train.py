@@ -73,7 +73,7 @@ print(f"Envs: {env.num_envs}, \
 
 print(f"rollouts: {env.epoch_length}, \
         learning_epochs: {env.n_mini_epochs}, \
-        mini_batches: {env.epoch_length * env.num_envs / env.minibatch_size}, \
+        mini_batches: {int(env.epoch_length * env.num_envs / env.minibatch_size)}, \
         timesteps: {env.epoch_length * env.n_epochs}")
 
 # 2) PPO config
@@ -82,7 +82,7 @@ cfg_ppo.update({
     # environment
     "rollouts":                   env.epoch_length,
     "learning_epochs":            env.n_mini_epochs,
-    "mini_batches":               env.epoch_length * env.num_envs / env.minibatch_size,
+    "mini_batches":               int(env.epoch_length * env.num_envs / env.minibatch_size),
     # agent
     "discount_factor":            0.99,
     "lambda":                     0.95,
