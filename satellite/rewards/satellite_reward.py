@@ -17,7 +17,7 @@ class RewardFunction(ABC):
         pass
 
 class TestReward(RewardFunction):
-    def __init__(self , alpha_q=1.0, alpha_omega=0.5, alpha_acc=0.2, k_dyn=0.5):
+    def __init__(self , alpha_q=10.0, alpha_omega=0.5, alpha_acc=0.2, k_dyn=0.5):
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
         self.alpha_acc = alpha_acc
@@ -35,7 +35,7 @@ class TestReward(RewardFunction):
 
         # Normalize the differences
         angle_diff = angle_diff / math.pi
-        ang_vel_diff = ang_vel_diff/ (2 * math.pi)
+        ang_vel_diff = ang_vel_diff / (2 * math.pi)
         ang_acc_diff = ang_acc_diff / (10 * (2 * math.pi))
 
         # Angular accelerration and velocity only matter when close to the target
