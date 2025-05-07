@@ -33,15 +33,19 @@ class TestReward(RewardFunction):
 
         print(f"[compute_reward]: angle_diff[0]={math.degrees(angle_diff[0].item()):.2f}° ang_vel_diff[0]={math.degrees(ang_vel_diff[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(ang_acc_diff[0].item()):.2f}°/s²")
 
+        # Angular accelerration and velocity only matter when close to the target
+        dynamic_weight = torch.exp(-self.k_dyn * angle_diff)
+
         # Normalize the differences
         angle_diff = angle_diff / math.pi
         ang_vel_diff = ang_vel_diff / (2 * math.pi)
         ang_acc_diff = ang_acc_diff / (10 * (2 * math.pi))
-
-        # Angular accelerration and velocity only matter when close to the target
-        dynamic_weight = torch.exp(-self.k_dyn * angle_diff)
-
-        return - (self.alpha_q * angle_diff +  dynamic_weight * (self.alpha_omega * ang_vel_diff + self.alpha_acc * ang_acc_diff))
+       
+        reward = - (self.alpha_q * angle_diff +  dynamic_weight * (self.alpha_omega * ang_vel_diff + self.alpha_acc * ang_acc_diff))
+        
+        print(f"[compute_reward]: reward[0]={(reward[0].item()):.2f}")
+        
+        return reward
 
 class WeightedSumReward(RewardFunction):
     """
