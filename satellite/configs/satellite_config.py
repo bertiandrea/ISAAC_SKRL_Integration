@@ -38,7 +38,7 @@ class SatelliteConfig(BaseConfig):
         #clipActions = 1
         #clipObservations = 1
 
-        badly_terminated_envs_penalty = 5.0
+        #badly_terminated_envs_penalty = 5.0
 
     class asset:
         root = str(Path(__file__).resolve().parent.parent)
