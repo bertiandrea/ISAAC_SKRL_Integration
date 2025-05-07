@@ -169,7 +169,7 @@ python joint_monkey.py
 
 Se lo script si avvia correttamente, l’installazione è andata a buon fine.
 
-## ⚙️ Opt. Installa tensoroboard nell'environment base
+## ⚙️ Opt. Installa tensorboard nell'environment base
 
 ```bash
 conda activate base
