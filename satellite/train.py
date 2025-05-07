@@ -71,27 +71,43 @@ print(f"Envs: {env.num_envs}, \
         act_space: {env.act_space}, \
         device: {env.device}")
 
+num_actors     = env.num_envs           # numero di ambienti paralleli
+horizon_length = 2048 // num_actors     # lunghezza della sequenza di rollouts
+mini_epochs    = 4                      # numero di passate SGD per aggiornamento
+minibatch_size = 256                    # dimensione del minibatch su cui calcolare un gradiente
+max_epochs     = 2000                   # numero di cicli di aggiornamento (ogni ciclo usa horizon_length passi)
+
+print(f"num_actors: {num_actors}, \
+        horizon_length: {horizon_length}, \
+        mini_epochs: {mini_epochs}, \
+        minibatch_size: {minibatch_size}, \
+        max_epochs: {max_epochs} \
+        rollouts: {horizon_length}, \
+        learning_epochs: {mini_epochs}, \
+        mini_batches: {horizon_length * num_actors / minibatch_size}, \
+        timesteps: {horizon_length * max_epochs}")
+
 # 2) PPO config
 cfg_ppo = PPO_DEFAULT_CONFIG.copy()
 cfg_ppo.update({
     # environment
-    "rollouts":                   16,
-    "learning_epochs":            8,
-    "mini_batches":               4,
+    "rollouts":                   horizon_length,
+    "learning_epochs":            mini_epochs,
+    "mini_batches":               horizon_length * num_actors / minibatch_size,
     # agent
     "discount_factor":            0.99,
     "lambda":                     0.95,
-    "learning_rate":              1e-3,
+    "learning_rate":              3e-4,
     "learning_rate_scheduler":    KLAdaptiveRL,
-    "learning_rate_scheduler_kwargs": {"kl_threshold": 0.016},
+    "learning_rate_scheduler_kwargs": {"kl_threshold": 0.008},
     "grad_norm_clip":             1.0,
     "ratio_clip":                 0.2,
     "value_clip":                 0.2,
     "clip_predicted_values":      True,
     "entropy_loss_scale":         0.00,
-    "value_loss_scale":           1.0,
+    "value_loss_scale":           2.0,
     "kl_threshold":               0,
-    "rewards_shaper":             lambda rewards, timestep, timesteps: rewards * 0.01,
+    "rewards_shaper":             lambda rewards, timestep, timesteps: rewards * 0.1,
     # preprocessing
     "state_preprocessor":         RunningStandardScaler,
     "state_preprocessor_kwargs":  {"size": env.state_space,   "device": env.device},
@@ -113,7 +129,7 @@ cfg_ppo["experiment"] = {
 }
 
 cfg_trainer = {
-    "timesteps": 100000,
+    "timesteps": horizon_length * max_epochs,
     "headless":  headless
 }
 
