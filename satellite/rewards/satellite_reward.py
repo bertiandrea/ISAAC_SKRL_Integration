@@ -17,6 +17,12 @@ class RewardFunction(ABC):
         pass
 
 class TestReward(RewardFunction):
+    def __init__(self , alpha_q=1.0, alpha_omega=0.5, alpha_acc=0.2, k_dyn=0.5):
+        self.alpha_q = alpha_q
+        self.alpha_omega = alpha_omega
+        self.alpha_acc = alpha_acc
+        self.k_dyn       = k_dyn
+
     def compute(self,
                 quats, ang_vels, ang_accs,
                 goal_quat, goal_ang_vel, goal_ang_acc,
@@ -27,8 +33,15 @@ class TestReward(RewardFunction):
 
         print(f"[compute_reward]: angle_diff[0]={math.degrees(angle_diff[0].item()):.2f}° ang_vel_diff[0]={math.degrees(ang_vel_diff[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(ang_acc_diff[0].item()):.2f}°/s²")
 
+        # Normalize the differences
+        angle_diff = angle_diff / math.pi
+        ang_vel_diff = ang_vel_diff/ (2 * math.pi)
+        ang_acc_diff = ang_acc_diff / (10 * (2 * math.pi))
+
         # Angular accelerration and velocity only matter when close to the target
-        return - (angle_diff +  (1/(1+angle_diff)) * (ang_vel_diff + ang_acc_diff))
+        dynamic_weight = torch.exp(-self.k_dyn * angle_diff)
+
+        return - (self.alpha_q * angle_diff +  dynamic_weight * (self.alpha_omega * ang_vel_diff + self.alpha_acc * ang_acc_diff))
 
 class WeightedSumReward(RewardFunction):
     """
