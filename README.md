@@ -22,7 +22,7 @@
 
 ### 🔹 1. Sul Server Remoto
 
-Esegui lo script `run_remote_vnc.sh` specificando il numero di display (es: `1`) e l'environment (es: rlgpu):
+Esegui lo script `run_remote_vnc.sh` specificando il numero di display (es: `1`), l'environment (es: rlgpu) e la reward function (es: test):
 
 ```bash
 ./run_remote_vnc.sh 1 rlgpu test
