@@ -153,7 +153,7 @@ conda activate rlgpu
 pip install skrl["torch"]
 ```
 
-## ⚙️ Optional for GPU
+## ⚙️ Opzionale per il funzionamento della GPU
 
 ```bash
 export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
