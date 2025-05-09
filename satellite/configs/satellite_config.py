@@ -11,11 +11,11 @@ class SatelliteConfig(BaseConfig):
     physics_engine = 'physx'
 
     class env:
-        epoch_length = 512
+        epoch_length = 16
         # lunghezza del rollout per ciascun ambiente: numero di passi di simulazione che ciascun env
         # compie prima di aggiornare i pesi dell’agente (qui 2048 passi totali divisi equamente tra gli env)
 
-        n_mini_epochs    = 4
+        n_mini_epochs = 8
         # passate di ottimizzazione (SGD) per aggiornamento: quante volte il PPO
         # riesamina e riutilizza i dati raccolti durante il rollout per affinare i gradienti
 
@@ -23,11 +23,11 @@ class SatelliteConfig(BaseConfig):
         # dimensione del minibatch: numero di transizioni campionate casualmente dai dati del rollout
         # usate in ogni singolo passo di calcolo del gradiente
 
-        n_epochs     = 2000
+        n_epochs     = 8000
         # numero totale di aggiornamenti dell’agente: quante volte (cicli) si esegue il
         # processo di rollout + ottimizzazione lungo l’intero training
 
-        num_envs = 128
+        num_envs = 1024
         # numero di ambienti paralleli: quante istanze indipendenti dell’ambiente vengono eseguite simultaneamente 
         # per raccogliere dati in parallelo e aumentare l’efficienza
         

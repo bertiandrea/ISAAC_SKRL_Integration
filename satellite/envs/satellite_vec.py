@@ -106,10 +106,6 @@ class SatelliteVec(VecTask):
 
         ################# SIM #################
         self.gym.refresh_actor_root_state_tensor(self.sim)
-        self.satellite_pos     = self.root_states[:, 0:3]
-        self.satellite_quats   = self.root_states[:, 3:7]
-        self.satellite_linvels = self.root_states[:, 7:10]
-        self.satellite_angvels = self.root_states[:, 10:13]
         ########################################
 
         self.prev_angvel[ids] = self.satellite_angvels[ids].clone()
@@ -134,10 +130,6 @@ class SatelliteVec(VecTask):
 
         ################# SIM #################
         self.gym.refresh_actor_root_state_tensor(self.sim)
-        self.satellite_pos     = self.root_states[:, 0:3]
-        self.satellite_quats   = self.root_states[:, 3:7]
-        self.satellite_linvels = self.root_states[:, 7:10]
-        self.satellite_angvels = self.root_states[:, 10:13]
         ########################################
 
         self.satellite_angacc = (self.satellite_angvels - self.prev_angvel) / self._cfg.sim.dt

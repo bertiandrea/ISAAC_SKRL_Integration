@@ -17,7 +17,7 @@ class RewardFunction(ABC):
         pass
 
 class TestReward(RewardFunction):
-    def __init__(self , alpha_q=10.0, alpha_omega=0.5, alpha_acc=0.2, k_dyn=0.5):
+    def __init__(self , alpha_q=1.0, alpha_omega=0.5, alpha_acc=0.2, k_dyn=0.5):
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
         self.alpha_acc = alpha_acc
@@ -34,14 +34,9 @@ class TestReward(RewardFunction):
         print(f"[compute_reward]: angle_diff[0]={math.degrees(angle_diff[0].item()):.2f}° ang_vel_diff[0]={math.degrees(ang_vel_diff[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(ang_acc_diff[0].item()):.2f}°/s²")
 
         # Angular accelerration and velocity only matter when close to the target
-        dynamic_weight = torch.exp(-self.k_dyn * angle_diff)
-
-        # Normalize the differences
-        angle_diff = angle_diff / math.pi
-        ang_vel_diff = ang_vel_diff / (2 * math.pi)
-        ang_acc_diff = ang_acc_diff / (10 * (2 * math.pi))
        
-        reward = - (self.alpha_q * angle_diff +  dynamic_weight * (self.alpha_omega * ang_vel_diff + self.alpha_acc * ang_acc_diff))
+        reward = self.alpha_q * (1/(1+angle_diff)) + \
+               (1/(1+angle_diff)) * (self.alpha_omega * (1/(1+ang_vel_diff)) + self.alpha_acc * (1/(1+ang_acc_diff)))
         
         print(f"[compute_reward]: reward[0]={(reward[0].item()):.2f}")
         

@@ -82,7 +82,7 @@ cfg_ppo.update({
     # environment
     "rollouts":                   env.epoch_length,
     "learning_epochs":            env.n_mini_epochs,
-    "mini_batches":               int(env.epoch_length * env.num_envs / env.minibatch_size),
+    "mini_batches":               2, #int(env.epoch_length * env.num_envs / env.minibatch_size),
     # agent
     "discount_factor":            0.99,
     "lambda":                     0.95,
