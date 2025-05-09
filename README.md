@@ -22,7 +22,7 @@
 
 ### 🔹 1. Sul Server Remoto
 
-Esegui lo script `run_remote_vnc.sh` specificando il numero di display (es: `1`) e l'environment (es: rlgpu):
+Esegui lo script `run_remote_vnc.sh` specificando il numero di display (es: `1`), l'environment (es: `rlgpu`) e la reward function (es: `test`):
 
 ```bash
 ./run_remote_vnc.sh 1 rlgpu test
@@ -153,7 +153,7 @@ conda activate rlgpu
 pip install skrl["torch"]
 ```
 
-## ⚙️ Optional for GPU
+## ⚙️ Opzionale per il funzionamento della GPU
 
 ```bash
 export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
