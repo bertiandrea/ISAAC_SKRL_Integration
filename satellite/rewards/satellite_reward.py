@@ -106,7 +106,7 @@ class WeightedSumReward(RewardFunction):
 
 class TwoPhaseReward(RewardFunction):
     """
-    Phase 1: +r1_pos or r1_neg based on improvement until cos_val >= threshold.
+    Phase 1: +r1_pos or r1_neg based on improvement until quat_diff >= threshold.
     Phase 2: α·exp(-φ/β) afterwards.
     """
     def __init__(self,
@@ -118,21 +118,21 @@ class TwoPhaseReward(RewardFunction):
         self.r1_neg = r1_neg
         self.alpha = alpha
         self.beta = beta
-        self.prev_cos_val = None
+        self.prev_quat_diff_val = None
 
     def compute(self,
                 quats, ang_vels, ang_accs,
                 goal_quat, goal_ang_vel, goal_ang_acc,
                 actions):
-        cos_val = quat_diff(quats, goal_quat)
-        phi = 2.0 * torch.asin( torch.clamp( torch.norm( cos_val[:, 0:3], p=2, dim=-1), max=1.0))
-        if self.prev_cos_val is not None:
-            r1 = torch.where(cos_val > self.prev_cos_val, self.r1_pos, self.r1_neg)
+        quat_diff_val = quat_diff(quats, goal_quat)
+        phi = 2.0 * torch.asin( torch.clamp( torch.norm( quat_diff_val[:, 0:3], p=2, dim=-1), max=1.0))
+        if self.prev_quat_diff_val is not None:
+            r1 = torch.where(quat_diff_val > self.prev_quat_diff_val, self.r1_pos, self.r1_neg)
         else:
             r1 = torch.zeros_like(phi)
         r2 = self.alpha * torch.exp(-phi / self.beta)
-        r = torch.where(cos_val < self.threshold, r1, r2)
-        self.prev_cos_val = cos_val.clone()
+        r = torch.where(quat_diff_val < self.threshold, r1, r2)
+        self.prev_quat_diff_val = quat_diff_val.clone()
         return r
 
 class ExponentialStabilizationReward(RewardFunction):
@@ -143,22 +143,22 @@ class ExponentialStabilizationReward(RewardFunction):
         self.scale = scale
         self.bonus = bonus
         self.goal_rad = math.radians(goal_deg)
-        self.prev_cos_val = None
+        self.prev_quat_diff_val = None
 
     def compute(self,
                 quats, ang_vels, ang_accs,
                 goal_quat, goal_ang_vel, goal_ang_acc,
                 actions):
-        cos_val = quat_diff(quats, goal_quat)
-        phi = 2.0 * torch.asin( torch.clamp( torch.norm( cos_val[:, 0:3], p=2, dim=-1), max=1.0))
-        if self.prev_cos_val is not None:
-            r = torch.where(cos_val > self.prev_cos_val,
+        quat_diff_val = quat_diff(quats, goal_quat)
+        phi = 2.0 * torch.asin( torch.clamp( torch.norm( quat_diff_val[:, 0:3], p=2, dim=-1), max=1.0))
+        if self.prev_quat_diff_val is not None:
+            r = torch.where(quat_diff_val > self.prev_quat_diff_val,
                             torch.exp(-phi / self.scale),
                             torch.exp(-phi / self.scale) - 1)
         else:
             r = torch.zeros_like(phi)
         bonus = torch.where(phi <= self.goal_rad, self.bonus, torch.zeros_like(phi))
-        self.prev_cos_val = cos_val.clone()
+        self.prev_quat_diff_val = quat_diff_val.clone()
         return r + bonus
 
 class ContinuousDiscreteEffortReward(RewardFunction):
