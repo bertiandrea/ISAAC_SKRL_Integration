@@ -1,10 +1,8 @@
 # satellite_reward.py
 
 from abc import ABC, abstractmethod
-import torch
 import math
-from satellite.utils.satellite_util import quat_diff_rad
-from satellite.utils.satellite_util import quat_diff
+from satellite.utils.satellite_util import quat_diff_rad, quat_diff
 
 import isaacgym #BugFix
 import torch
