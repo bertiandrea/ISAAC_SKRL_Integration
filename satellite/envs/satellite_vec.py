@@ -4,7 +4,7 @@ import numpy as np
 from typing import Any
 
 from satellite.configs.satellite_config import SatelliteConfig
-from satellite.utils.satellite_util import class_to_dict, sample_random_quaternion_batch, quat_diff
+from satellite.utils.satellite_util import class_to_dict, sample_random_quaternion_batch, quat_diff, quat_diff_rad
 from satellite.isaacgymenvs.vec_task import VecTask
 from satellite.rewards.satellite_reward import (
     TestReward,
@@ -15,7 +15,6 @@ from satellite.rewards.satellite_reward import (
     ShapingReward,
     RewardFunction
 )
-from satellite.utils.torch_jit_utils import quat_diff_rad
 
 import isaacgym #BugFix
 from isaacgym import gymapi
