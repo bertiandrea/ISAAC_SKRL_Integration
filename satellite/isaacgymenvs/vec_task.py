@@ -259,9 +259,6 @@ class VecTask(Env):
 
         self.check_termination()
         
-        # Fixed Penalty for badly terminated envs:
-        #self.reward_buf = torch.where(self.timeout_buf, torch.ones_like(self.reward_buf) * self._cfg.env.badly_terminated_envs_penalty, self.reward_buf)
-
     def step(self, actions: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, Dict[str, Any]]:
         self.pre_physics_step(actions)
 
@@ -279,11 +276,6 @@ class VecTask(Env):
 
         self.control_steps += 1
         
-        #print(f"[step] states_buf (velocities and accelerations):\n{self.states_buf[:, 4:]}")
-        #print(f"[step] reward_buf:\n{self.reward_buf.view(-1, 1)}")
-        #print(f"[step] reset_buf (any): {self.reset_buf.view(-1, 1).any()}")
-        #print(f"[step] timeout_buf (any): {self.timeout_buf.view(-1, 1).any()}")
-
         return self.states_buf.to(self.rl_device).clone(), \
             self.reward_buf.to(self.rl_device).view(-1, 1).clone(), \
             self.reset_buf.to(self.rl_device).view(-1, 1).clone(), \
