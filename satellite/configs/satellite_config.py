@@ -19,7 +19,7 @@ class SatelliteConfig(BaseConfig):
         # passate di ottimizzazione (SGD) per aggiornamento: quante volte il PPO
         # riesamina e riutilizza i dati raccolti durante il rollout per affinare i gradienti
 
-        minibatch_size = 1024
+        minibatch_size = 16384
         # dimensione del minibatch: numero di transizioni campionate casualmente dai dati del rollout
         # usate in ogni singolo passo di calcolo del gradiente
 
