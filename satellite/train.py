@@ -21,6 +21,9 @@ from skrl.resources.schedulers.torch import KLAdaptiveRL
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
 
+import isaacgym #BugFix
+import torch
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Training con reward function selezionabile")
     parser.add_argument(
@@ -82,7 +85,7 @@ cfg_ppo.update({
     # environment
     "rollouts":                   env.epoch_length,
     "learning_epochs":            env.n_mini_epochs,
-    "mini_batches":               2, #int(env.epoch_length * env.num_envs / env.minibatch_size),
+    "mini_batches":               int(env.epoch_length * env.num_envs / env.minibatch_size),
     # agent
     "discount_factor":            0.99,
     "lambda":                     0.95,
@@ -96,7 +99,7 @@ cfg_ppo.update({
     "entropy_loss_scale":         0.00,
     "value_loss_scale":           1.0,
     "kl_threshold":               0,
-    "rewards_shaper":             lambda rewards, timestep, timesteps: rewards * 0.1,
+    "rewards_shaper":             lambda rewards, timestep, timesteps: rewards * 0.01,
     # preprocessing
     "state_preprocessor":         RunningStandardScaler,
     "state_preprocessor_kwargs":  {"size": env.state_space,   "device": env.device},

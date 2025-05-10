@@ -23,17 +23,17 @@ class SatelliteConfig(BaseConfig):
         # dimensione del minibatch: numero di transizioni campionate casualmente dai dati del rollout
         # usate in ogni singolo passo di calcolo del gradiente
 
-        n_epochs     = 8000
+        n_epochs = 8192
         # numero totale di aggiornamenti dell’agente: quante volte (cicli) si esegue il
         # processo di rollout + ottimizzazione lungo l’intero training
 
-        num_envs = 1024
+        num_envs = 4096
         # numero di ambienti paralleli: quante istanze indipendenti dell’ambiente vengono eseguite simultaneamente 
         # per raccogliere dati in parallelo e aumentare l’efficienza
         
-        num_observations = 7 # [x,y,z,w, ax,ay,az]
+        num_observations = 11 # [x,y,z,w, dx,dy,dz,dw, ax,ay,az]
 
-        num_states = 10 # [x,y,z,w, vx,vy,vz, ax,ay,az]
+        num_states = 14 # [x,y,z,w, dx,dy,dz,dw, vx,vy,vz, ax,ay,az]
 
         num_actions = 3
         
@@ -47,7 +47,7 @@ class SatelliteConfig(BaseConfig):
         threshold_ang_goal = 0.01745        # soglia in radianti per orientamento
         threshold_vel_goal = 0.01745        # soglia in rad/sec per la differenza di velocità
         overspeed_ang_vel = 3.141           # soglia in rad/sec per l'overspeed
-        episode_length_s = 300              # soglia in secondi per la terminazione di una singola simulazione
+        episode_length_s = 30              # soglia in secondi per la terminazione di una singola simulazione
         
         #clip_actions = 1
         #clip_observations = 1

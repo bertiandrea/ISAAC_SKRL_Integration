@@ -3,6 +3,11 @@
 from abc import ABC, abstractmethod
 import torch
 import math
+from satellite.utils.satellite_util import quat_diff_rad
+from satellite.utils.satellite_util import quat_diff
+
+import isaacgym #BugFix
+import torch
 
 class RewardFunction(ABC):
     @abstractmethod
@@ -17,26 +22,26 @@ class RewardFunction(ABC):
         pass
 
 class TestReward(RewardFunction):
-    def __init__(self , alpha_q=1.0, alpha_omega=0.5, alpha_acc=0.2, k_dyn=0.5):
+    def __init__(self , alpha_q=1.0, alpha_omega=0.5, alpha_acc=0.2):
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
         self.alpha_acc = alpha_acc
-        self.k_dyn       = k_dyn
 
     def compute(self,
                 quats, ang_vels, ang_accs,
                 goal_quat, goal_ang_vel, goal_ang_acc,
                 actions):
-        angle_diff = 2 * torch.acos(torch.sum(quats * goal_quat, dim=1).abs().clamp(0.0, 1.0))
+        angle_diff = quat_diff_rad(quats, goal_quat)
         ang_vel_diff = torch.norm(ang_vels - goal_ang_vel, dim=1)
         ang_acc_diff = torch.norm(ang_accs - goal_ang_acc, dim=1)
 
         print(f"[compute_reward]: angle_diff[0]={math.degrees(angle_diff[0].item()):.2f}° ang_vel_diff[0]={math.degrees(ang_vel_diff[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(ang_acc_diff[0].item()):.2f}°/s²")
 
         # Angular accelerration and velocity only matter when close to the target
-       
-        reward = self.alpha_q * (1/(1+angle_diff)) + \
-               (1/(1+angle_diff)) * (self.alpha_omega * (1/(1+ang_vel_diff)) + self.alpha_acc * (1/(1+ang_acc_diff)))
+
+        # Max when angle_diff, ang_vel_diff, ang_acc_diff = 0 (goal) -> reward = alpha_q + alpha_omega + alpha_acc
+        # Min when angle_diff, ang_vel_diff, ang_acc_diff >> 0 -> reward = 0
+        reward = self.alpha_q * (1/(1+angle_diff)) + self.alpha_omega * (1/(1+ang_vel_diff)) + self.alpha_acc * (1/(1+ang_acc_diff))
         
         print(f"[compute_reward]: reward[0]={(reward[0].item()):.2f}")
         
@@ -53,7 +58,7 @@ class WeightedSumReward(RewardFunction):
       + penalty_saturation if any action hits saturation
     """
     def __init__(self,
-                 alpha_q=10.0, alpha_omega=3.0, alpha_acc=1.0,
+                 alpha_q=1.0, alpha_omega=0.3, alpha_acc=0.1,
                  q_threshE=1e-2, omega_threshE=1e-2,
                  q_threshL=1e-2, omega_threshL=1e-2,
                  bonus_q=200.0, bonus_stable=1000.0,
@@ -78,15 +83,14 @@ class WeightedSumReward(RewardFunction):
                 quats, ang_vels, ang_accs,
                 goal_quat, goal_ang_vel, goal_ang_acc,
                 actions):
-        q_err = 2 * torch.acos(torch.sum(quats * goal_quat, dim=1).clamp(0.0, 1.0).abs())
+        q_err = quat_diff_rad(quats, goal_quat)
         omega_err = torch.norm(ang_vels - goal_ang_vel, dim=1)
         acc_err = torch.norm(ang_accs - goal_ang_acc, dim=1)
 
         print(f"[compute_reward]: angle_diff[0]={math.degrees(q_err[0].item()):.2f}° ang_vel_diff[0]={math.degrees(omega_err[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(acc_err[0].item()):.2f}°/s²")
         
-        base = - (self.alpha_q * q_err
-                + self.alpha_omega * omega_err
-                + self.alpha_acc * acc_err)
+        base = self.alpha_q * (1/(1+q_err)) + self.alpha_omega * (1/(1+omega_err)) + self.alpha_acc * (1/(1+acc_err))
+
         bonus = torch.zeros_like(base)
         bonus = torch.where(q_err <= self.q_threshE, bonus + self.bonus_q, bonus)
         bonus = torch.where((q_err <= self.q_threshE) & (omega_err <= self.omega_threshE),
@@ -108,7 +112,7 @@ class TwoPhaseReward(RewardFunction):
     def __init__(self,
                  threshold=0.999962,
                  r1_pos=0.1, r1_neg=-0.1,
-                 alpha=10.0, beta=0.5):
+                 alpha=1.0, beta=0.5):
         self.threshold = threshold
         self.r1_pos = r1_pos
         self.r1_neg = r1_neg
@@ -120,8 +124,8 @@ class TwoPhaseReward(RewardFunction):
                 quats, ang_vels, ang_accs,
                 goal_quat, goal_ang_vel, goal_ang_acc,
                 actions):
-        cos_val = torch.sum(quats * goal_quat, dim=1).clamp(0.0, 1.0).abs()
-        phi = 2 * torch.acos(cos_val)
+        cos_val = quat_diff(quats, goal_quat)
+        phi = 2.0 * torch.asin( torch.clamp( torch.norm( cos_val[:, 0:3], p=2, dim=-1), max=1.0))
         if self.prev_cos_val is not None:
             r1 = torch.where(cos_val > self.prev_cos_val, self.r1_pos, self.r1_neg)
         else:
@@ -145,8 +149,8 @@ class ExponentialStabilizationReward(RewardFunction):
                 quats, ang_vels, ang_accs,
                 goal_quat, goal_ang_vel, goal_ang_acc,
                 actions):
-        cos_val = torch.sum(quats * goal_quat, dim=1).clamp(0.0, 1.0).abs()
-        phi = 2 * torch.acos(cos_val)
+        cos_val = quat_diff(quats, goal_quat)
+        phi = 2.0 * torch.asin( torch.clamp( torch.norm( cos_val[:, 0:3], p=2, dim=-1), max=1.0))
         if self.prev_cos_val is not None:
             r = torch.where(cos_val > self.prev_cos_val,
                             torch.exp(-phi / self.scale),
@@ -180,7 +184,7 @@ class ContinuousDiscreteEffortReward(RewardFunction):
                 quats, ang_vels, ang_accs,
                 goal_quat, goal_ang_vel, goal_ang_acc,
                 actions):
-        phi = 2 * torch.acos(torch.sum(quats * goal_quat, dim=1).clamp(0.0, 1.0).abs())
+        phi = quat_diff_rad(quats, goal_quat)
         omega_err = torch.norm(ang_vels - goal_ang_vel, dim=1)
         u_norm = torch.sum(actions.pow(2), dim=1)
         sup_norm = torch.max(phi, omega_err)
@@ -219,7 +223,7 @@ class ShapingReward(RewardFunction):
                 quats, ang_vels, ang_accs,
                 goal_quat, goal_ang_vel, goal_ang_acc,
                 actions):
-        phi = 2 * torch.acos(torch.sum(quats * goal_quat, dim=1).clamp(0.0, 1.0).abs())
+        phi = quat_diff_rad(quats, goal_quat)
         if self.prev_phi is not None:
             delta_phi = phi - self.prev_phi
         else:
