@@ -138,6 +138,10 @@ class SatelliteVec(VecTask):
         self.states_buf = torch.cat((self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), self.satellite_angacc, self.satellite_angvels), dim=-1)
         self.obs_buf = torch.cat((self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), self.satellite_angacc), dim=-1)
         
+        print(f"[compute_observations]: satellite_quats[0]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[0].tolist())}]")
+        print(f"[compute_observations]: satellite_quats[1]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[1].tolist())}]")
+        print(f"[compute_observations]: satellite_quats[2]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[2].tolist())}]")
+        
         if self._cfg.env.sensor_noise_std > 0.0:
             self.obs_buf = self.obs_buf + torch.normal(mean=0.0, std=self._cfg.env.sensor_noise_std, 
                                                        size=self.obs_buf.shape, device=self._cfg.env.device)
