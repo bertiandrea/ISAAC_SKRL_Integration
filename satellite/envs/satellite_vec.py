@@ -154,9 +154,9 @@ class SatelliteVec(VecTask):
 
     def apply_torque(self, actions: torch.Tensor) -> None:
         if self._cfg.env.actuation_noise_std > 0.0:
-            self.actions = actions + torch.normal(mean=0.0, std=self._cfg.env.actuation_noise_std, 
+            actions = actions + torch.normal(mean=0.0, std=self._cfg.env.actuation_noise_std, 
                                              size=actions.shape, device=self._cfg.env.device)
-        self.actions = torch.clamp(self.actions, -self.clip_actions, self.clip_actions)
+        self.actions = torch.clamp(actions, -self.clip_actions, self.clip_actions)
         
         print(f"[apply_torque]: actions[0]=[{', '.join(f'{v:.2f}' for v in self.actions[0].tolist())}]")
         print(f"[apply_torque]: actions[1]=[{', '.join(f'{v:.2f}' for v in self.actions[1].tolist())}]")
