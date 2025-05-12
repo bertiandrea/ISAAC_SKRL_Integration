@@ -65,7 +65,9 @@ env          = SatelliteVec(cfg=env_cfg,
                             sim_device="cuda:0",
                             graphics_device_id=0,
                             headless=headless,
-                            reward_fn=reward_fn
+                            reward_fn=reward_fn,
+                            virtual_screen_capture=False,
+                            force_render=False
 )
 
 print(f"Envs: {env.num_envs}, \
