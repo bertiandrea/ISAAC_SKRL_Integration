@@ -35,11 +35,13 @@ class TestReward(RewardFunction):
 
         print(f"[compute_reward]: angle_diff[0]={math.degrees(angle_diff[0].item()):.2f}° ang_vel_diff[0]={math.degrees(ang_vel_diff[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(ang_acc_diff[0].item()):.2f}°/s²")
 
-        # Angular accelerration and velocity only matter when close to the target
+        # The closer the angle_diff is to 0, the higher the weight of the velocity and acceleration
+        # The further the angle_diff is from 0, the lower the weight of the velocity and acceleration
+        dynamic_weight = (1 / (1 + angle_diff)) 
 
         # Max when angle_diff, ang_vel_diff, ang_acc_diff = 0 (goal) -> reward = alpha_q + alpha_omega + alpha_acc
         # Min when angle_diff, ang_vel_diff, ang_acc_diff >> 0 -> reward = 0
-        reward = self.alpha_q * (1/(1+angle_diff)) + self.alpha_omega * (1/(1+ang_vel_diff)) + self.alpha_acc * (1/(1+ang_acc_diff))
+        reward = self.alpha_q * (1/(1+angle_diff)) + self.alpha_omega * dynamic_weight * (1/(1+ang_vel_diff)) + self.alpha_acc * (1/(1+ang_acc_diff))
         
         print(f"[compute_reward]: reward[0]={(reward[0].item()):.2f}")
         
