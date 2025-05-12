@@ -50,7 +50,6 @@ class SatelliteVec(VecTask):
         self.satellite_angacc = (self.satellite_angvels - self.prev_angvel) / self._cfg.sim.dt
 
         self.goal_quat = sample_random_quaternion_batch(self._cfg.env.device, self._cfg.env.num_envs)
-        print("Goal quaternions sample:", self.goal_quat[:5])
         #self.goal_quat = torch.tensor( [0, 1, 0, 0], dtype=torch.float32, device=self._cfg.env.device).repeat((self._cfg.env.num_envs, 1))
         self.goal_ang_vel = torch.zeros((self._cfg.env.num_envs, 3), dtype=torch.float32, device=self._cfg.env.device)
         self.goal_ang_acc = torch.zeros((self._cfg.env.num_envs, 3), dtype=torch.float32, device=self._cfg.env.device)

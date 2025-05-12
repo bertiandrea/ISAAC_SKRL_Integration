@@ -55,7 +55,7 @@ reward_map = {
 reward_fn = reward_map[args.reward_fn]()
 
 # fissiamo il seed per la riproducibilità
-set_seed(42)
+#set_seed(42)
 
 # 1) setup environment
 env_cfg      = SatelliteConfig()
