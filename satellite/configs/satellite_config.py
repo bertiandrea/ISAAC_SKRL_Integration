@@ -52,6 +52,8 @@ class SatelliteConfig(BaseConfig):
         #clip_actions = 1
         #clip_observations = 1
 
+        torque_scale = 5
+
     class asset:
         root = str(Path(__file__).resolve().parent.parent)
         file = "satellite.urdf"

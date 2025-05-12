@@ -154,18 +154,18 @@ class SatelliteVec(VecTask):
 
     def apply_torque(self, actions: torch.Tensor) -> None:
         if self._cfg.env.actuation_noise_std > 0.0:
-            actions = actions + torch.normal(mean=0.0, std=self._cfg.env.actuation_noise_std, 
+            self.actions = actions + torch.normal(mean=0.0, std=self._cfg.env.actuation_noise_std, 
                                              size=actions.shape, device=self._cfg.env.device)
-        actions = torch.clamp(actions, -self.clip_actions, self.clip_actions)
+        self.actions = torch.clamp(self.actions, -self.clip_actions, self.clip_actions)
         
-        print(f"[apply_torque]: actions[0]=[{', '.join(f'{v:.2f}' for v in actions[0].tolist())}]")
-        print(f"[apply_torque]: actions[1]=[{', '.join(f'{v:.2f}' for v in actions[1].tolist())}]")
-        print(f"[apply_torque]: actions[2]=[{', '.join(f'{v:.2f}' for v in actions[2].tolist())}]")
+        print(f"[apply_torque]: actions[0]=[{', '.join(f'{v:.2f}' for v in self.actions[0].tolist())}]")
+        print(f"[apply_torque]: actions[1]=[{', '.join(f'{v:.2f}' for v in self.actions[1].tolist())}]")
+        print(f"[apply_torque]: actions[2]=[{', '.join(f'{v:.2f}' for v in self.actions[2].tolist())}]")
 
         ################# SIM #################
         torque_tensor = torch.zeros((self.num_bodies * self._cfg.env.num_envs, 3), device=self._cfg.env.device)
         root_indices = torch.arange(self._cfg.env.num_envs, device=self._cfg.env.device, dtype=torch.long) * self.num_bodies
-        torque_tensor[root_indices] = actions
+        torque_tensor[root_indices] = self.actions * self._cfg.env.torque_scale
 
         self.gym.apply_rigid_body_force_tensors(
             self.sim,
