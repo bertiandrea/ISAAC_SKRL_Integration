@@ -117,8 +117,8 @@ class SatelliteVec(VecTask):
         self.goal_ang_vel[ids] = torch.zeros((len(ids), 3), dtype=torch.float32, device=self._cfg.env.device)
         self.goal_ang_acc[ids] = torch.zeros((len(ids), 3), dtype=torch.float32, device=self._cfg.env.device)
 
-        self.states_buf[ids] = torch.cat((self.satellite_quats, quat_diff(self.satellite_quats[ids], self.goal_quat[ids]), self.satellite_angacc[ids], self.satellite_angvels[ids]), dim=-1)
-        self.obs_buf[ids] = torch.cat((self.satellite_quats, quat_diff(self.satellite_quats[ids], self.goal_quat[ids]), self.satellite_angacc[ids]), dim=-1)
+        self.states_buf[ids] = torch.cat((self.satellite_quats[ids], quat_diff(self.satellite_quats[ids], self.goal_quat[ids]), self.satellite_angacc[ids], self.satellite_angvels[ids]), dim=-1)
+        self.obs_buf[ids] = torch.cat((self.satellite_quats[ids], quat_diff(self.satellite_quats[ids], self.goal_quat[ids]), self.satellite_angacc[ids]), dim=-1)
         
         self.progress_buf[ids] = 0
         self.reset_buf[ids] = False
@@ -141,7 +141,7 @@ class SatelliteVec(VecTask):
         print(f"[compute_observations]: satellite_quats[0]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[0].tolist())}]")
         print(f"[compute_observations]: satellite_quats[1]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[1].tolist())}]")
         print(f"[compute_observations]: satellite_quats[2]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[2].tolist())}]")
-        
+
         if self._cfg.env.sensor_noise_std > 0.0:
             self.obs_buf = self.obs_buf + torch.normal(mean=0.0, std=self._cfg.env.sensor_noise_std, 
                                                        size=self.obs_buf.shape, device=self._cfg.env.device)
