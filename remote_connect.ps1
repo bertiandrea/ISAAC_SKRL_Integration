@@ -5,3 +5,5 @@ Start-Process wt -ArgumentList '-w 0 nt --title "Tunnel 5999" -p "PowerShell" po
 Start-Process wt -ArgumentList '-w 0 nt --title "Tunnel 6006" -p "PowerShell" powershell -NoExit -Command "ssh -tt -L 59001:localhost:6006 -C -N -J betajump andreaberti@192.168.1.3"'
 
 Start-Process wt -ArgumentList '-w 0 nt --title "SSH Shell" -p "PowerShell" powershell -NoExit -Command "ssh -tt -J betajump andreaberti@192.168.1.3"'
+
+Start-Process wt -ArgumentList '-w 0 nt --title "NVIDIA" -p "PowerShell" powershell -NoExit -Command "ssh -tt -J betajump andreaberti@192.168.1.3 ''watch nvidia-smi''"'
