@@ -46,7 +46,7 @@ class SatelliteConfig(BaseConfig):
 
         threshold_ang_goal = 0.01745        # soglia in radianti per orientamento
         threshold_vel_goal = 0.01745        # soglia in rad/sec per la differenza di velocità
-        overspeed_ang_vel = 3.141           # soglia in rad/sec per l'overspeed
+        overspeed_ang_vel = 1.57            # soglia in rad/sec per l'overspeed
         episode_length_s = 120              # soglia in secondi per la terminazione di una singola simulazione
         
         #clip_actions = 1

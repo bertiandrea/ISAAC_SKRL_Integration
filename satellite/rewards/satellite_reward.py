@@ -34,6 +34,8 @@ class TestReward(RewardFunction):
         ang_acc_diff = torch.norm(ang_accs - goal_ang_acc, dim=1)
 
         print(f"[compute_reward]: angle_diff[0]={math.degrees(angle_diff[0].item()):.2f}° ang_vel_diff[0]={math.degrees(ang_vel_diff[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(ang_acc_diff[0].item()):.2f}°/s²")
+        print(f"[compute_reward]: angle_diff[1]={math.degrees(angle_diff[1].item()):.2f}° ang_vel_diff[1]={math.degrees(ang_vel_diff[1].item()):.2f}°/s ang_acc_diff[1]={math.degrees(ang_acc_diff[1].item()):.2f}°/s²")
+        print(f"[compute_reward]: angle_diff[2]={math.degrees(angle_diff[2].item()):.2f}° ang_vel_diff[2]={math.degrees(ang_vel_diff[2].item()):.2f}°/s ang_acc_diff[2]={math.degrees(ang_acc_diff[2].item()):.2f}°/s²")
 
         # The closer the angle_diff is to 0, the higher the weight of the velocity and acceleration
         # The further the angle_diff is from 0, the lower the weight of the velocity and acceleration
@@ -44,7 +46,9 @@ class TestReward(RewardFunction):
         reward = self.alpha_q * (1/(1+angle_diff)) + self.alpha_omega * dynamic_weight * (1/(1+ang_vel_diff)) + self.alpha_acc * (1/(1+ang_acc_diff))
         
         print(f"[compute_reward]: reward[0]={(reward[0].item()):.2f}")
-        
+        print(f"[compute_reward]: reward[1]={(reward[1].item()):.2f}")
+        print(f"[compute_reward]: reward[2]={(reward[2].item()):.2f}")
+
         return reward
 
 class WeightedSumReward(RewardFunction):

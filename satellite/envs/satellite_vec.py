@@ -50,6 +50,7 @@ class SatelliteVec(VecTask):
         self.satellite_angacc = (self.satellite_angvels - self.prev_angvel) / self._cfg.sim.dt
 
         self.goal_quat = sample_random_quaternion_batch(self._cfg.env.device, self._cfg.env.num_envs)
+        print("Goal quaternions sample:", self.goal_quat[:5])
         #self.goal_quat = torch.tensor( [0, 1, 0, 0], dtype=torch.float32, device=self._cfg.env.device).repeat((self._cfg.env.num_envs, 1))
         self.goal_ang_vel = torch.zeros((self._cfg.env.num_envs, 3), dtype=torch.float32, device=self._cfg.env.device)
         self.goal_ang_acc = torch.zeros((self._cfg.env.num_envs, 3), dtype=torch.float32, device=self._cfg.env.device)
@@ -154,7 +155,9 @@ class SatelliteVec(VecTask):
         self.actions = torch.clamp(actions, -self.clip_actions, self.clip_actions)
         
         print(f"[apply_torque]: actions[0]=[{', '.join(f'{v:.2f}' for v in actions[0].tolist())}]")
-        
+        print(f"[apply_torque]: actions[1]=[{', '.join(f'{v:.2f}' for v in actions[1].tolist())}]")
+        print(f"[apply_torque]: actions[2]=[{', '.join(f'{v:.2f}' for v in actions[2].tolist())}]")
+
         ################# SIM #################
         torque_tensor = torch.zeros((self.num_bodies * self._cfg.env.num_envs, 3), device=self._cfg.env.device)
         root_indices = torch.arange(self._cfg.env.num_envs, device=self._cfg.env.device, dtype=torch.long) * self.num_bodies
