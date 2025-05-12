@@ -34,20 +34,20 @@ class SatelliteVec(VecTask):
         ################# SETUP SIM #################
         self.actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim)
         self.root_states = gymtorch.wrap_tensor(self.actor_root_state).view(self._cfg.env.num_envs, 13)
-        #############################################
-
-        ################# SIM #################
-        self.gym.refresh_actor_root_state_tensor(self.sim)
         self.satellite_pos     = self.root_states[:, 0:3]
         self.satellite_quats   = self.root_states[:, 3:7]
         self.satellite_linvels = self.root_states[:, 7:10]
         self.satellite_angvels = self.root_states[:, 10:13]
+        #############################################
+
+        ################# SIM #################
+        self.gym.refresh_actor_root_state_tensor(self.sim)
         ########################################
+
+        self.initial_root_states = self.root_states.clone()
 
         self.prev_angvel = self.satellite_angvels.clone()
         self.satellite_angacc = (self.satellite_angvels - self.prev_angvel) / self._cfg.sim.dt
-
-        self.initial_root_states = self.root_states.clone()
 
         self.goal_quat = sample_random_quaternion_batch(self._cfg.env.device, self._cfg.env.num_envs)
         #self.goal_quat = torch.tensor( [0, 1, 0, 0], dtype=torch.float32, device=self._cfg.env.device).repeat((self._cfg.env.num_envs, 1))
@@ -90,7 +90,7 @@ class SatelliteVec(VecTask):
     
     def termination(self) -> None:
         ids = torch.nonzero(self.reset_buf | self.timeout_buf, as_tuple=False).flatten()
-        if ids.numel() != 0:
+        if len(ids) > 0:
             self.reset_idx(ids)
         
     def reset_idx(self, ids: torch.Tensor) -> None:      
@@ -111,14 +111,14 @@ class SatelliteVec(VecTask):
         self.prev_angvel[ids] = self.satellite_angvels[ids].clone()
         self.satellite_angacc[ids] = (self.satellite_angvels[ids] - self.prev_angvel[ids]) / self._cfg.sim.dt
 
-        self.states_buf[ids] = torch.cat((self.satellite_quats, quat_diff(self.satellite_quats[ids], self.goal_quat[ids]), self.satellite_angacc[ids], self.satellite_angvels[ids]), dim=-1)
-        self.obs_buf[ids] = torch.cat((self.satellite_quats, quat_diff(self.satellite_quats[ids], self.goal_quat[ids]), self.satellite_angacc[ids]), dim=-1)
-        
         self.goal_quat[ids] = sample_random_quaternion_batch(self._cfg.env.device, len(ids))
         #self.goal_quat[ids] = torch.tensor([0, 1, 0, 0], dtype=torch.float32, device=self._cfg.env.device).repeat((len(ids), 1))
         self.goal_ang_vel[ids] = torch.zeros((len(ids), 3), dtype=torch.float32, device=self._cfg.env.device)
         self.goal_ang_acc[ids] = torch.zeros((len(ids), 3), dtype=torch.float32, device=self._cfg.env.device)
 
+        self.states_buf[ids] = torch.cat((self.satellite_quats, quat_diff(self.satellite_quats[ids], self.goal_quat[ids]), self.satellite_angacc[ids], self.satellite_angvels[ids]), dim=-1)
+        self.obs_buf[ids] = torch.cat((self.satellite_quats, quat_diff(self.satellite_quats[ids], self.goal_quat[ids]), self.satellite_angacc[ids]), dim=-1)
+        
         self.progress_buf[ids] = 0
         self.reset_buf[ids] = False
         self.timeout_buf[ids] = False
