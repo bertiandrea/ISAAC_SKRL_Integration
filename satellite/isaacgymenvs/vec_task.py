@@ -119,8 +119,8 @@ class VecTask(Env):
 
         if self.headless == False:
             camera_props = gymapi.CameraProperties()
-            camera_props.width = SCREEN_RESOLUTION.width
-            camera_props.height = SCREEN_RESOLUTION.height
+            camera_props.width = SCREEN_RESOLUTION["width"]
+            camera_props.height = SCREEN_RESOLUTION["height"]
             self.viewer = self.gym.create_viewer(
                 self.sim, camera_props)
             self.gym.subscribe_viewer_keyboard_event(
