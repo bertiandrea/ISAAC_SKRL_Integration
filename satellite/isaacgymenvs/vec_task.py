@@ -16,7 +16,10 @@ from isaacgym import gymapi
 import torch
 
 EXISTING_SIM = None
-SCREEN_CAPTURE_RESOLUTION = (1027, 768)
+SCREEN_RESOLUTION = {
+    "width": 1920,
+    "height": 1080
+}
 
 def _create_sim_once(gym, *args, **kwargs):
     global EXISTING_SIM
@@ -32,7 +35,6 @@ class Env(ABC):
         split_device = sim_device.split(":")
         self.device_type = split_device[0]
         self.device_id = int(split_device[1]) if len(split_device) > 1 else 0   # SIM CREATION
-
         self.device = "cpu"
         if config["sim"]["use_gpu_pipeline"]:
             if self.device_type.lower() == "cuda" or self.device_type.lower() == "gpu":
@@ -71,7 +73,7 @@ class Env(ABC):
         self.render_fps: int = config["env"].get("render_FPS", -1)
         self.last_frame_time: float = 0.0
 
-        self.record_frames: bool = False
+        self.record_frames: bool = config["env"].get("record_frames", False)
         self.record_frames_dir = join("recorded_frames", datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
 
         self.epoch_length: int = config["env"].get("epoch_length", 0)
@@ -84,15 +86,9 @@ class VecTask(Env):
 
     metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 24}
 
-    def __init__(self, config, rl_device, sim_device, graphics_device_id, headless, virtual_screen_capture: bool = False, force_render: bool = False): 
+    def __init__(self, config, rl_device, sim_device, graphics_device_id, headless, force_render: bool = False): 
         super().__init__(config, rl_device, sim_device, graphics_device_id, headless)
 
-        self.virtual_screen_capture = virtual_screen_capture
-        self.virtual_display = None
-        if self.virtual_screen_capture:
-            from pyvirtualdisplay.smartdisplay import SmartDisplay
-            self.virtual_display = SmartDisplay(size=SCREEN_CAPTURE_RESOLUTION)
-            self.virtual_display.start()
         self.force_render = force_render
 
         self.sim_params = self.parse_sim_params(self.cfg["physics_engine"], self.cfg["sim"])
@@ -122,8 +118,11 @@ class VecTask(Env):
         self.viewer = None
 
         if self.headless == False:
+            camera_props = gymapi.CameraProperties()
+            camera_props.width = SCREEN_RESOLUTION.width
+            camera_props.height = SCREEN_RESOLUTION.height
             self.viewer = self.gym.create_viewer(
-                self.sim, gymapi.CameraProperties())
+                self.sim, camera_props)
             self.gym.subscribe_viewer_keyboard_event(
                 self.viewer, gymapi.KEY_ESCAPE, "QUIT")
             self.gym.subscribe_viewer_keyboard_event(
@@ -206,10 +205,6 @@ class VecTask(Env):
                     os.makedirs(self.record_frames_dir, exist_ok=True)
 
                 self.gym.write_viewer_image_to_file(self.viewer, join(self.record_frames_dir, f"frame_{self.control_steps}.png"))
-
-            if self.virtual_display and mode == "rgb_array":
-                img = self.virtual_display.grab()
-                return np.array(img)
 
     def parse_sim_params(self, physics_engine: str, config_sim: Dict[str, Any]) -> gymapi.SimParams:
         sim_params = gymapi.SimParams()

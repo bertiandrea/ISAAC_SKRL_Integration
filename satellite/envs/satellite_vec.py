@@ -23,11 +23,11 @@ import torch
 
 class SatelliteVec(VecTask):
     def __init__(self, cfg: SatelliteConfig, rl_device: Any, sim_device: Any, graphics_device_id: int, headless: bool, 
-                 virtual_screen_capture: bool = False, force_render: bool = False, reward_fn: RewardFunction = None):
+                force_render: bool = False, reward_fn: RewardFunction = None):
         self.cfg = class_to_dict(cfg)
         self._cfg = cfg
 
-        super().__init__(self.cfg, rl_device, sim_device, graphics_device_id, headless, virtual_screen_capture, force_render)
+        super().__init__(self.cfg, rl_device, sim_device, graphics_device_id, headless, force_render)
         
         self.max_episode_length = int(np.ceil(self._cfg.env.episode_length_s / self._cfg.sim.dt))
 

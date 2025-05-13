@@ -66,7 +66,6 @@ env          = SatelliteVec(cfg=env_cfg,
                             graphics_device_id=0,
                             headless=headless,
                             reward_fn=reward_fn,
-                            virtual_screen_capture=False,
                             force_render=False
 )
 
