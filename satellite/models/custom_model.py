@@ -15,11 +15,11 @@ class Policy(GaussianMixin, Model):
         print("Policy: action_space", action_space)
         print("Policy: num_observations", self.num_observations)
         self.net = nn.Sequential(nn.Linear(self.num_observations, hidden_size),
-                                 nn.ReLU(), #Also Tanh() or ELU()
+                                 nn.ELU(), #Also Tanh() or ReLU()
                                  nn.Linear(hidden_size, hidden_size),
-                                 nn.ReLU(), #Also Tanh() or ELU()
+                                 nn.ELU(), #Also Tanh() or ReLU()
                                  nn.Linear(hidden_size, hidden_size // 2),
-                                 nn.ReLU()  #Also Tanh() or ELU()
+                                 nn.ELU(), #Also Tanh() or ReLU()
                                  )
         self.mean_layer = nn.Linear(hidden_size // 2, self.num_actions)
         self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
@@ -29,7 +29,7 @@ class Policy(GaussianMixin, Model):
 
     def compute(self, inputs, role):
         x = inputs["states"][:, :self.num_observations]
-        return self.mean_layer(self.net(x)), self.log_std_parameter, {}
+        return self.mean_layer(self.net(x)), self._get_log_std_from_parameter(), {}
         
 class Value(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False, hidden_size=256): #observation_space init like state_space
@@ -39,11 +39,11 @@ class Value(DeterministicMixin, Model):
         print("Value: action_space", action_space)
         print("Value: num_observations", self.num_observations)
         self.net = nn.Sequential(nn.Linear(self.num_observations, hidden_size), #num_observations init like num_states
-                                 nn.ReLU(), #Also Tanh() or ELU()
+                                 nn.ELU(), #Also Tanh() or ReLU()
                                  nn.Linear(hidden_size, hidden_size),
-                                 nn.ReLU(), #Also Tanh() or ELU()
+                                 nn.ELU(), #Also Tanh() or ReLU()
                                  nn.Linear(hidden_size, hidden_size // 2),
-                                 nn.ReLU()  #Also Tanh() or ELU()
+                                 nn.ELU()  #Also Tanh() or ReLU()
                                  )
         self.value_layer = nn.Linear(hidden_size // 2, 1)
 
