@@ -45,8 +45,8 @@ class SatelliteVec(VecTask):
         ########################################
 
         self.initial_root_states = self.root_states.clone()
-
         self.prev_angvel = self.satellite_angvels.clone()
+        
         self.satellite_angacc = (self.satellite_angvels - self.prev_angvel) / self._cfg.sim.dt
 
         self.goal_quat = sample_random_quaternion_batch(self._cfg.env.device, self._cfg.env.num_envs)
@@ -109,6 +109,7 @@ class SatelliteVec(VecTask):
         ########################################
 
         self.prev_angvel[ids] = self.satellite_angvels[ids].clone()
+
         self.satellite_angacc[ids] = (self.satellite_angvels[ids] - self.prev_angvel[ids]) / self._cfg.sim.dt
 
         self.goal_quat[ids] = sample_random_quaternion_batch(self._cfg.env.device, len(ids))
