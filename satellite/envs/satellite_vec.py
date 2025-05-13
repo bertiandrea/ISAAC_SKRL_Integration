@@ -181,6 +181,9 @@ class SatelliteVec(VecTask):
             self.goal_quat, self.goal_ang_vel, self.goal_ang_acc,
             self.actions
         )
+        print(f"[compute_reward]: reward_buf[0]={self.reward_buf[0].item():.2f}")
+        print(f"[compute_reward]: reward_buf[1]={self.reward_buf[1].item():.2f}")
+        print(f"[compute_reward]: reward_buf[2]={self.reward_buf[2].item():.2f}")
 
     def check_termination(self) -> None:
         angle_diff = quat_diff_rad(self.satellite_quats, self.goal_quat)

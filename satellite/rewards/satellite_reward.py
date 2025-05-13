@@ -47,6 +47,10 @@ class TestReward(RewardFunction):
         self.alpha_acc = alpha_acc
 
     def _compute(self, phi, omega_err, acc_err, actions):
+        print(f"[compute_reward]: angle_diff[0]={math.degrees(phi[0].item()):.2f}° ang_vel_diff[0]={math.degrees(omega_err[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(acc_err[0].item()):.2f}°/s²")
+        print(f"[compute_reward]: angle_diff[1]={math.degrees(phi[1].item()):.2f}° ang_vel_diff[1]={math.degrees(omega_err[1].item()):.2f}°/s ang_acc_diff[1]={math.degrees(acc_err[1].item()):.2f}°/s²")
+        print(f"[compute_reward]: angle_diff[2]={math.degrees(phi[2].item()):.2f}° ang_vel_diff[2]={math.degrees(omega_err[2].item()):.2f}°/s ang_acc_diff[2]={math.degrees(acc_err[2].item()):.2f}°/s²")
+    
         weight = 1.0 / (1.0 + phi)
         r_q = self.alpha_q * 1.0 / (1.0 + phi)
         r_omega = self.alpha_omega * weight * (1.0 / (1.0 + omega_err))
