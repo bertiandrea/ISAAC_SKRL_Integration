@@ -29,7 +29,7 @@ class Policy(GaussianMixin, Model):
 
     def compute(self, inputs, role):
         x = inputs["states"][:, :self.num_observations]
-        return self.mean_layer(self.net(x)), self._get_log_std_from_parameter(), {}
+        return self.mean_layer(self.net(x)), self.log_std_parameter, {}
         
 class Value(DeterministicMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False, hidden_size=256): #observation_space init like state_space
