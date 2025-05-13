@@ -24,6 +24,8 @@ from skrl.utils import set_seed
 import isaacgym #BugFix
 import torch
 
+os.environ["CUDA_LAUNCH_BLOCKING"] = "1" # BugFix -> Force CUDA to be synchronous for debugging
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Training con reward function selezionabile")
     parser.add_argument(
