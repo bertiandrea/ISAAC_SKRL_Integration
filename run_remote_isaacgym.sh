@@ -69,7 +69,7 @@ else
 fi
 
 # Avvia il training con la reward function scelta
-python -m satellite.train --reward-fn "$REWARD_FN"
+CUDA_LAUNCH_BLOCKING=1 python -m satellite.train --reward-fn "$REWARD_FN"
 
 # Mantieni lo script attivo fino alla chiusura di Xvfb
 wait $XVFB_PID
