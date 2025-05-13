@@ -52,7 +52,7 @@ class SatelliteConfig(BaseConfig):
         #clip_actions = 1
         #clip_observations = 1
 
-        torque_scale = 100
+        torque_scale = 10
 
         record_frames = False 
         
