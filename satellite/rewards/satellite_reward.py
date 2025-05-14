@@ -103,6 +103,7 @@ class WeightedSumReward(RewardFunction):
         if self.action_saturation_thresh is not None:
             saturated = torch.any(actions.abs() >= self.action_saturation_thresh, dim=1)
             bonus = torch.where(saturated, bonus + self.penalty_saturation, bonus)
+        
         return base + bonus
 
 class TwoPhaseReward(RewardFunction):
@@ -125,9 +126,10 @@ class TwoPhaseReward(RewardFunction):
         else:
             delta = phi - self._prev_phi
             r1 = torch.where(delta < 0.0, self.r1_pos, self.r1_neg)
-        self._prev_phi = phi.clone()
         r2 = self.alpha * torch.exp(-phi / self.beta)
-        # use r2 once within threshold
+
+        self._prev_phi = phi.clone()
+
         return torch.where(phi >= self.threshold, r2, r1)
 
 class ExponentialStabilizationReward(RewardFunction):
@@ -148,7 +150,9 @@ class ExponentialStabilizationReward(RewardFunction):
             delta = phi - self._prev_phi
             r = torch.where(delta > 0.0, exp_term, exp_term - 1.0)
         bonus = torch.where(phi <= self.goal_rad, self.bonus, torch.zeros_like(phi))
+        
         self._prev_phi = phi.clone()
+
         return r + bonus
 
 class ContinuousDiscreteEffortReward(RewardFunction):
@@ -165,10 +169,11 @@ class ContinuousDiscreteEffortReward(RewardFunction):
 
     def _compute(self, phi, omega_err, acc_err, actions):
         u_norm_sq = torch.sum(actions.pow(2), dim=1)
-        sup = torch.max(phi, omega_err)
+        sup_err = torch.max(phi, omega_err)
         r1 = -(phi + omega_err + self.effort_penalty * u_norm_sq)
-        r2 = torch.where(sup <= self.error_thresh, self.bonus, torch.zeros_like(phi))
-        r3 = torch.where(sup >= self.fail_thresh, self.fail_penalty, torch.zeros_like(phi))
+        r2 = torch.where(sup_err <= self.error_thresh, self.bonus, torch.zeros_like(phi))
+        r3 = torch.where(sup_err >= self.fail_thresh, self.fail_penalty, torch.zeros_like(phi))
+        
         return r1 + r2 + r3
 
 class ShapingReward(RewardFunction):
@@ -199,5 +204,7 @@ class ShapingReward(RewardFunction):
             delta = phi - self._prev_phi
         beta = self.beta_fn(delta, self.mode)
         tau = self.tau_fn(phi, self.mode)
+
         self._prev_phi = phi.clone()
+        
         return beta * tau
