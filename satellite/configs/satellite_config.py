@@ -17,8 +17,9 @@ class SatelliteConfig(BaseConfig):
     set_seed = False
     seed = 42
 
-    device = torch.device("cuda" if CUDA else "cpu")
+    device_type = torch.device("cuda" if CUDA else "cpu")
     device_id = torch.cuda.current_device() if CUDA else -1
+    device = device_type + ":" + str(device_id)
 
     class env:  
         num_envs = NUM_ENVS

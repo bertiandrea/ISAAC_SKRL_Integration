@@ -29,80 +29,94 @@ def _create_sim_once(gym, *args, **kwargs):
         EXISTING_SIM = gym.create_sim(*args, **kwargs)
         return EXISTING_SIM
 
-
 class Env(ABC):
-    def __init__(self, config: Dict[str, Any], rl_device: str, sim_device: str, graphics_device_id: int, headless: bool): 
-        split_device = sim_device.split(":")
-        self.device_type = split_device[0]
-        self.device_id = int(split_device[1]) if len(split_device) > 1 else 0   # SIM CREATION
-        self.device = "cpu"
-        if config["sim"]["use_gpu_pipeline"]:
-            if self.device_type.lower() == "cuda" or self.device_type.lower() == "gpu":
-                self.device = "cuda" + ":" + str(self.device_id)
-            else:
-                print("GPU Pipeline can only be used with GPU simulation. Forcing CPU Pipeline.")
-                config["sim"]["use_gpu_pipeline"] = False
-
-        self.rl_device = rl_device
-
+    def __init__(self, config, headless: bool): 
+        self.device_type = getattr(config, 'device', 'cpu')
+        self.device_id = getattr(config, 'device', -1)
+        if self.device_type == 'cuda':
+            self.device = getattr(config, 'device', 'cpu')
+        elif self.device_type == 'cpu':
+            self.device = 'cpu'
+        else:
+            raise ValueError(f"Invalid device type: {self.device_type}")
+        
         self.headless = headless
 
-        enable_camera_sensors = config["env"].get("enable_camera_sensors", False)
-        self.graphics_device_id = graphics_device_id    # SIM CREATION
-        if enable_camera_sensors == False and self.headless == True:
-            self.graphics_device_id = -1
-
-        self.num_envs = config["env"]["num_envs"]
-        self.num_agents = config["env"].get("num_agents", 1)
+        self.num_envs = getattr(config.env, 'num_envs', 0)
+        self.num_agents = getattr(config.env, 'num_agents', 1)
         
-        self.num_observations = config["env"].get("num_observations", 0)
-        self.num_states = config["env"].get("num_states", 0)
-        self.num_actions = config["env"]["num_actions"]
+        self.num_observations = getattr(config.env, 'num_observations', 0)
+        self.num_states = getattr(config.env, 'num_states', 0)
+        self.num_actions = getattr(config.env, 'num_actions', 0)
 
         self.obs_space = spaces.Box(np.ones(self.num_observations) * -np.Inf, np.ones(self.num_observations) * np.Inf)
         self.state_space = spaces.Box(np.ones(self.num_states) * -np.Inf, np.ones(self.num_states) * np.Inf)
-        self.act_space = spaces.Box(np.ones(self.num_actions) * -1., np.ones(self.num_actions) * 1.)
+        self.act_space = spaces.Box(np.ones(self.num_actions) * -np.Inf, np.ones(self.num_actions) * np.Inf)
 
-        self.control_freq_inv = config["env"].get("control_frequency_inv", 1)
+        self.control_freq_inv = getattr(config.env, 'control_freq_inv', 1)
 
-        self.clip_obs = config["env"].get("clip_observations", np.Inf)
-        self.clip_actions = config["env"].get("clip_actions", np.Inf)
+        self.clip_obs = getattr(config.env, 'clip_observations', np.Inf)
+        self.clip_actions = getattr(config.env, 'clip_actions', np.Inf)
 
         self.control_steps: int = 0
 
-        self.render_fps: int = config["env"].get("render_FPS", -1)
+        self.render_fps: int = getattr(config.env, 'render_fps', -1)
         self.last_frame_time: float = 0.0
 
-        self.record_frames: bool = config["env"].get("record_frames", False)
+        self.record_frames: bool = getattr(config.env, 'record_frames', False)
         self.record_frames_dir = join("recorded_frames", datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
 
-        self.epoch_length: int = config["env"].get("epoch_length", 0)
-        self.n_mini_epochs: int = config["env"].get("n_mini_epochs", 0)
-        self.minibatch_size: int = config["env"].get("minibatch_size", 0)
-        self.n_epochs: int = config["env"].get("n_epochs", 0)
+        self.epoch_length: int = getattr(config.env, 'epoch_length', 0)
+        self.n_mini_epochs: int = getattr(config.env, 'n_mini_epochs', 0)
+        self.minibatch_size: int = getattr(config.env, 'minibatch_size', 0)
+        self.n_epochs: int = getattr(config.env, 'n_epochs', 0)
 
-
-class VecTask(Env):
-
-    metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 24}
-
-    def __init__(self, config, rl_device, sim_device, graphics_device_id, headless, force_render: bool = False): 
-        super().__init__(config, rl_device, sim_device, graphics_device_id, headless)
-
-        self.force_render = force_render
-
-        self.sim_params = self.parse_sim_params(self.cfg["physics_engine"], self.cfg["sim"])
-        if self.cfg["physics_engine"] == "physx":
+        self.dt: float = getattr(config.env.sim, "dt", 1.0 / 60.0)
+        if config.env.sim.physics_engine == "physx":
             self.physics_engine = gymapi.SIM_PHYSX      # SIM CREATION
-        elif self.cfg["physics_engine"] == "flex":
+        elif config.env.sim.physics_engine == "physx_gpu":
             self.physics_engine = gymapi.SIM_FLEX       # SIM CREATION
         else:
-            raise ValueError(f"Invalid physics engine backend: {self.cfg['physics_engine']}")
+            raise ValueError(f"Invalid physics engine backend: {config.env.sim.physics_engine}")
+        
+        self.sim_params = self.parse_sim_params(config.env.sim.physics_engine, config.env.sim)
 
-        self.dt: float = self.sim_params.dt
 
-        torch._C._jit_set_profiling_mode(False)
-        torch._C._jit_set_profiling_executor(False)
+
+    def parse_sim_params(self, physics_engine: str, config_sim) -> gymapi.SimParams:
+        sim_params = gymapi.SimParams()
+
+        sim_params.dt = getattr(config_sim, "dt", 1.0 / 60.0)
+        sim_params.num_client_threads = getattr(config_sim, "num_client_threads", 1)
+        sim_params.use_gpu_pipeline = getattr(config_sim, "use_gpu_pipeline", False)
+        sim_params.substeps = getattr(config_sim, "substeps", 2)
+        sim_params.gravity = gymapi.Vec3(*getattr(config_sim, "gravity", [0.0, 0.0, -9.81]))
+
+        if config_sim.up_axis == "z":
+            sim_params.up_axis = gymapi.UP_AXIS_Z
+        elif config_sim.up_axis == "y":
+            sim_params.up_axis = gymapi.UP_AXIS_Y
+        else:
+            raise ValueError(f"Invalid physics up-axis: {config_sim.up_axis}")
+
+        if physics_engine == "physx":
+            for opt, val in vars(config_sim.physx).keys():
+                if opt == "contact_collection":
+                    setattr(sim_params.physx, opt, gymapi.ContactCollection(val))
+                else:
+                    setattr(sim_params.physx, opt, val)
+        elif physics_engine == "flex":
+            for opt, val in vars(config_sim.flex).keys():
+                setattr(sim_params.flex, opt, val)
+        else:
+            raise ValueError(f"Invalid physics engine backend: {physics_engine}")
+
+        return sim_params
+
+class VecTask(Env):
+    def __init__(self, config, headless: bool, force_render: bool = False): 
+        super().__init__(config, headless)
+        self.force_render = force_render
 
         self.gym = gymapi.acquire_gym()
 
@@ -163,7 +177,7 @@ class VecTask(Env):
 
         return sim
         
-    def render(self, mode="rgb_array"):
+    def render(self):
         if self.viewer:
             if self.gym.query_viewer_has_closed(self.viewer):
                 sys.exit()
@@ -206,40 +220,6 @@ class VecTask(Env):
 
                 self.gym.write_viewer_image_to_file(self.viewer, join(self.record_frames_dir, f"frame_{self.control_steps}.png"))
 
-    def parse_sim_params(self, physics_engine: str, config_sim: Dict[str, Any]) -> gymapi.SimParams:
-        sim_params = gymapi.SimParams()
-
-        if config_sim["up_axis"] not in ["z", "y"]:
-            msg = f"Invalid physics up-axis: {config_sim['up_axis']}"
-            print(msg)
-            raise ValueError(msg)
-
-        sim_params.dt = config_sim["dt"]
-        sim_params.num_client_threads = config_sim.get("num_client_threads", 0)
-        sim_params.use_gpu_pipeline = config_sim["use_gpu_pipeline"]
-        sim_params.substeps = config_sim.get("substeps", 2)
-
-        if config_sim["up_axis"] == "z":
-            sim_params.up_axis = gymapi.UP_AXIS_Z
-        else:
-            sim_params.up_axis = gymapi.UP_AXIS_Y
-
-        sim_params.gravity = gymapi.Vec3(*config_sim["gravity"])
-
-        if physics_engine == "physx":
-            if "physx" in config_sim:
-                for opt in config_sim["physx"].keys():
-                    if opt == "contact_collection":
-                        setattr(sim_params.physx, opt, gymapi.ContactCollection(config_sim["physx"][opt]))
-                    else:
-                        setattr(sim_params.physx, opt, config_sim["physx"][opt])
-        else:
-            if "flex" in config_sim:
-                for opt in config_sim["flex"].keys():
-                    setattr(sim_params.flex, opt, config_sim["flex"][opt])
-
-        return sim_params
-
     def pre_physics_step(self, actions: torch.Tensor) -> None:        
         self.termination()
 
@@ -271,19 +251,18 @@ class VecTask(Env):
 
         self.control_steps += 1
         
-        return self.states_buf.to(self.rl_device).clone(), \
-            self.reward_buf.to(self.rl_device).view(-1, 1).clone(), \
-            self.reset_buf.to(self.rl_device).view(-1, 1).clone(), \
-            self.timeout_buf.to(self.rl_device).view(-1, 1).clone(), \
+        return self.states_buf.to(self.device).clone(), \
+            self.reward_buf.to(self.device).view(-1, 1).clone(), \
+            self.reset_buf.to(self.device).view(-1, 1).clone(), \
+            self.timeout_buf.to(self.device).view(-1, 1).clone(), \
             {}
 
     def reset(self):
-        ids = torch.arange(self._cfg.env.num_envs, device=self._cfg.env.device)
+        ids = torch.arange(self.num_envs, device=self.device)
         self.reset_idx(ids)
         
-        return self.states_buf.to(self.rl_device).clone(), {}
+        return self.states_buf.to(self.device).clone(), {}
 
-    
-    def destroy(self) -> None:
+    def close(self) -> None:
         self.gym.destroy_viewer(self.viewer)
         self.gym.destroy_sim(self.sim)
