@@ -34,7 +34,7 @@ class Params(ABC):
 
         ########################################################################
 
-        self.dt: float = getattr(config.sim, "dt", 1.0 / 60.0)
+        self.dt = getattr(config.sim, "dt", 1.0 / 60.0)
         if config.sim.physics_engine == "flex":
             self.physics_engine = gymapi.SIM_FLEX
         else:
