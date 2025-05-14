@@ -19,9 +19,6 @@ from skrl.memories.torch import RandomMemory
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
 
-import isaacgym #BugFix
-import torch
-
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1" # BugFix -> Force CUDA to be synchronous for debugging
 
 REWARD_MAP = {
