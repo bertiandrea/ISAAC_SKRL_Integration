@@ -8,10 +8,7 @@ from pathlib import Path
 import isaacgym #BugFix
 import torch
 
-
 CUDA = torch.cuda.is_available()
-NUM_ENVS = 4096
-ROLLOUTS = 16
 
 class SatelliteConfig(BaseConfig):
     set_seed = False
@@ -22,7 +19,7 @@ class SatelliteConfig(BaseConfig):
     device = device_type + ":" + str(device_id)
 
     class env:  
-        num_envs = NUM_ENVS
+        num_envs = 4096
    
         num_observations = 11 # [x,y,z,w, dx,dy,dz,dw, ax,ay,az]
 
@@ -67,10 +64,11 @@ class SatelliteConfig(BaseConfig):
 
     class rl:
         class PPO:
+            num_envs = 4096
             rollouts = ROLLOUTS
             learning_epochs = 8
             minibatch_size = 16384
-            mini_batches = rollouts * NUM_ENVS // minibatch_size,
+            mini_batches = rollouts * num_envs // minibatch_size,
             discount_factor = 0.99
             lambda_ = 0.95
             learning_rate = 1e-3
@@ -96,8 +94,9 @@ class SatelliteConfig(BaseConfig):
                     wandb = False
 
         class trainer:
+            rollouts = 16
             n_epochs = 8192
-            timesteps = ROLLOUTS * n_epochs
+            timesteps = rollouts * n_epochs
             headless = False
             disable_progressbar = True   # whether to disable the progressbar. If None, disable on non-TTY
         

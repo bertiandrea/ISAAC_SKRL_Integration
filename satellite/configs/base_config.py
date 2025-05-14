@@ -4,7 +4,6 @@ import inspect
 
 """
 config
-├─ physics_engine               # “physx” o “flex”
 ├─ sim
 │  ├─ use_gpu_pipeline          # bool
 │  ├─ up_axis                   # "z" o "y"
@@ -12,12 +11,12 @@ config
 │  ├─ num_client_threads        # int   (opzionale)
 │  ├─ substeps                  # int   (opzionale)
 │  ├─ gravity                   # [float, float, float]
+│  ├─ physics_engine            # “physx” o “flex”
 │  ├─ physx                     # dict  (opzionale, se physics_engine=="physx")
 │  │  └─ …                      # es. contact_collection, solver iterations, ecc.
 │  └─ flex                      # dict  (opzionale, se physics_engine=="flex")
 │     └─ …                      # opzioni specifiche Flex
 └─ env
-   ├─ enableCameraSensors       # bool  (opzionale; default=False)
    ├─ numEnvs                   # int
    ├─ numAgents                 # int   (opzionale; default=1)
    ├─ numObservations           # int   (opzionale; default=0)
@@ -29,9 +28,9 @@ config
    └─ renderFPS                 # int   (opzionale; default=-1)
 
 physx
+    ├─ use_gpu                         # PhysX su GPU (bool)
     ├─ num_threads                     # Number of CPU threads for PhysX
     ├─ solver_type                     # 0=PGS, 1=TGS
-    ├─ use_gpu                         # PhysX su GPU (bool)
     ├─ num_position_iterations         # Iterazioni di posizione (1–255)
     ├─ num_velocity_iterations         # Iterazioni di velocità (1–255)
     ├─ contact_offset                  # Distanza a cui generare i contatti

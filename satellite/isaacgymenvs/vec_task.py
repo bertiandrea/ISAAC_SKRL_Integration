@@ -63,25 +63,25 @@ class Env(ABC):
 
         self.dt: float = getattr(config.env.sim, "dt", 1.0 / 60.0)
         if config.env.sim.physics_engine == "physx":
-            self.physics_engine = gymapi.SIM_PHYSX      # SIM CREATION
-        elif config.env.sim.physics_engine == "physx_gpu":
-            self.physics_engine = gymapi.SIM_FLEX       # SIM CREATION
+            self.physics_engine = gymapi.SIM_PHYSX
+        elif config.env.sim.physics_engine == "flex":
+            self.physics_engine = gymapi.SIM_FLEX
         else:
             raise ValueError(f"Invalid physics engine backend: {config.env.sim.physics_engine}")
         
-        self.sim_params = self.parse_sim_params(config.env.sim.physics_engine, config.env.sim)
+        self.sim_params = self.parse_sim_params(config.env.sim)
 
 
 
-    def parse_sim_params(self, physics_engine: str, config_sim) -> gymapi.SimParams:
+    def parse_sim_params(self, config_sim) -> gymapi.SimParams:
         sim_params = gymapi.SimParams()
 
         sim_params.dt = getattr(config_sim, "dt", 1.0 / 60.0)
         sim_params.num_client_threads = getattr(config_sim, "num_client_threads", 1)
-        sim_params.use_gpu_pipeline = getattr(config_sim, "use_gpu_pipeline", False)
+        if self.device_type != 'cpu' and self.device_id >= 0:
+            sim_params.use_gpu_pipeline = getattr(config_sim, "use_gpu_pipeline", False)
         sim_params.substeps = getattr(config_sim, "substeps", 2)
         sim_params.gravity = gymapi.Vec3(*getattr(config_sim, "gravity", [0.0, 0.0, -9.81]))
-
         if config_sim.up_axis == "z":
             sim_params.up_axis = gymapi.UP_AXIS_Z
         elif config_sim.up_axis == "y":
@@ -89,17 +89,17 @@ class Env(ABC):
         else:
             raise ValueError(f"Invalid physics up-axis: {config_sim.up_axis}")
 
-        if physics_engine == "physx":
+        if config_sim.physics_engine == "physx":
             for opt, val in vars(config_sim.physx).keys():
                 if opt == "contact_collection":
                     setattr(sim_params.physx, opt, gymapi.ContactCollection(val))
                 else:
                     setattr(sim_params.physx, opt, val)
-        elif physics_engine == "flex":
+        elif config_sim.physics_engine == "flex":
             for opt, val in vars(config_sim.flex).keys():
                 setattr(sim_params.flex, opt, val)
         else:
-            raise ValueError(f"Invalid physics engine backend: {physics_engine}")
+            raise ValueError(f"Invalid physics engine backend: {config_sim.physics_engine}")
 
         return sim_params
 
