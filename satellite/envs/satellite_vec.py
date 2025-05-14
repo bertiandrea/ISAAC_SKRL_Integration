@@ -16,8 +16,8 @@ import torch
 import numpy as np
 
 class SatelliteVec(VecTask):
-    def __init__(self, cfg, headless: bool, force_render: bool = False, reward_fn: RewardFunction = None):
-        super().__init__(cfg, headless, force_render)
+    def __init__(self, cfg, headless: bool, reward_fn: RewardFunction = None):
+        super().__init__(cfg, headless)
 
         ################# SETUP SIM #################
         self.actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim)
@@ -52,30 +52,6 @@ class SatelliteVec(VecTask):
         else:
             self.reward_fn = reward_fn
                     
-    def create_sim(self) -> None:
-        self.sim = super().create_sim(self.device_id, self.device_id, self.physics_engine, self.sim_params)
-        self.create_envs(self.env_spacing, int(np.sqrt(self.num_envs)))
-
-    def create_envs(self, spacing, num_per_row: int) -> None:
-        self.satellite_asset = self.load_asset()
-        env_lower = gymapi.Vec3(-spacing[0], -spacing[1], -spacing[2])
-        env_upper = gymapi.Vec3(spacing[0], spacing[1], spacing[2])
-
-        for i in range(self.num_envs):
-            env = self.gym.create_env(self.sim, env_lower, env_upper, num_per_row)
-            self.create_actor(i, env, self.satellite_asset, self.asset_init_pos_p, self.asset_init_pos_r, 1, self.asset_name)
-    
-    def create_actor(self, env_idx: int, env, asset_handle, pose_p, pose_r, collision: int, name: str) -> None:
-        init_pose = gymapi.Transform()
-        init_pose.p = gymapi.Vec3(*pose_p)
-        init_pose.r = gymapi.Quat(*pose_r)
-        self.gym.create_actor(env, asset_handle, init_pose, f"{name}", env_idx, collision)
-
-    def load_asset(self):
-        asset = self.gym.load_asset(self.sim, self.asset_root, self.asset_file)
-        self.num_bodies = self.gym.get_asset_rigid_body_count(asset)
-        return asset
-
     ################################################################################################################################
     
     def termination(self) -> None:

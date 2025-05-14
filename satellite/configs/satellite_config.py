@@ -20,6 +20,9 @@ class SatelliteConfig(BaseConfig):
     device_id = torch.cuda.current_device() if CUDA else -1
     device = f"{device_type}:{device_id}" if CUDA else "cpu"
 
+    screen_width = 1920
+    screen_height = 1080
+    
     class env:  
         num_envs = 4096
    
@@ -43,8 +46,6 @@ class SatelliteConfig(BaseConfig):
         clip_observations = np.Inf
 
         torque_scale = 10
-
-        record_frames = False 
         
     class asset:
         root = str(Path(__file__).resolve().parent.parent)
@@ -94,11 +95,47 @@ class SatelliteConfig(BaseConfig):
             rollouts = 16
             n_epochs = 8192
             timesteps = rollouts * n_epochs
-            headless = False
             disable_progressbar = True   # whether to disable the progressbar. If None, disable on non-TTY
 
         class memory:
             rollouts = 16
         
+"""
+config
+├─ sim
+│  ├─ use_gpu_pipeline          # bool
+│  ├─ up_axis                   # "z" o "y"
+│  ├─ dt                        # float
+│  ├─ num_client_threads        # int   (opzionale)
+│  ├─ substeps                  # int   (opzionale)
+│  ├─ gravity                   # [float, float, float]
+│  ├─ physics_engine            # “physx” o “flex”
+│  ├─ physx                     # dict  (opzionale, se physics_engine=="physx")
+│  │  └─ …                      # es. contact_collection, solver iterations, ecc.
+│  └─ flex                      # dict  (opzionale, se physics_engine=="flex")
+│     └─ …                      # opzioni specifiche Flex
+└─ env
+   ├─ num_envs                   # int
+   ├─ num_agents                 # int   (opzionale; default=1)
+   ├─ num_observations           # int   (opzionale; default=0)
+   ├─ num_states                 # int   (opzionale; default=0)
+   ├─ num_actions                # int
+   ├─ clip_observations          # float (opzionale; default=Inf)
+   └─ clip_actions               # float (opzionale; default=Inf)
 
-        
+physx
+    ├─ use_gpu                         # PhysX su GPU (bool)
+    ├─ num_threads                     # Number of CPU threads for PhysX
+    ├─ solver_type                     # 0=PGS, 1=TGS
+    ├─ num_position_iterations         # Iterazioni di posizione (1–255)
+    ├─ num_velocity_iterations         # Iterazioni di velocità (1–255)
+    ├─ contact_offset                  # Distanza a cui generare i contatti
+    ├─ rest_offset                     # Distanza di riposo dopo il contatto
+    ├─ bounce_threshold_velocity       # Velocità soglia per rimbalzo
+    ├─ max_depenetration_velocity      # Velocità massima di correzione penetrazione
+    ├─ default_buffer_size_multiplier  # Scala dei buffer interni GPU
+    ├─ max_gpu_contact_pairs           # Dimensione del buffer contatti GPU
+    ├─ friction_offset_threshold       # Distanza soglia per vincoli di attrito
+    ├─ friction_correlation_distance   # Distanza di correlazione attrito
+    └─ num_subscenes                   # Numero di sotto‐scene per multithreading
+"""

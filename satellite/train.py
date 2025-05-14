@@ -24,10 +24,7 @@ from skrl.memories.torch import RandomMemory
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
 
-import os
 import argparse
-
-os.environ["CUDA_LAUNCH_BLOCKING"] = "1" # BugFix -> Force CUDA to be synchronous for debugging
 
 REWARD_MAP = {
     "test": TestReward,
@@ -91,7 +88,6 @@ def main():
     env = SatelliteVec(cfg=env_cfg,
                     headless=args.headless,
                     reward_fn=REWARD_MAP[args.reward_fn](),
-                    force_render=False
     )
 
     # 2) PPO and Trainer config
