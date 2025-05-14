@@ -1,11 +1,11 @@
 # satellite_util.py
 
-import math
-
 import isaacgym #BugFix
 from isaacgym import gymapi
 from isaacgym import gymtorch
 import torch
+
+import math
 
 def sample_random_quaternion(target_device):
     u = torch.rand(3, device=target_device)

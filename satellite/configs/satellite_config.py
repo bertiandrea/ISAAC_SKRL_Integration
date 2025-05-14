@@ -1,14 +1,16 @@
 # satellite_config.py
 
 from satellite.configs.base_config import BaseConfig
-from skrl.resources.preprocessors.torch import RunningStandardScaler
-from skrl.resources.schedulers.torch import KLAdaptiveRL
-from pathlib import Path
 
 import isaacgym #BugFix
 from isaacgym import gymapi
 from isaacgym import gymtorch
 import torch
+
+from skrl.resources.preprocessors.torch import RunningStandardScaler
+from skrl.resources.schedulers.torch import KLAdaptiveRL
+
+from pathlib import Path
 
 CUDA = torch.cuda.is_available()
 

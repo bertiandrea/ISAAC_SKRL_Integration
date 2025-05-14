@@ -1,7 +1,5 @@
 # satellite_vec.py
 
-import numpy as np
-
 from satellite.configs.satellite_config import SatelliteConfig
 from satellite.utils.satellite_util import sample_random_quaternion_batch, quat_diff, quat_diff_rad
 from satellite.isaacgymenvs.vec_task import VecTask
@@ -14,6 +12,8 @@ import isaacgym #BugFix
 from isaacgym import gymapi
 from isaacgym import gymtorch
 import torch
+
+import numpy as np
 
 class SatelliteVec(VecTask):
     def __init__(self, cfg, headless: bool, force_render: bool = False, reward_fn: RewardFunction = None):

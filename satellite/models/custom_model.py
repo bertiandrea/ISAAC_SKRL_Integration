@@ -1,12 +1,12 @@
 # custom_model.py
 
-from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
-
 import isaacgym #BugFix
 from isaacgym import gymapi
 from isaacgym import gymtorch
 import torch
 import torch.nn as nn
+
+from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
 
 class Policy(GaussianMixin, Model):
     def __init__(self, observation_space, action_space, device, clip_actions=False, hidden_size=256, 

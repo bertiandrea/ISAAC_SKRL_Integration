@@ -1,7 +1,5 @@
 # train.py
 
-import os
-import argparse
 from satellite.configs.satellite_config import SatelliteConfig, class_to_dict
 from satellite.envs.satellite_vec import SatelliteVec
 from satellite.models.custom_model import Policy, Value
@@ -14,10 +12,18 @@ from satellite.rewards.satellite_reward import (
     ShapingReward,
 )
 
+import isaacgym #BugFix
+from isaacgym import gymapi
+from isaacgym import gymtorch
+import torch
+
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.memories.torch import RandomMemory
 from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
+
+import os
+import argparse
 
 os.environ["CUDA_LAUNCH_BLOCKING"] = "1" # BugFix -> Force CUDA to be synchronous for debugging
 

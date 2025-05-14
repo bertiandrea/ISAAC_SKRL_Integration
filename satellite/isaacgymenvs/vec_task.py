@@ -1,17 +1,16 @@
 # vec_task.py
 
+import isaacgym #BugFix
+from isaacgym import gymapi
+from isaacgym import gymtorch
+import torch
+
 import time
 import sys
 import numpy as np
 from typing import Dict, Any, Tuple
 from abc import ABC
-
 from gymnasium import spaces
-
-import isaacgym #BugFix
-from isaacgym import gymapi
-from isaacgym import gymtorch
-import torch
 
 EXISTING_SIM = None
 SCREEN_RESOLUTION = {
