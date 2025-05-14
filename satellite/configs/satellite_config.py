@@ -1,36 +1,30 @@
 # satellite_config.py
 
 from satellite.configs.base_config import BaseConfig
+from skrl.resources.preprocessors.torch import RunningStandardScaler
+from skrl.resources.schedulers.torch import KLAdaptiveRL
 from pathlib import Path
 
 import isaacgym #BugFix
 import torch
 
+
+CUDA = torch.cuda.is_available()
+NUM_ENVS = 4096
+ROLLOUTS = 16
+
 class SatelliteConfig(BaseConfig):
+    set_seed = False
     seed = 42
-    physics_engine = 'physx'
 
-    class env:
-        epoch_length = 16
-        # lunghezza del rollout per ciascun ambiente: numero di passi di simulazione che ciascun env
-        # compie prima di aggiornare i pesi dell’agente (qui 2048 passi totali divisi equamente tra gli env)
+    device = torch.device("cuda" if CUDA else "cpu")
+    graphics_device_id=torch.cuda.current_device() if CUDA else -1
+    rl_device=("cuda:" + str(graphics_device_id)) if CUDA else "cpu"
+    sim_device=("cuda:" + str(graphics_device_id)) if CUDA else "cpu"
 
-        n_mini_epochs = 8
-        # passate di ottimizzazione (SGD) per aggiornamento: quante volte il PPO
-        # riesamina e riutilizza i dati raccolti durante il rollout per affinare i gradienti
-
-        minibatch_size = 16384
-        # dimensione del minibatch: numero di transizioni campionate casualmente dai dati del rollout
-        # usate in ogni singolo passo di calcolo del gradiente
-
-        n_epochs = 8192
-        # numero totale di aggiornamenti dell’agente: quante volte (cicli) si esegue il
-        # processo di rollout + ottimizzazione lungo l’intero training
-
-        num_envs = 4096
-        # numero di ambienti paralleli: quante istanze indipendenti dell’ambiente vengono eseguite simultaneamente 
-        # per raccogliere dati in parallelo e aumentare l’efficienza
-        
+    class env:  
+        num_envs = NUM_ENVS
+   
         num_observations = 11 # [x,y,z,w, dx,dy,dz,dw, ax,ay,az]
 
         num_states = 14 # [x,y,z,w, dx,dy,dz,dw, vx,vy,vz, ax,ay,az]
@@ -41,9 +35,7 @@ class SatelliteConfig(BaseConfig):
 
         sensor_noise_std = 0.0
         actuation_noise_std = 0.0
-
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
+        
         threshold_ang_goal = 0.01745        # soglia in radianti per orientamento
         threshold_vel_goal = 0.01745        # soglia in rad/sec per la differenza di velocità
         overspeed_ang_vel = 1.57            # soglia in rad/sec per l'overspeed
@@ -68,7 +60,47 @@ class SatelliteConfig(BaseConfig):
         dt = 1.0 / 60.0
         gravity = [0.0, 0.0, 0.0] # [m/s^2]
         up_axis = 'z'
-        use_gpu_pipeline = torch.cuda.is_available()
+        use_gpu_pipeline = CUDA
+        physics_engine = 'physx'
 
         class physx:
-            use_gpu = torch.cuda.is_available()
+            use_gpu = CUDA
+
+    class rl:
+        class PPO:
+            rollouts = ROLLOUTS
+            learning_epochs = 8
+            minibatch_size = 16384
+            mini_batches = rollouts * NUM_ENVS // minibatch_size,
+            discount_factor = 0.99
+            lambda_ = 0.95
+            learning_rate = 1e-3
+            learning_rate_scheduler = KLAdaptiveRL
+            learning_rate_scheduler_kwargs = {"kl_threshold": 0.016}
+            grad_norm_clip = 1.0
+            ratio_clip = 0.2
+            value_clip = 0.2
+            clip_predicted_values = True
+            entropy_loss_scale = 0.00
+            value_loss_scale = 1.0
+            kl_threshold = 0
+            rewards_shaper = lambda rewards, timestep, timesteps: rewards * 0.01
+            state_preprocessor = RunningStandardScaler
+            value_preprocessor = RunningStandardScaler
+            random_timesteps = 0
+            learning_starts = 0
+            
+            class experiment:
+                    write_interval = 10
+                    checkpoint_interval = 100
+                    directory = "./runs"
+                    wandb = False
+
+        class trainer:
+            n_epochs = 8192
+            timesteps = ROLLOUTS * n_epochs
+            headless = False
+            disable_progressbar = True   # whether to disable the progressbar. If None, disable on non-TTY
+        
+
+        

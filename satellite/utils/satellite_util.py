@@ -5,23 +5,6 @@ import math
 import isaacgym #BugFix
 import torch
 
-def class_to_dict(obj) -> dict:
-    if not  hasattr(obj,"__dict__"):
-        return obj
-    result = {}
-    for key in dir(obj):
-        if key.startswith("_"):
-            continue
-        element = []
-        val = getattr(obj, key)
-        if isinstance(val, list):
-            for item in val:
-                element.append(class_to_dict(item))
-        else:
-            element = class_to_dict(val)
-        result[key] = element
-    return result
-
 def sample_random_quaternion(target_device):
     u = torch.rand(3, device=target_device)
     w = torch.sqrt(1 - u[0]) * torch.sin(2 * math.pi * u[1])
