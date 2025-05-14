@@ -5,6 +5,8 @@ import math
 from satellite.utils.satellite_util import quat_diff_rad
 
 import isaacgym #BugFix
+from isaacgym import gymapi
+from isaacgym import gymtorch
 import torch
 
 class RewardFunction(ABC):

@@ -3,6 +3,8 @@
 import math
 
 import isaacgym #BugFix
+from isaacgym import gymapi
+from isaacgym import gymtorch
 import torch
 
 def sample_random_quaternion(target_device):

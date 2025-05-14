@@ -3,6 +3,8 @@
 from skrl.models.torch import DeterministicMixin, GaussianMixin, Model
 
 import isaacgym #BugFix
+from isaacgym import gymapi
+from isaacgym import gymtorch
 import torch
 import torch.nn as nn
 

@@ -6,6 +6,8 @@ from skrl.resources.schedulers.torch import KLAdaptiveRL
 from pathlib import Path
 
 import isaacgym #BugFix
+from isaacgym import gymapi
+from isaacgym import gymtorch
 import torch
 
 CUDA = torch.cuda.is_available()

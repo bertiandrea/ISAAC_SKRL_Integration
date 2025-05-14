@@ -10,6 +10,7 @@ from gymnasium import spaces
 
 import isaacgym #BugFix
 from isaacgym import gymapi
+from isaacgym import gymtorch
 import torch
 
 EXISTING_SIM = None
