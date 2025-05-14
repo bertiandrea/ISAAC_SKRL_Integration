@@ -11,6 +11,7 @@ from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
 from pathlib import Path
+import numpy as np
 
 CUDA = torch.cuda.is_available()
 
@@ -20,7 +21,7 @@ class SatelliteConfig(BaseConfig):
 
     device_type = torch.device("cuda" if CUDA else "cpu")
     device_id = torch.cuda.current_device() if CUDA else -1
-    device = device_type + ":" + str(device_id)
+    device = f"{device_type}:{device_id}"
 
     class env:  
         num_envs = 4096
@@ -41,8 +42,8 @@ class SatelliteConfig(BaseConfig):
         overspeed_ang_vel = 1.57            # soglia in rad/sec per l'overspeed
         episode_length_s = 120              # soglia in secondi per la terminazione di una singola simulazione
         
-        #clip_actions = 1
-        #clip_observations = 1
+        clip_actions = np.Inf
+        clip_observations = np.Inf
 
         torque_scale = 10
 
@@ -69,7 +70,7 @@ class SatelliteConfig(BaseConfig):
     class rl:
         class PPO:
             num_envs = 4096
-            rollouts = ROLLOUTS
+            rollouts = 16
             learning_epochs = 8
             minibatch_size = 16384
             mini_batches = rollouts * num_envs // minibatch_size,

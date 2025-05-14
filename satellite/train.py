@@ -77,7 +77,7 @@ def parse_args():
     return parser.parse_args()
 
 def main():
-    # parsing degli argomenti
+    # 0) parsing degli argomenti
     args = parse_args()
 
     # 1) setup environment

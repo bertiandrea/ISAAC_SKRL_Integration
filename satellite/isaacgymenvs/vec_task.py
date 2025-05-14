@@ -229,3 +229,7 @@ class VecTask(Env):
     def close(self) -> None:
         self.gym.destroy_viewer(self.viewer)
         self.gym.destroy_sim(self.sim)
+
+    def destroy(self) -> None:
+        self.gym.destroy_viewer(self.viewer)
+        self.gym.destroy_sim(self.sim)
