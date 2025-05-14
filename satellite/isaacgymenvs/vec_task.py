@@ -58,18 +58,8 @@ class Env(ABC):
         self.clip_obs = getattr(config.env, 'clip_observations', np.Inf)
         self.clip_actions = getattr(config.env, 'clip_actions', np.Inf)
 
-        self.control_steps: int = 0
-
         self.render_fps: int = getattr(config.env, 'render_fps', -1)
         self.last_frame_time: float = 0.0
-
-        self.record_frames: bool = getattr(config.env, 'record_frames', False)
-        self.record_frames_dir = join("recorded_frames", datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
-
-        self.epoch_length: int = getattr(config.env, 'epoch_length', 0)
-        self.n_mini_epochs: int = getattr(config.env, 'n_mini_epochs', 0)
-        self.minibatch_size: int = getattr(config.env, 'minibatch_size', 0)
-        self.n_epochs: int = getattr(config.env, 'n_epochs', 0)
 
         self.dt: float = getattr(config.env.sim, "dt", 1.0 / 60.0)
         if config.env.sim.physics_engine == "physx":
@@ -128,7 +118,6 @@ class VecTask(Env):
         self.allocate_buffers()
 
     def set_viewer(self):
-        self.enable_viewer_sync = True
         self.viewer = None
 
         if self.headless == False:
@@ -137,12 +126,6 @@ class VecTask(Env):
             camera_props.height = SCREEN_RESOLUTION["height"]
             self.viewer = self.gym.create_viewer(
                 self.sim, camera_props)
-            self.gym.subscribe_viewer_keyboard_event(
-                self.viewer, gymapi.KEY_ESCAPE, "QUIT")
-            self.gym.subscribe_viewer_keyboard_event(
-                self.viewer, gymapi.KEY_V, "toggle_viewer_sync")
-            self.gym.subscribe_viewer_keyboard_event(
-                self.viewer, gymapi.KEY_R, "record_frames")
 
             sim_params = self.gym.get_sim_params(self.sim)
             if sim_params.up_axis == gymapi.UP_AXIS_Z:
@@ -182,43 +165,26 @@ class VecTask(Env):
             if self.gym.query_viewer_has_closed(self.viewer):
                 sys.exit()
 
-            for evt in self.gym.query_viewer_action_events(self.viewer):
-                if evt.action == "QUIT" and evt.value > 0:
-                    sys.exit()
-                elif evt.action == "toggle_viewer_sync" and evt.value > 0:
-                    self.enable_viewer_sync = not self.enable_viewer_sync
-                elif evt.action == "record_frames" and evt.value > 0:
-                    self.record_frames = not self.record_frames
-
             if self.device != 'cpu':
                 self.gym.fetch_results(self.sim, True)
 
-            if self.enable_viewer_sync:
-                self.gym.step_graphics(self.sim)
-                self.gym.draw_viewer(self.viewer, self.sim, True)
+            self.gym.step_graphics(self.sim)
+            self.gym.draw_viewer(self.viewer, self.sim, True)
 
-                self.gym.sync_frame_time(self.sim)
+            self.gym.sync_frame_time(self.sim)
 
-                now = time.time()
-                delta = now - self.last_frame_time
-                if self.render_fps < 0:
-                    render_dt = self.dt * self.control_freq_inv
-                else:
-                    render_dt = 1.0 / self.render_fps
-
-                if delta < render_dt:
-                    time.sleep(render_dt - delta)
-
-                self.last_frame_time = time.time()
-
+            now = time.time()
+            delta = now - self.last_frame_time
+            if self.render_fps < 0:
+                render_dt = self.dt * self.control_freq_inv
             else:
-                self.gym.poll_viewer_events(self.viewer)
+                render_dt = 1.0 / self.render_fps
 
-            if self.record_frames:
-                if not os.path.isdir(self.record_frames_dir):
-                    os.makedirs(self.record_frames_dir, exist_ok=True)
+            if delta < render_dt:
+                time.sleep(render_dt - delta)
 
-                self.gym.write_viewer_image_to_file(self.viewer, join(self.record_frames_dir, f"frame_{self.control_steps}.png"))
+            self.last_frame_time = time.time()
+
 
     def pre_physics_step(self, actions: torch.Tensor) -> None:        
         self.termination()
@@ -248,8 +214,6 @@ class VecTask(Env):
         ######################################################################
         
         self.post_physics_step()
-
-        self.control_steps += 1
         
         return self.states_buf.to(self.device).clone(), \
             self.reward_buf.to(self.device).view(-1, 1).clone(), \
