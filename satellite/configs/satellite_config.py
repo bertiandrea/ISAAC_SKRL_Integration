@@ -7,9 +7,6 @@ from isaacgym import gymapi
 from isaacgym import gymtorch
 import torch
 
-from skrl.resources.preprocessors.torch import RunningStandardScaler
-from skrl.resources.schedulers.torch import KLAdaptiveRL
-
 from pathlib import Path
 import numpy as np
 
@@ -19,9 +16,9 @@ class SatelliteConfig(BaseConfig):
     set_seed = False
     seed = 42
 
-    device_type = torch.device("cuda" if CUDA else "cpu")
+    device_type = "cuda" if CUDA else "cpu"
     device_id = torch.cuda.current_device() if CUDA else -1
-    device = f"{device_type}:{device_id}"
+    device = f"{device_type}:{device_id}" if CUDA else "cpu"
 
     class env:  
         num_envs = 4096
@@ -73,12 +70,10 @@ class SatelliteConfig(BaseConfig):
             rollouts = 16
             learning_epochs = 8
             minibatch_size = 16384
-            mini_batches = rollouts * num_envs // minibatch_size,
+            mini_batches = rollouts * num_envs // minibatch_size
             discount_factor = 0.99
             lambda_ = 0.95
             learning_rate = 1e-3
-            learning_rate_scheduler = KLAdaptiveRL
-            learning_rate_scheduler_kwargs = {"kl_threshold": 0.016}
             grad_norm_clip = 1.0
             ratio_clip = 0.2
             value_clip = 0.2
@@ -86,9 +81,6 @@ class SatelliteConfig(BaseConfig):
             entropy_loss_scale = 0.00
             value_loss_scale = 1.0
             kl_threshold = 0
-            rewards_shaper = lambda rewards, timestep, timesteps: rewards * 0.01
-            state_preprocessor = RunningStandardScaler
-            value_preprocessor = RunningStandardScaler
             random_timesteps = 0
             learning_starts = 0
             
@@ -104,6 +96,9 @@ class SatelliteConfig(BaseConfig):
             timesteps = rollouts * n_epochs
             headless = False
             disable_progressbar = True   # whether to disable the progressbar. If None, disable on non-TTY
+
+        class memory:
+            rollouts = 16
         
 
         

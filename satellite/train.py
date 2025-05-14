@@ -1,6 +1,6 @@
 # train.py
 
-from satellite.configs.satellite_config import SatelliteConfig, class_to_dict
+from satellite.configs.satellite_config import SatelliteConfig
 from satellite.envs.satellite_vec import SatelliteVec
 from satellite.models.custom_model import Policy, Value
 from satellite.rewards.satellite_reward import (
@@ -17,6 +17,8 @@ from isaacgym import gymapi
 from isaacgym import gymtorch
 import torch
 
+from skrl.resources.preprocessors.torch import RunningStandardScaler
+from skrl.resources.schedulers.torch import KLAdaptiveRL
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.memories.torch import RandomMemory
 from skrl.trainers.torch import SequentialTrainer
@@ -94,20 +96,27 @@ def main():
 
     # 2) PPO and Trainer config
     env_cfg_dict = class_to_dict(env_cfg)
-
+    print(env_cfg_dict)
     cfg_ppo = PPO_DEFAULT_CONFIG.copy()
+
     env_cfg_dict["rl"]["PPO"]["state_preprocessor_kwargs"] = {
         "size": env.state_space,   "device": env.device
     }
     env_cfg_dict["rl"]["PPO"]["value_preprocessor_kwargs"] = {
         "size": 1, "device": env.device
     }
+    env_cfg_dict["rl"]["PPO"]["learning_rate_scheduler"] = KLAdaptiveRL
+    env_cfg_dict["rl"]["PPO"]["learning_rate_scheduler_kwargs"] = { "kl_threshold": 0.016 }
+    env_cfg_dict["rl"]["PPO"]["state_preprocessor"] = RunningStandardScaler
+    env_cfg_dict["rl"]["PPO"]["value_preprocessor"] = RunningStandardScaler
+    env_cfg_dict["rl"]["PPO"]["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.01
+
     cfg_ppo.update(env_cfg_dict["rl"]["PPO"])
 
     cfg_trainer = env_cfg_dict["rl"]["trainer"]
 
     # 3) memoria
-    memory = RandomMemory(memory_size=env_cfg_dict["rl"]["PPO"]["rollouts"],
+    memory = RandomMemory(memory_size=env_cfg_dict["rl"]["memory"]["rollouts"],
                         num_envs=env.num_envs,
                         device=env.device)
 

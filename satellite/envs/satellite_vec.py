@@ -18,23 +18,6 @@ import numpy as np
 class SatelliteVec(VecTask):
     def __init__(self, cfg, headless: bool, force_render: bool = False, reward_fn: RewardFunction = None):
         super().__init__(cfg, headless, force_render)
-        self.episode_length_s = getattr(cfg.env, 'episode_length_s', 600.0)
-        self.max_episode_length = int(np.ceil(self.episode_length_s / self.dt))
-
-        self.env_spacing = getattr(cfg.env, 'env_spacing', 0.0)
-        self.asset_init_pos_p = getattr(cfg.asset, 'init_pos_p', [0.0, 0.0, 0.0])
-        self.asset_init_pos_r = getattr(cfg.asset, 'init_pos_r', [0.0, 0.0, 0.0, 1.0])
-        self.asset_name = getattr(cfg.asset, 'name', 'satellite')
-        self.asset_root = getattr(cfg.asset, 'root', '.')
-        self.asset_file = getattr(cfg.asset, 'file', 'satellite.urdf')
-
-        self.sensor_noise_std = getattr(cfg.env, 'sensor_noise_std', 0.0)
-        self.actuation_noise_std = getattr(cfg.env, 'actuation_noise_std', 0.0)
-        self.torque_scale = getattr(cfg.env, 'torque_scale', 1.0)
-
-        self.overspeed_ang_vel = getattr(cfg.env, 'overspeed_ang_vel', 1.57)
-        self.threshold_ang_goal = getattr(cfg.env, 'threshold_ang_goal', 0.01745)
-        self.threshold_vel_goal = getattr(cfg.env, 'threshold_vel_goal', 0.01745)
 
         ################# SETUP SIM #################
         self.actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim)
