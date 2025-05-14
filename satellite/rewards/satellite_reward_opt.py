@@ -4,8 +4,7 @@ from abc import ABC, abstractmethod
 import math
 from satellite.utils.satellite_util import quat_diff_rad
 
-# Ensure environment integration
-import isaacgym  # BugFix
+import isaacgym #BugFix
 import torch
 
 class RewardFunction(ABC):

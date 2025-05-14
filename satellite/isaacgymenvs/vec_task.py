@@ -1,11 +1,8 @@
 # vec_task.py
 
-import os
 import time
 import sys
 import numpy as np
-from datetime import datetime
-from os.path import join
 from typing import Dict, Any, Tuple
 from abc import ABC
 
@@ -31,17 +28,17 @@ def _create_sim_once(gym, *args, **kwargs):
 
 class Env(ABC):
     def __init__(self, config, headless: bool): 
+        self.headless = headless
+
         self.device_type = getattr(config, 'device', 'cpu')
         self.device_id = getattr(config, 'device', -1)
-        if self.device_type == 'cuda':
+        if self.device_type == 'cuda' or self.device_type == 'gpu':
             self.device = getattr(config, 'device', 'cpu')
         elif self.device_type == 'cpu':
             self.device = 'cpu'
         else:
             raise ValueError(f"Invalid device type: {self.device_type}")
         
-        self.headless = headless
-
         self.num_envs = getattr(config.env, 'num_envs', 0)
         self.num_agents = getattr(config.env, 'num_agents', 1)
         
@@ -80,6 +77,8 @@ class Env(ABC):
         sim_params.num_client_threads = getattr(config_sim, "num_client_threads", 1)
         if self.device_type != 'cpu' and self.device_id >= 0:
             sim_params.use_gpu_pipeline = getattr(config_sim, "use_gpu_pipeline", False)
+        else:
+            sim_params.use_gpu_pipeline = False
         sim_params.substeps = getattr(config_sim, "substeps", 2)
         sim_params.gravity = gymapi.Vec3(*getattr(config_sim, "gravity", [0.0, 0.0, -9.81]))
         if config_sim.up_axis == "z":

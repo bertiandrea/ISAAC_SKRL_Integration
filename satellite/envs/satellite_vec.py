@@ -1,7 +1,6 @@
 # satellite_vec.py
 
 import numpy as np
-from typing import Any
 
 from satellite.configs.satellite_config import SatelliteConfig
 from satellite.utils.satellite_util import sample_random_quaternion_batch, quat_diff, quat_diff_rad
