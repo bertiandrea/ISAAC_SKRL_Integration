@@ -78,15 +78,12 @@ def main():
     args = parse_args()
 
     # 1) setup environment
-    env_cfg      = SatelliteConfig()
+    env_cfg = SatelliteConfig()
 
     if env_cfg.set_seed:
         set_seed(env_cfg.seed)
 
-    env = SatelliteVec(cfg=env_cfg, 
-                    rl_device=env_cfg.rl_device,
-                    sim_device=env_cfg.sim_device,
-                    graphics_device_id=env_cfg.graphics_device_id,
+    env = SatelliteVec(cfg=env_cfg,
                     headless=args.headless,
                     reward_fn=REWARD_MAP[args.reward_fn](),
                     force_render=False
@@ -117,7 +114,7 @@ def main():
     models = { "policy": policy, "value":  value}
 
     # 5) istanzia agente e trainer
-    agent   = PPO(models=models,
+    agent = PPO(models=models,
                 memory=memory,
                 cfg=cfg_ppo,
                 observation_space=env.state_space,

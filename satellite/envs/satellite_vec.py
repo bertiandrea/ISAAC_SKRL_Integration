@@ -17,9 +17,8 @@ from isaacgym import gymtorch
 import torch
 
 class SatelliteVec(VecTask):
-    def __init__(self, cfg, rl_device: Any, sim_device: Any, graphics_device_id: int, headless: bool, 
-                force_render: bool = False, reward_fn: RewardFunction = None):
-        super().__init__(cfg, rl_device, sim_device, graphics_device_id, headless, force_render)
+    def __init__(self, cfg, headless: bool, force_render: bool = False, reward_fn: RewardFunction = None):
+        super().__init__(cfg, headless, force_render)
         
         self.cfg = cfg
 
@@ -59,7 +58,7 @@ class SatelliteVec(VecTask):
             self.reward_fn = reward_fn
                     
     def create_sim(self) -> None:
-        self.sim = super().create_sim(self.device_id, self.graphics_device_id, self.physics_engine, self.sim_params)
+        self.sim = super().create_sim(self.device_id, self.device_id, self.physics_engine, self.sim_params)
         self.create_envs(self.cfg.env.env_spacing, int(np.sqrt(self.cfg.env.num_envs)))
 
     def create_envs(self, spacing, num_per_row: int) -> None:
