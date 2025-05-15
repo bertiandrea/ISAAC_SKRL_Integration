@@ -79,7 +79,7 @@ Funzioni tensor‐based per: generare N quaternioni random, calcolare la distanz
 - **`Policy`**
 Policy: rete a 3 layer densi, con output `mean` e `log-std` per la distribuzione gaussiana delle azioni. Utilizza `observation_space`.
 - **`Value`**
-Value: rete a 3 layer densi, con output singolo `valore di stato`. Utilizza `state_space` ed è quindi onniscente.
+Value: rete a 3 layer densi, con output singolo `value`. Utilizza `state_space` ed è quindi onniscente.
 
 ---
 ## 7. Asset URDF
