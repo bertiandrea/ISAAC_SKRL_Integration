@@ -1,7 +1,5 @@
 # ISAAC_SKRL_Integration
 
-# Controllo di Assetto di un Satellite in Isaac Gym
-
 Questo progetto implementa una pipeline end-to-end per addestrare un agente di controllo dell’assetto orbitale di un satellite, sfruttando NVIDIA Isaac Gym per la simulazione fisica parallela e SKRL per l’algoritmo PPO.
 
 ---
