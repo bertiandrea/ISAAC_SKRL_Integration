@@ -20,12 +20,12 @@ class VecTask(Params):
         self.set_viewer()
         
         self.allocate_buffers()
-    
+        self.gym.prepare_sim(self.sim)
+
     def create_sim(self) -> None:
         self.gym = gymapi.acquire_gym()
         self.sim = self.gym.create_sim(self.device_id, self.device_id, self.physics_engine, self.sim_params)
         self.create_envs(self.env_spacing, int(np.sqrt(self.num_envs)))
-        self.gym.prepare_sim(self.sim)
 
     def create_envs(self, spacing, num_per_row: int) -> None:
         self.asset = self.load_asset()
@@ -89,8 +89,6 @@ class VecTask(Params):
         if self.gym.query_viewer_has_closed(self.viewer):
             self.close()
 
-        self.gym.fetch_results(self.sim, True)
-
         self.gym.step_graphics(self.sim)
 
         self.gym.draw_viewer(self.viewer, self.sim, True)
@@ -112,26 +110,26 @@ class VecTask(Params):
         self.progress_buf += 1
 
     def step(self, actions: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, Dict[str, Any]]:
-        #self.pre_physics_step(actions)
+        self.pre_physics_step(actions)
 
         ######################################################################
         self.gym.simulate(self.sim)
-
+        self.gym.fetch_results(self.sim, True)
         ######################################################################
         
-        #self.post_physics_step()
+        self.post_physics_step()
         
-        return self.states_buf.to(self.device), \
-            self.reward_buf.to(self.device).view(-1, 1), \
-            self.reset_buf.to(self.device).view(-1, 1), \
-            self.timeout_buf.to(self.device).view(-1, 1), \
+        return self.states_buf, \
+            self.reward_buf.view(-1, 1), \
+            self.reset_buf.view(-1, 1), \
+            self.timeout_buf.view(-1, 1), \
             {}
 
     def reset(self):
         ids = torch.arange(self.num_envs, device=self.device)
         self.reset_idx(ids)
         
-        return self.states_buf.to(self.device), {}
+        return self.states_buf, {}
 
     def close(self) -> None:
         if self.viewer is not None:
