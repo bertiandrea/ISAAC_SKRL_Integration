@@ -111,35 +111,3 @@ class SatelliteConfig(BaseConfig):
 
         class memory:
             rollouts = 16
-        
-"""
-config
-├─ sim
-│  ├─ use_gpu_pipeline          # bool
-│  ├─ up_axis                   # "z" o "y"
-│  ├─ dt                        # float
-│  ├─ num_client_threads        # int   (opzionale)
-│  ├─ substeps                  # int   (opzionale)
-│  ├─ gravity                   # [float, float, float]
-│  ├─ physics_engine            # “physx” o “flex”
-│  ├─ physx                     # dict  (opzionale, se physics_engine=="physx")
-│  │  └─ …                      # es. contact_collection, solver iterations, ecc.
-│  └─ flex                      # dict  (opzionale, se physics_engine=="flex")
-│     └─ …                      # opzioni specifiche Flex
-└─ env
-   ├─ num_envs                   # int
-   ├─ num_agents                 # int   (opzionale; default=1)
-   ├─ num_observations           # int   (opzionale; default=0)
-   ├─ num_states                 # int   (opzionale; default=0)
-   ├─ num_actions                # int
-   ├─ clip_observations          # float (opzionale; default=Inf)
-   └─ clip_actions               # float (opzionale; default=Inf)
-
-physx
-    ├─ use_gpu                         # PhysX su GPU (bool)
-    ├─ solver_type                     # 0=PGS, 1=TGS
-    ├─ num_position_iterations         # Iterazioni di posizione (1–255)
-    ├─ num_velocity_iterations         # Iterazioni di velocità (1–255)
-    ├─ contact_offset                  # Distanza a cui generare i contatti
-    └─ rest_offset                     # Distanza di riposo dopo il contatto
-"""
