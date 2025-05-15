@@ -52,12 +52,12 @@ Estende `Params` e incapsula:
 
 ### 3.3. `SatelliteVec`  
 Estende `VecTask` per:
-- Estrae da `actor_root_state_tensor` le posizioni, quaternion, velocità angolari, accelerazioni angolari popolando:
+- Estrarre da `actor_root_state_tensor` le posizioni, quaternion, velocità angolari, accelerazioni angolari popolando:
   - **`obs_buf`**: quaternione corrente, differenza quaternion, accelerazione angolare.
   - **`states_buf`**: come sopra + velocità angolari.
-- Applica la coppia di controllo sul satellite.
-- Calcola reward tramite una `RewardFunction` selezionabile.
-- Verifica terminazione per:
+- Applicare la coppia di controllo sul satellite.
+- Calcolare reward tramite una `RewardFunction` selezionabile.
+- Verificare la terminazione per:
   - **Goal**: errore di orientamento e velocità sotto soglia.
   - **Timeout/Overspeed**: durata massima o velocità angolare eccessiva.
 
