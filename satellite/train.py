@@ -92,7 +92,7 @@ def main():
 
     # 2) PPO and Trainer config
     env_cfg_dict = class_to_dict(env_cfg)
-    print(env_cfg_dict)
+
     cfg_ppo = PPO_DEFAULT_CONFIG.copy()
 
     env_cfg_dict["rl"]["PPO"]["state_preprocessor_kwargs"] = {

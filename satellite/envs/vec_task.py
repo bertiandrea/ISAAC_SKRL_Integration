@@ -7,7 +7,6 @@ from isaacgym import gymapi
 from isaacgym import gymtorch
 import torch
 
-import time
 import sys
 import numpy as np
 from typing import Dict, Any, Tuple
@@ -15,8 +14,6 @@ from typing import Dict, Any, Tuple
 class VecTask(Params):
     def __init__(self, config, headless: bool): 
         super().__init__(config, headless)
-
-        self.last_frame_time: float = 0.0
 
         self.create_sim()
         
@@ -87,25 +84,18 @@ class VecTask(Params):
             self.num_envs, device=self.device, dtype=torch.long)
 
     def render(self):
+        if self.headless == True:
+            return
         if self.gym.query_viewer_has_closed(self.viewer):
-            sys.exit()
+            self.close()
 
-        if self.device != 'cpu':
-            self.gym.fetch_results(self.sim, True)
+        self.gym.fetch_results(self.sim, True)
 
         self.gym.step_graphics(self.sim)
+
         self.gym.draw_viewer(self.viewer, self.sim, True)
 
         self.gym.sync_frame_time(self.sim)
-
-        now = time.time()
-
-        delta = now - self.last_frame_time
-        if delta < self.dt:
-            time.sleep(self.dt - delta)
-
-        self.last_frame_time = time.time()
-
 
     def pre_physics_step(self, actions: torch.Tensor) -> None:        
         self.termination()
@@ -120,35 +110,34 @@ class VecTask(Params):
         self.check_termination()
 
         self.progress_buf += 1
-        
+
     def step(self, actions: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, Dict[str, Any]]:
-        self.pre_physics_step(actions)
+        #self.pre_physics_step(actions)
 
         ######################################################################
         self.gym.simulate(self.sim)
 
-        if self.device == 'cpu':
-            self.gym.fetch_results(self.sim, True)
         ######################################################################
         
-        self.post_physics_step()
+        #self.post_physics_step()
         
-        return self.states_buf.to(self.device).clone(), \
-            self.reward_buf.to(self.device).view(-1, 1).clone(), \
-            self.reset_buf.to(self.device).view(-1, 1).clone(), \
-            self.timeout_buf.to(self.device).view(-1, 1).clone(), \
+        return self.states_buf.to(self.device), \
+            self.reward_buf.to(self.device).view(-1, 1), \
+            self.reset_buf.to(self.device).view(-1, 1), \
+            self.timeout_buf.to(self.device).view(-1, 1), \
             {}
 
     def reset(self):
         ids = torch.arange(self.num_envs, device=self.device)
         self.reset_idx(ids)
         
-        return self.states_buf.to(self.device).clone(), {}
+        return self.states_buf.to(self.device), {}
 
     def close(self) -> None:
         if self.viewer is not None:
             self.gym.destroy_viewer(self.viewer)
         self.gym.destroy_sim(self.sim)
+        sys.exit()
 
     def destroy(self) -> None:
         self.close()
