@@ -6,7 +6,7 @@ Il progetto mette in piedi una pipeline completa per addestrare un agente di con
 Modulo per la definizione di tutti i parametri necessari al funzionamento del sistema: dalla gestione del seed e del dispositivo di calcolo (CPU/GPU), fino ai dettagli relativi agli ambienti paralleli. Include anche i percorsi al file URDF dell’asset, i parametri di simulazione e i setting dell’algoritmo PPO.
 
 ### Environment
-Il modulo environment definisce classi che avviano e orchestrano in parallelo N istanze di simulazione su GPU con NVIDIA Isaac Gym: ciascuna classe si occupa di inizializzare gli ambienti caricando il modello URDF, controllare il ciclo di vita di ogni simulazione (reset, step, terminazione), raccogliere osservazioni e ricompense da tutte le istanze e fornire i dati necessari all'algoritmo di PPO.
+Il modulo environment definisce classi che avviano e orchestrano in parallelo N istanze di simulazione con NVIDIA Isaac Gym: ciascuna classe si occupa di inizializzare gli ambienti caricando il modello URDF, controllare il ciclo di vita di ogni simulazione (reset, step, terminazione), raccogliere osservazioni e ricompense da tutte le istanze e fornire i dati necessari all'algoritmo di PPO.
 
 ### Rewards
 Il sistema prevede un set modulare di funzioni di ricompensa che permettono l'implementazione di diverse strategie. Ogni funzione riceve in ingresso l’errore di orientamento, di velocità e di accelerazione rispetto al goal e restituisce un valore che rappresenta la reward.
