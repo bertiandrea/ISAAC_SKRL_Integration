@@ -45,7 +45,7 @@ class SatelliteConfig(BaseConfig):
         clip_actions = np.Inf
         clip_observations = np.Inf
 
-        torque_scale = 100
+        torque_scale = 10
         
     class asset:
         root = str(Path(__file__).resolve().parent.parent)
@@ -107,7 +107,8 @@ class SatelliteConfig(BaseConfig):
             rollouts = 16
             n_epochs = 8192
             timesteps = rollouts * n_epochs
-            disable_progressbar = False   # whether to disable the progressbar. If None, disable on non-TTY
+            disable_progressbar = False
+            headless = False
 
         class memory:
             rollouts = 16

@@ -17,9 +17,12 @@ class VecTask(Params):
 
         self.create_sim()
         
-        self.set_viewer()
+        self.viewer = None
+        if not self.headless:
+            self.set_viewer()
         
         self.allocate_buffers()
+        
         self.gym.prepare_sim(self.sim)
 
     def create_sim(self) -> None:
@@ -47,11 +50,7 @@ class VecTask(Params):
         init_pose.r = gymapi.Quat(*pose_r)
         self.gym.create_actor(env, asset_handle, init_pose, f"{name}", env_idx, collision)
     
-    def set_viewer(self):
-        self.viewer = None
-        if self.headless == True:
-            return
-        
+    def set_viewer(self):        
         camera_props = gymapi.CameraProperties()
         camera_props.width = self.screen_width
         camera_props.height = self.screen_height
@@ -84,8 +83,6 @@ class VecTask(Params):
             self.num_envs, device=self.device, dtype=torch.long)
 
     def render(self):
-        if self.headless == True:
-            return
         if self.gym.query_viewer_has_closed(self.viewer):
             self.close()
 
@@ -110,14 +107,14 @@ class VecTask(Params):
         self.progress_buf += 1
 
     def step(self, actions: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, Dict[str, Any]]:
-        self.pre_physics_step(actions)
+        #self.pre_physics_step(actions)
 
         ######################################################################
         self.gym.simulate(self.sim)
         self.gym.fetch_results(self.sim, True)
         ######################################################################
         
-        self.post_physics_step()
+        #self.post_physics_step()
         
         return self.states_buf, \
             self.reward_buf.view(-1, 1), \

@@ -85,10 +85,7 @@ def main():
     if env_cfg.set_seed:
         set_seed(env_cfg.seed)
 
-    env = SatelliteVec(cfg=env_cfg,
-                    headless=args.headless,
-                    reward_fn=REWARD_MAP[args.reward_fn](),
-    )
+    env = SatelliteVec(cfg=env_cfg, reward_fn=REWARD_MAP[args.reward_fn]())
 
     # 2) PPO and Trainer config
     env_cfg_dict = class_to_dict(env_cfg)

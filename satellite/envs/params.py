@@ -10,9 +10,11 @@ from abc import ABC
 from gymnasium import spaces
 
 class Params(ABC):
-    def __init__(self, config, headless: bool): 
-        self.headless = headless
+    def __init__(self, config): 
+        self.headless = getattr(config.rl.trainer, 'headless', False)
 
+        ########################################################################
+        
         self.screen_width = getattr(config, 'screen_width', 1920)
         self.screen_height = getattr(config, 'screen_height', 1080)
 

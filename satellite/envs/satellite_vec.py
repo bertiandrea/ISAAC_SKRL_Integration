@@ -13,8 +13,8 @@ from isaacgym import gymtorch
 import torch
 
 class SatelliteVec(VecTask):
-    def __init__(self, cfg, headless: bool, reward_fn: RewardFunction = None):
-        super().__init__(cfg, headless)
+    def __init__(self, cfg, reward_fn: RewardFunction = None):
+        super().__init__(cfg)
 
         ################# SETUP SIM #################
         self.actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim)
