@@ -12,8 +12,8 @@ import numpy as np
 from typing import Dict, Any, Tuple
 
 class VecTask(Params):
-    def __init__(self, config, headless: bool): 
-        super().__init__(config, headless)
+    def __init__(self, config): 
+        super().__init__(config)
 
         self.create_sim()
         
