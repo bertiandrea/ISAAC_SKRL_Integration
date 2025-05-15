@@ -1,95 +1,27 @@
 # ISAAC_SKRL_Integration
 
-Questo progetto implementa una pipeline end-to-end per addestrare un agente di controllo dell’assetto orbitale di un satellite, sfruttando NVIDIA Isaac Gym per la simulazione fisica parallela e SKRL per l’algoritmo PPO.
+Il progetto mette in piedi una pipeline completa per addestrare un agente di controllo dell’assetto orbitale di un satellite, basata su due componenti chiave: la simulazione fisica parallela offerta da NVIDIA Isaac Gym e l’algoritmo PPO (Proximal Policy Optimization) fornito da SKRL.
 
----
-## 1. Architettura
-1. **Configuration**  
-   Gestione centralizzata dei parametri di simulazione, dell’ambiente e dell’algoritmo di RL.  
-2. **Environment**  
-   Creazione e gestione in parallelo delle istanze di simulazione via Isaac Gym.
-3. **Rewards**  
-   Set modulare di funzioni di ricompensa per diverse strategie di shaping della reward.
-4. **Utilities**
-   Funzioni quaternion-based per campionamento random e il calcolo di differenze tra quaternioni.
-6. **Models**  
-   Creazione di 2 reti neurali: Policy (Gaussiana) e Value (Deterministica).
-7. **Asset URDF**  
-   Descrizione fisica del satellite.  
-8. **Training**  
-   Script di lancio che unisce parsing argomenti, istanziazione ambiente, configurazione PPO e avvio del ciclo di apprendimento.
+### Configuration
+Modulo per la definizione di tutti i parametri necessari al funzionamento del sistema: dalla gestione del seed e del dispositivo di calcolo (CPU/GPU), fino ai dettagli relativi agli ambienti paralleli. Include anche i percorsi al file URDF dell’asset, i parametri di simulazione e i setting dell’algoritmo PPO.
 
----
-## 2. Configuration (`configs/`)
-- **`BaseConfig`**  
-  Classe di base che individua e istanzia tutte le classi annidate come attributi.  
-- **`SatelliteConfig`**  
-  - **Parametri generali**:  
-    - Seed, device CUDA/CPU, risoluzione schermo.
-  - **Parametri `env`**:  
-    - Numero di ambienti paralleli, dimensione di stato/azione/osservazione, rumore sensoriale/attuazione, soglie di terminazione (angolo, velocità, overspeed), durata epoca, ecc... 
-  - **Parametri `asset`**:  
-    - Percorso al file URDF, nome dell’actor, posizione e orientamento iniziale.  
-  - **Parametri `sim`**:  
-    - Passo di integrazione (`dt`), gravità, motore fisico (PhysX/Flex) e parametri specifici (solver, iterazioni, offset di contatto).  
-  - **Parametri `rl`**:  
-    - Setting dei parametri di PPO (rollout length, learning rate, clipping, scale delle perdite, checkpoint), trainer (numero di epoche, timesteps totali).
+### Environment
+Il modulo environment definisce classi che avviano e orchestrano in parallelo N istanze di simulazione su GPU con NVIDIA Isaac Gym: ciascuna classe si occupa di inizializzare gli ambienti caricando il modello URDF, controllare il ciclo di vita di ogni simulazione (reset, step, terminazione), raccogliere osservazioni e ricompense da tutte le istanze e fornire i dati necessari all'algoritmo di PPO.
 
----
-## 3. Environment (`envs/`)
-### 3.1. `Params`
-- Carica dal config tutti i parametri utili della simulazione.
-### 3.2. `VecTask`  
-Estende `Params` e incapsula:
-- **Creazione della simulazione e degli N ambienti paralleli**.
-- **Load dell’asset** negli N ambienti paralleli.
-- **Viewer** per visualizzare la scena.
-- Buffer Torch per osservazioni (`obs_buf`), stati (`states_buf`), reward, reset e avanzamento.
-- Metodi chiave:
-  - `step(actions)`: esegue una simulazione e restituisce all'algoritmo PPO `(states, reward, reset, timeout)`.
-  - `reset()`: reset completo di tutti gli ambienti.
-  - `render()`, `close()`, `destroy()`.
+### Rewards
+Il sistema prevede un set modulare di funzioni di ricompensa che permettono l'implementazione di diverse strategie. Ogni funzione riceve in ingresso l’errore di orientamento, di velocità e di accelerazione rispetto al goal e restituisce un valore che rappresenta la reward.
 
-### 3.3. `SatelliteVec`  
-Estende `VecTask` per:
-- Estrarre da `actor_root_state_tensor` le posizioni, quaternion, velocità angolari, accelerazioni angolari popolando:
-  - **`obs_buf`**: quaternione corrente, differenza quaternion, accelerazione angolare.
-  - **`states_buf`**: come sopra + velocità angolari.
-- Applicare la coppia di controllo sul satellite.
-- Calcolare reward tramite una `RewardFunction` selezionabile.
-- Verificare la terminazione per:
-  - **Goal**: errore di orientamento e velocità sotto soglia.
-  - **Timeout/Overspeed**: durata massima o velocità angolare eccessiva.
+### Utilities
+Questo modulo raccoglie funzioni tensor-based per operazioni con quaternioni, come la generazione di quaternioni casuali o la differenza tra due quaternioni.
 
----
-## 4. Rewards (`rewards/`)
-Dall'errore di orientamento, velocità e accelerazione rispetto al goal calcola la reward di ciascun ambiente.
-Implementazioni principali:
-- **`TestReward`**: peso inverso agli errori di orientamento, velocità e accelerazione.  
-- **`WeightedSumReward`**: somma pesata + bonus early success + penalità per saturazione.  
-- **`TwoPhaseReward`**: ricompensa a due fasi, con decay esponenziale una volta sotto soglia.  
-- **`ExponentialStabilizationReward`**, **`ContinuousDiscreteEffortReward`**, **`ShapingReward`**.
+### Models
+In questo modulo sono definite due reti neurali dense a tre layer: la policy, che trasforma le osservazioni nei parametri (media e log-std) di una gaussiana da cui si campionano le azioni, e la value, che – avendo accesso allo stato completo del sistema – stima il valore atteso. Questa stima viene poi confrontata con la ricompensa effettiva per ottenere l’advantage, cioè la misura di quanto l’azione scelta abbia superato (o meno) le aspettative.
 
----
-## 5. Utilities (`utils/`)
-Funzioni tensor‐based per: generare N quaternioni random, calcolare la distanza angolare in radianti tra due quaternioni, calcolare la differenza tra due quaternioni.
+### Asset URDF
+Il file URDF descrive la geometria, la massa e le proprietà fisiche del satellite, permettendo a Isaac Gym di caricare un modello realistico e di applicare correttamente forze e coppie di controllo.
 
----
-## 6. Models (`models/`)
-- **`Policy`**
-Policy: rete a 3 layer densi, con output `mean` e `log-std` per la distribuzione gaussiana delle azioni. Utilizza `observation_space`.
-- **`Value`**
-Value: rete a 3 layer densi, con output singolo `value`. Utilizza `state_space` ed è quindi onniscente.
-
----
-## 7. Asset URDF
-Definizione fisica del satellite.
-
----
-## 8. Training
- - Configurazione del simulatore, degli environment, e dell'algoritmo PPO.
- - Creazione modelli Policy/Value, agente PPO e trainer sequenziale.
- - Lancio del processo di training.
+### Training
+Lo script di training integra tutti i componenti: legge gli argomenti da riga di comando, costruisce l’ambiente, configura l’algoritmo PPO con i suoi iperparametri, istanzia i modelli di policy e value, impacchetta il tutto in un agente SKRL e avvia il ciclo di apprendimento.
 
 ---
 ## 🖥️ Esecuzione Locale
