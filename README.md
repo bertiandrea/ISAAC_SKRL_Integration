@@ -64,7 +64,7 @@ Implementazioni principali:
 - **`TestReward`**: peso inverso agli errori di orientamento, velocità e accelerazione.  
 - **`WeightedSumReward`**: somma pesata + bonus early success + penalità per saturazione.  
 - **`TwoPhaseReward`**: ricompensa a due fasi, con decay esponenziale una volta sotto soglia.  
-- **`ExponentialStabilizationReward`**, **`ContinuousDiscreteEffortReward`**, **`ShapingReward`**: altre varianti di shaping basate su delta dell’errore e funzioni β, τ.
+- **`ExponentialStabilizationReward`**, **`ContinuousDiscreteEffortReward`**, **`ShapingReward`**.
 ---
 ## 5. Utilities (`utils/`)
 Funzioni tensor‐based per: generare N quaternioni random, calcolare la distanza angolare in radianti tra due quaternioni, calcolare la differenza tra due quaternioni.
