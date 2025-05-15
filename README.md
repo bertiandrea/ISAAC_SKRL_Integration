@@ -18,6 +18,7 @@ Questo progetto implementa una pipeline end-to-end per addestrare un agente di c
    Descrizione fisica del satellite.  
 8. **Training**  
    Script di lancio che unisce parsing argomenti, istanziazione ambiente, configurazione PPO e avvio del ciclo di apprendimento.
+
 ---
 ## 2. Configuration (`configs/`)
 - **`BaseConfig`**  
@@ -33,6 +34,7 @@ Questo progetto implementa una pipeline end-to-end per addestrare un agente di c
     - Passo di integrazione (`dt`), gravità, motore fisico (PhysX/Flex) e parametri specifici (solver, iterazioni, offset di contatto).  
   - **Parametri `rl`**:  
     - Setting dei parametri di PPO (rollout length, learning rate, clipping, scale delle perdite, checkpoint), trainer (numero di epoche, timesteps totali).
+
 ---
 ## 3. Environment (`envs/`)
 ### 3.1. `Params`
@@ -47,6 +49,7 @@ Estende `Params` e incapsula:
   - `step(actions)`: esegue una simulazione e restituisce all'algoritmo PPO `(states, reward, reset, timeout)`.
   - `reset()`: reset completo di tutti gli ambienti.
   - `render()`, `close()`, `destroy()`.
+
 ### 3.3. `SatelliteVec`  
 Estende `VecTask` per:
 - Estrae da `actor_root_state_tensor` le posizioni, quaternion, velocità angolari, accelerazioni angolari popolando:
@@ -57,6 +60,7 @@ Estende `VecTask` per:
 - Verifica terminazione per:
   - **Goal**: errore di orientamento e velocità sotto soglia.
   - **Timeout/Overspeed**: durata massima o velocità angolare eccessiva.
+
 ---
 ## 4. Rewards (`rewards/`)
 Dall'errore di orientamento, velocità e accelerazione rispetto al goal calcola la reward di ciascun ambiente.
@@ -65,23 +69,28 @@ Implementazioni principali:
 - **`WeightedSumReward`**: somma pesata + bonus early success + penalità per saturazione.  
 - **`TwoPhaseReward`**: ricompensa a due fasi, con decay esponenziale una volta sotto soglia.  
 - **`ExponentialStabilizationReward`**, **`ContinuousDiscreteEffortReward`**, **`ShapingReward`**.
+
 ---
 ## 5. Utilities (`utils/`)
 Funzioni tensor‐based per: generare N quaternioni random, calcolare la distanza angolare in radianti tra due quaternioni, calcolare la differenza tra due quaternioni.
+
 ---
 ## 6. Models (`models/`)
 - **`Policy`**
 Policy: rete a 3 layer densi, con output `mean` e `log-std` per la distribuzione gaussiana delle azioni. Utilizza `observation_space`.
 - **`Value`**
 Value: rete a 3 layer densi, con output singolo `valore di stato`. Utilizza `state_space` ed è quindi onniscente.
+
 ---
 ## 7. Asset URDF
 Definizione fisica del satellite.
+
 ---
 ## 8. Training
  - Configurazione del simulatore, degli environment, e dell'algoritmo PPO.
  - Creazione modelli Policy/Value, agente PPO e trainer sequenziale.
  - Lancio del processo di training.
+
 ---
 ## 🖥️ Esecuzione Locale
 
