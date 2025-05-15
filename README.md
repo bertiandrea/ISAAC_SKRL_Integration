@@ -11,9 +11,9 @@ Questo progetto implementa una pipeline end-to-end per addestrare un agente di c
 3. **Rewards**  
    Set modulare di funzioni di ricompensa per diverse strategie di shaping della reward.
 4. **Utilities**
-   Funzioni quaternion-based per campionamento random e calcolo differenze geometriche.
+   Funzioni quaternion-based per campionamento random e il calcolo di differenze tra quaternioni.
 6. **Models**  
-   Reti neurali Policy (Gaussiana) e Value (Deterministica).
+   Creazione di 2 reti neurali: Policy (Gaussiana) e Value (Deterministica).
 7. **Asset URDF**  
    Descrizione fisica del satellite.  
 8. **Training**  
