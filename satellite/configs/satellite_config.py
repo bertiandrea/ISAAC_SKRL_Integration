@@ -61,7 +61,12 @@ class SatelliteConfig(BaseConfig):
         up_axis = 'z'
         use_gpu_pipeline = CUDA
         physics_engine = 'physx'
-
+        # substeps = 2
+        # num_client_threads = 1
+        # stress_visualization
+        # stress_visualization_max
+        # stress_visualization_min
+        
         class physx:
             use_gpu = CUDA
             solver_type = 1
@@ -69,14 +74,36 @@ class SatelliteConfig(BaseConfig):
             num_velocity_iterations = 1
             contact_offset = 0.01
             rest_offset = 0.0
-        
+            #always_use_articulations
+            #bounce_threshold_velocity
+            #contact_collection
+            #default_buffer_size_multiplier
+            #friction_correlation_distance
+            #friction_offset_threshold
+            #max_depenetration_velocity
+            #max_gpu_contact_pairs
+            #num_subscenes
+            #num_threads
+            
         class flex:
             solver_type = 5
             num_outer_iterations = 4
             num_inner_iterations = 20
             relaxation = 0.8
             warm_start = 0.5
-
+            #contact_regularization
+            #deterministic_mode
+            #dynamic_friction
+            #friction_mode
+            #geometric_stiffness
+            #max_rigid_contacts
+            #max_soft_contacts
+            #particle_friction
+            #return_contacts
+            #shape_collision_distance
+            #shape_collision_margin
+            #static_friction
+    
     class rl:
         class PPO:
             num_envs = 4096
