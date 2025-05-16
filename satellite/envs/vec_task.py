@@ -111,7 +111,7 @@ class VecTask(Params):
 
         ######################################################################
         self.gym.simulate(self.sim)
-        self.gym.fetch_results(self.sim, True)
+        self.gym.fetch_results(self.sim, False)
         ######################################################################
         
         #self.post_physics_step()

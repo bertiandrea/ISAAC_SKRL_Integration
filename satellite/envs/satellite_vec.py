@@ -108,9 +108,9 @@ class SatelliteVec(VecTask):
         self.obs_buf = torch.cat(
             (self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), self.satellite_angacc), dim=-1)
         
-        #print(f"[compute_observations]: satellite_quats[0]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[0].tolist())}]")
-        #print(f"[compute_observations]: satellite_quats[1]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[1].tolist())}]")
-        #print(f"[compute_observations]: satellite_quats[2]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[2].tolist())}]")
+        print(f"[compute_observations]: satellite_quats[0]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[0].tolist())}]")
+        print(f"[compute_observations]: satellite_quats[1]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[1].tolist())}]")
+        print(f"[compute_observations]: satellite_quats[2]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[2].tolist())}]")
 
         if self.sensor_noise_std > 0.0:
             self.obs_buf = self.obs_buf + torch.normal(mean=0.0, std=self.sensor_noise_std, 
@@ -128,9 +128,9 @@ class SatelliteVec(VecTask):
                                              size=actions.shape, device=self.device)
         self.actions = torch.clamp(actions, -self.clip_actions, self.clip_actions) * self.torque_scale
 
-        #print(f"[apply_torque]: actions[0]=[{', '.join(f'{v:.2f}' for v in self.actions[0].tolist())}]")
-        #print(f"[apply_torque]: actions[1]=[{', '.join(f'{v:.2f}' for v in self.actions[1].tolist())}]")
-        #print(f"[apply_torque]: actions[2]=[{', '.join(f'{v:.2f}' for v in self.actions[2].tolist())}]")
+        print(f"[apply_torque]: actions[0]=[{', '.join(f'{v:.2f}' for v in self.actions[0].tolist())}]")
+        print(f"[apply_torque]: actions[1]=[{', '.join(f'{v:.2f}' for v in self.actions[1].tolist())}]")
+        print(f"[apply_torque]: actions[2]=[{', '.join(f'{v:.2f}' for v in self.actions[2].tolist())}]")
 
         ################# SIM #################
         torque_tensor = torch.zeros((self.num_bodies * self.num_envs, 3), device=self.device)
@@ -151,9 +151,9 @@ class SatelliteVec(VecTask):
             self.goal_quat, self.goal_ang_vel, self.goal_ang_acc,
             self.actions
         )
-        #print(f"[compute_reward]: reward_buf[0]={self.reward_buf[0].item():.2f}")
-        #print(f"[compute_reward]: reward_buf[1]={self.reward_buf[1].item():.2f}")
-        #print(f"[compute_reward]: reward_buf[2]={self.reward_buf[2].item():.2f}")
+        print(f"[compute_reward]: reward_buf[0]={self.reward_buf[0].item():.2f}")
+        print(f"[compute_reward]: reward_buf[1]={self.reward_buf[1].item():.2f}")
+        print(f"[compute_reward]: reward_buf[2]={self.reward_buf[2].item():.2f}")
 
     def check_termination(self) -> None:
         angle_diff = quat_diff_rad(self.satellite_quats, self.goal_quat)
