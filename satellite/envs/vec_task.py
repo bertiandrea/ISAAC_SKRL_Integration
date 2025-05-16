@@ -107,14 +107,14 @@ class VecTask(Params):
         self.progress_buf += 1
 
     def step(self, actions: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, Dict[str, Any]]:
-        #self.pre_physics_step(actions)
+        self.pre_physics_step(actions)
 
         ######################################################################
         self.gym.simulate(self.sim)
         self.gym.fetch_results(self.sim, False)
         ######################################################################
         
-        #self.post_physics_step()
+        self.post_physics_step()
         
         return self.states_buf, \
             self.reward_buf.view(-1, 1), \

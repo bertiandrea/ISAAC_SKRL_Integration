@@ -63,9 +63,9 @@ class SatelliteConfig(BaseConfig):
         physics_engine = 'physx'
         substeps = 2
         num_client_threads = 8
-        # stress_visualization
-        # stress_visualization_max
-        # stress_visualization_min
+        #stress_visualization
+        #stress_visualization_max
+        #stress_visualization_min
         
         class physx:
             use_gpu = CUDA
