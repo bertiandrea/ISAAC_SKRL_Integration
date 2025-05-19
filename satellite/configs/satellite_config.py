@@ -132,7 +132,7 @@ class SatelliteConfig(BaseConfig):
 
         class trainer:
             rollouts = 16
-            n_epochs = 8192
+            n_epochs = 16
             timesteps = rollouts * n_epochs
             disable_progressbar = False
             headless = False

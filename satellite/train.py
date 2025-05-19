@@ -106,8 +106,6 @@ def main():
 
     cfg_ppo.update(env_cfg_dict["rl"]["PPO"])
 
-    cfg_trainer = env_cfg_dict["rl"]["trainer"]
-
     # 3) memoria
     memory = RandomMemory(memory_size=env_cfg_dict["rl"]["memory"]["rollouts"],
                         num_envs=env.num_envs,
@@ -126,7 +124,7 @@ def main():
                 action_space=env.act_space,
                 device=env.device)
 
-    trainer = SequentialTrainer(cfg=cfg_trainer,
+    trainer = SequentialTrainer(cfg=env_cfg_dict["rl"]["trainer"],
                                 env=env,
                                 agents=agent)
 

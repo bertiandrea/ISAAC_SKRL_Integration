@@ -9,14 +9,13 @@ fi
 DISPLAY_NUM=$1
 CONDA_ENV=${2:-rlgpu}           # Nome dell'ambiente Conda, default "rlgpu"
 REWARD_FN=${3:-test}            # Reward function da passare, default "test"
+SCREEN_RES="1920x1080x24"
 
 export DISPLAY=:$DISPLAY_NUM
 
 echo "Using DISPLAY=$DISPLAY"
 echo "Using Conda environment: $CONDA_ENV"
 echo "Using reward function: $REWARD_FN"
-
-SCREEN_RES="1920x1080x24"
 
 # Verifica se il display è già in uso
 if [ -e /tmp/.X${DISPLAY_NUM}-lock ]; then
@@ -26,11 +25,11 @@ fi
 
 # Funzione cleanup al termine dello script
 cleanup() {
-    echo "Stopping Xvfb and cleaning up..."
-    kill $XVFB_PID 2>/dev/null
-    pkill -f "gnome-session"
-    pkill -f "x11vnc -display :$DISPLAY_NUM"
-}
+    echo "Stopping Xvfb, GNOME, and x11vnc..."
+    kill "$XVFB_PID" 2>/dev/null
+    kill "$GNOME_PID" 2>/dev/null
+    kill "$X11VNC_PID" 2>/dev/null
+    }
 trap cleanup EXIT
 
 # Avvia Xvfb
@@ -48,6 +47,7 @@ export XDG_CURRENT_DESKTOP=GNOME
 export GDMSESSION=gnome
 
 gnome-session --session=gnome &
+GNOME_PID=$!
 
 sleep 5
 
@@ -58,18 +58,19 @@ chmod +x /tmp/gnome_vnc_env.sh
 
 # Avvia x11vnc sulla porta corretta
 x11vnc -display $DISPLAY -nopw -forever -bg -rfbport $((5900 + DISPLAY_NUM))
+X11VNC_PID=$!
 
 # Inizializza Conda
 if [ -f "$HOME/miniconda3/etc/profile.d/conda.sh" ]; then
     source "$HOME/miniconda3/etc/profile.d/conda.sh"
     conda activate "$CONDA_ENV"
 else
-    echo "Conda non trovato in $HOME/miniconda3. Verifica l'installazione."
+    echo "Conda not found $HOME/miniconda3. Verify the installation path."
     exit 1
 fi
 
 # Avvia il training con la reward function scelta
-CUDA_LAUNCH_BLOCKING=1 python -m satellite.train --reward-fn "$REWARD_FN"
+CUDA_LAUNCH_BLOCKING=1 python -m satellite.train_profile --reward-fn "$REWARD_FN"
 
 # Mantieni lo script attivo fino alla chiusura di Xvfb
 wait $XVFB_PID
