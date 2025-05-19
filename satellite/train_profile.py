@@ -21,19 +21,18 @@ from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.memories.torch import RandomMemory
-from skrl.trainers.torch import SequentialTrainer
+from skrl.trainers.torch import StepTrainer
 from skrl.utils import set_seed
 
 import argparse
+import os
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Profiler imports
 from torch.profiler import (
     profile,
     ProfilerActivity,
-    schedule,
     tensorboard_trace_handler,
-    record_function,
 )
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -101,7 +100,6 @@ def main():
     env_cfg_dict["rl"]["PPO"]["value_preprocessor"] = RunningStandardScaler
     env_cfg_dict["rl"]["PPO"]["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.01
     cfg_ppo.update(env_cfg_dict["rl"]["PPO"])
-    cfg_trainer = env_cfg_dict["rl"]["trainer"]
 
     # 3) memoria
     memory = RandomMemory(
@@ -124,29 +122,36 @@ def main():
         action_space=env.act_space,
         device=env.device
     )
-    trainer = SequentialTrainer(cfg=cfg_trainer, env=env, agents=agent)
+    trainer = StepTrainer(env=env, agents=agent, cfg=env_cfg_dict["rl"]["trainer"])
 
     # ──────────────────────────────────────────────────────────────────────────
     # Setup PyTorch profiler
-    log_dir = "./profiler_logs"
+    log_dir = "/home/andreaberti/profiler_logs"
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir)
+    
     prof = profile(
         activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-        schedule=schedule(wait=1, warmup=1, active=3, repeat=1),
         on_trace_ready=tensorboard_trace_handler(log_dir),
         record_shapes=True,
         profile_memory=True,
+        with_stack=True,
+        with_flops=True
     )
-    prof.__enter__()
     # ──────────────────────────────────────────────────────────────────────────
 
     print("###################### DONE INIT ######################")
-    # Wrapping the entire training in a record_function scope
-    with record_function("full_training"):
-        trainer.train()
+    prof.start()
 
-    # Advance profiler and close
-    prof.step()
-    prof.__exit__(None, None, None)
+    for timestep in range(env_cfg_dict["rl"]["trainer"]["timesteps"]):
+        prof.step()
+        trainer.train(timestep=timestep)
+        
+    for timestep in range(env_cfg_dict["rl"]["trainer"]["timesteps"]):
+        prof.step()
+        trainer.eval(timestep=timestep)
+
+    prof.stop()
     print(f"Profiler traces written to {log_dir}")
 
     env.destroy()
