@@ -21,7 +21,7 @@ from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.memories.torch import RandomMemory
-from skrl.trainers.torch import StepTrainer
+from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
 
 import argparse
@@ -122,14 +122,15 @@ def main():
         action_space=env.act_space,
         device=env.device
     )
-    trainer = StepTrainer(env=env, agents=agent, cfg=env_cfg_dict["rl"]["trainer"])
-
+    trainer = SequentialTrainer(cfg=env_cfg_dict["rl"]["trainer"],
+                                env=env,
+                                agents=agent)
     # ──────────────────────────────────────────────────────────────────────────
     # Setup PyTorch profiler
     log_dir = "/home/andreaberti/profiler_logs"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-    
+
     prof = profile(
         activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
         on_trace_ready=tensorboard_trace_handler(log_dir),
@@ -142,15 +143,7 @@ def main():
 
     print("###################### DONE INIT ######################")
     prof.start()
-
-    for timestep in range(env_cfg_dict["rl"]["trainer"]["timesteps"]):
-        prof.step()
-        trainer.train(timestep=timestep)
-        
-    for timestep in range(env_cfg_dict["rl"]["trainer"]["timesteps"]):
-        prof.step()
-        trainer.eval(timestep=timestep)
-
+    trainer.train()
     prof.stop()
     print(f"Profiler traces written to {log_dir}")
 
