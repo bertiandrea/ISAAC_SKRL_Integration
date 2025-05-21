@@ -72,6 +72,4 @@ fi
 # Avvia il training con la reward function scelta
 python -m satellite.train_profile --reward-fn "$REWARD_FN"
 
-cleanup
-echo "Training completed. Cleanup done."
 exit 0
