@@ -131,11 +131,11 @@ def main():
     prof = profile(
         activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
         on_trace_ready=tensorboard_trace_handler(log_dir),
-        #record_shapes=True,
+        record_shapes=True,
         profile_memory=True,
         with_stack=True,
         with_flops=True,
-        #with_modules=True,
+        with_modules=True,
     )
     # ──────────────────────────────────────────────────────────────────────────
 
