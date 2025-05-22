@@ -130,8 +130,6 @@ def main():
 
     print("###################### DONE INIT ######################")
     trainer.train()
-
-    env.destroy()
-
+    
 if __name__ == "__main__":
     main()

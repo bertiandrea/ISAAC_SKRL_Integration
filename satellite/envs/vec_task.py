@@ -133,8 +133,4 @@ class VecTask(Params):
         if self.viewer is not None:
             self.gym.destroy_viewer(self.viewer)
         self.gym.destroy_sim(self.sim)
-        sys.exit()
-
-    def destroy(self) -> None:
-        print("Destroy Called")
-        self.close()
+        print("Close Done")

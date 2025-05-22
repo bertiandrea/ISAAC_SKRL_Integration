@@ -127,14 +127,11 @@ def main():
                                 agents=agent)
     # ──────────────────────────────────────────────────────────────────────────
     # Setup PyTorch profiler
-    log_dir = "/home/andreaberti/profiler_logs"
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir)
-
+    log_dir = "/home/andreaberti/ISAAC_SKRL_Integration/profiler_logs"
     prof = profile(
         activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
         on_trace_ready=tensorboard_trace_handler(log_dir),
-        record_shapes=True,
+        #record_shapes=True,
         profile_memory=True,
         with_stack=True,
         with_flops=True
@@ -145,9 +142,6 @@ def main():
     prof.start()
     trainer.train()
     prof.stop()
-    print(f"Profiler traces written to {log_dir}")
-
-    env.destroy()
 
 if __name__ == "__main__":
     main()
