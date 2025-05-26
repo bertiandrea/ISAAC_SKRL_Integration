@@ -30,6 +30,10 @@ class SatelliteVec(VecTask):
         ########################################
 
         self.initial_root_states = self.root_states.clone()
+
+        print(f"[SatelliteVec] initial_root_states[0]=[{', '.join(f'{v:.2f}' for v in self.initial_root_states[0].tolist())}]")
+        print(f"[SatelliteVec] initial_root_states[1]=[{', '.join(f'{v:.2f}' for v in self.initial_root_states[1].tolist())}]")
+        print(f"[SatelliteVec] initial_root_states[2]=[{', '.join(f'{v:.2f}' for v in self.initial_root_states[2].tolist())}]")
         
         self.prev_angvel = torch.zeros((self.num_envs, 3), dtype=torch.float32, device=self.device)
         #self.prev_angvel = self.satellite_angvels.clone()
@@ -63,9 +67,9 @@ class SatelliteVec(VecTask):
 
         ################# SIM #################
         self.root_states[ids] = self.initial_root_states[ids].clone()
-
+        actor_indices = ids.to(dtype=torch.int32)
         self.gym.set_actor_root_state_tensor_indexed(
-            self.sim, gymtorch.unwrap_tensor(self.root_states), gymtorch.unwrap_tensor(ids.to(dtype=torch.int32)), len(ids.to(dtype=torch.int32))
+            self.sim, self.actor_root_state, gymtorch.unwrap_tensor(actor_indices), len(actor_indices)
         )
         #######################################
 
@@ -103,23 +107,23 @@ class SatelliteVec(VecTask):
 
         self.satellite_angacc = (self.satellite_angvels - self.prev_angvel) / self.dt
 
-        self.states_buf = torch.cat(
-            (self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), self.satellite_angacc, self.satellite_angvels), dim=-1)
         self.obs_buf = torch.cat(
             (self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), self.satellite_angacc), dim=-1)
         
+        self.states_buf = torch.cat(
+            (self.obs_buf, self.satellite_angvels), dim=-1)
+
         print(f"[compute_observations]: satellite_quats[0]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[0].tolist())}]")
         print(f"[compute_observations]: satellite_quats[1]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[1].tolist())}]")
         print(f"[compute_observations]: satellite_quats[2]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[2].tolist())}]")
 
         if self.sensor_noise_std > 0.0:
-            self.obs_buf = self.obs_buf + torch.normal(mean=0.0, std=self.sensor_noise_std, 
+            noise = torch.normal(mean=0.0, std=self.sensor_noise_std, 
                                                        size=self.obs_buf.shape, device=self.device)
-        self.obs_buf = torch.clamp(self.obs_buf, -self.clip_obs, self.clip_obs)
+            self.obs_buf = self.obs_buf + noise
+            self.states_buf = self.states_buf + noise
 
-        if self.sensor_noise_std > 0.0:
-            self.states_buf = self.states_buf + torch.normal(mean=0.0, std=self.sensor_noise_std, 
-                                                             size=self.states_buf.shape, device=self.device)
+        self.obs_buf = torch.clamp(self.obs_buf, -self.clip_obs, self.clip_obs)
         self.states_buf = torch.clamp(self.states_buf, -self.clip_obs, self.clip_obs)
 
     def apply_torque(self, actions: torch.Tensor) -> None:

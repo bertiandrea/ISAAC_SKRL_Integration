@@ -113,7 +113,8 @@ class VecTask(Params):
 
         ######################################################################
         self.gym.simulate(self.sim)
-        #self.gym.fetch_results(self.sim, True)
+        if self.device_type == "cpu":
+            self.gym.fetch_results(self.sim, True)
         ######################################################################
         
         self.post_physics_step()
