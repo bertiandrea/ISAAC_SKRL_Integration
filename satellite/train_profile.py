@@ -142,7 +142,6 @@ def main():
     print("###################### DONE INIT ######################")
     prof.start()
     trainer.train()
-    prof.step()  # Step the profiler after each training iteration
     prof.stop()
 
 if __name__ == "__main__":
