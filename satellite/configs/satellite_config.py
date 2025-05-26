@@ -11,6 +11,8 @@ from pathlib import Path
 import numpy as np
 
 CUDA = torch.cuda.is_available()
+NUM_ENVS = 16384
+N_EPOCHS = 32
 
 class SatelliteConfig(BaseConfig):
     set_seed = False
@@ -24,7 +26,7 @@ class SatelliteConfig(BaseConfig):
     screen_height = 1080
     
     class env:  
-        num_envs = 4096
+        num_envs = NUM_ENVS
    
         num_observations = 11 # [x,y,z,w, dx,dy,dz,dw, ax,ay,az]
 
@@ -106,11 +108,10 @@ class SatelliteConfig(BaseConfig):
     
     class rl:
         class PPO:
-            num_envs = 4096
+            num_envs = NUM_ENVS
             rollouts = 16
             learning_epochs = 8
-            minibatch_size = 16384
-            mini_batches = rollouts * num_envs // minibatch_size
+            mini_batches = 2
             discount_factor = 0.99
             lambda_ = 0.95
             learning_rate = 1e-3
@@ -132,7 +133,7 @@ class SatelliteConfig(BaseConfig):
 
         class trainer:
             rollouts = 16
-            n_epochs = 32
+            n_epochs = N_EPOCHS
             timesteps = rollouts * n_epochs
             disable_progressbar = False
             headless = True
