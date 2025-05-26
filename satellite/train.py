@@ -57,21 +57,9 @@ def parse_args():
         description="Training con reward function selezionabile")
     parser.add_argument(
         "--reward-fn",
-        choices=[
-            "test",
-            "weighted_sum",
-            "two_phase",
-            "exp_stabilization",
-            "continuous_discrete_effort",
-            "shaping"
-        ],
+        choices=list(REWARD_MAP.keys()),
         default="test",
         help="Which RewardFunction?"
-    )
-    parser.add_argument(
-        "--headless",
-        action="store_true",
-        help="Run in headless mode (no GUI)"
     )
     return parser.parse_args()
 

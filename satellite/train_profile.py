@@ -25,7 +25,6 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
 
 import argparse
-import os
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Profiler imports
@@ -68,11 +67,6 @@ def parse_args():
         default="test",
         help="Which RewardFunction?"
     )
-    parser.add_argument(
-        "--headless",
-        action="store_true",
-        help="Run in headless mode (no GUI)"
-    )
     return parser.parse_args()
 
 def main():
@@ -83,11 +77,14 @@ def main():
     env_cfg = SatelliteConfig()
     if env_cfg.set_seed:
         set_seed(env_cfg.seed)
+
     env = SatelliteVec(cfg=env_cfg, reward_fn=REWARD_MAP[args.reward_fn]())
 
     # 2) PPO and Trainer config
     env_cfg_dict = class_to_dict(env_cfg)
+
     cfg_ppo = PPO_DEFAULT_CONFIG.copy()
+
     env_cfg_dict["rl"]["PPO"]["state_preprocessor_kwargs"] = {
         "size": env.state_space, "device": env.device
     }
@@ -99,6 +96,7 @@ def main():
     env_cfg_dict["rl"]["PPO"]["state_preprocessor"] = RunningStandardScaler
     env_cfg_dict["rl"]["PPO"]["value_preprocessor"] = RunningStandardScaler
     env_cfg_dict["rl"]["PPO"]["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.01
+    
     cfg_ppo.update(env_cfg_dict["rl"]["PPO"])
 
     # 3) memoria
