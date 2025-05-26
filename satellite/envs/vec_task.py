@@ -118,17 +118,17 @@ class VecTask(Params):
         
         self.post_physics_step()
         
-        return self.states_buf, \
-            self.reward_buf.view(-1, 1), \
-            self.reset_buf.view(-1, 1), \
-            self.timeout_buf.view(-1, 1), \
+        return self.states_buf.to(self.device), \
+            self.reward_buf.view(-1, 1).to(self.device), \
+            self.reset_buf.view(-1, 1).to(self.device), \
+            self.timeout_buf.view(-1, 1).to(self.device), \
             {}
 
     def reset(self):
         ids = torch.arange(self.num_envs, device=self.device)
         self.reset_idx(ids)
         
-        return self.states_buf, {}
+        return self.states_buf.to(self.device), {}
 
     def close(self) -> None:
         print("Close Called")
