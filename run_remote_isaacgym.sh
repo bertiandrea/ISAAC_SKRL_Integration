@@ -1,12 +1,6 @@
 #!/bin/bash
 
-# Verifica che un numero di display sia stato fornito
-if [ -z "$1" ]; then
-    echo "Usage: $0 <display number> [conda_env_name] [reward_fn]"
-    exit 1
-fi
-
-DISPLAY_NUM=$1
+DISPLAY_NUM=${1:-99}            # Numero del display, default 99
 CONDA_ENV=${2:-rlgpu}           # Nome dell'ambiente Conda, default "rlgpu"
 REWARD_FN=${3:-test}            # Reward function da passare, default "test"
 SCREEN_RES="1920x1080x24"
