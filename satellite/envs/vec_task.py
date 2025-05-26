@@ -86,6 +86,8 @@ class VecTask(Params):
         if self.gym.query_viewer_has_closed(self.viewer):
             self.close()
 
+        self.gym.fetch_results(self.sim, True)
+
         self.gym.step_graphics(self.sim)
 
         self.gym.draw_viewer(self.viewer, self.sim, True)
@@ -111,7 +113,7 @@ class VecTask(Params):
 
         ######################################################################
         self.gym.simulate(self.sim)
-        self.gym.fetch_results(self.sim, False)
+        #self.gym.fetch_results(self.sim, True)
         ######################################################################
         
         self.post_physics_step()
