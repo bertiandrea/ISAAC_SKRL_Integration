@@ -13,7 +13,8 @@ def sample_random_quaternion(target_device):
     x = torch.sqrt(1 - u[0]) * torch.cos(2 * math.pi * u[1])
     y = torch.sqrt(u[0]) * torch.sin(2 * math.pi * u[2])
     z = torch.sqrt(u[0]) * torch.cos(2 * math.pi * u[2])
-    return torch.tensor([x, y, z, w], dtype=torch.float32, device=target_device)
+    quat = torch.tensor([x, y, z, w], dtype=torch.float32, device=target_device)
+    return quat / torch.norm(quat)
 
 def sample_random_quaternion_batch(target_device, n):
     if n == 0:
