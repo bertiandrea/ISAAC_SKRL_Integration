@@ -41,7 +41,7 @@ class SatelliteConfig(BaseConfig):
         
         threshold_ang_goal = 0.01745        # soglia in radianti per orientamento
         threshold_vel_goal = 0.01745        # soglia in rad/sec per la differenza di velocità
-        overspeed_ang_vel = 1.57            # soglia in rad/sec per l'overspeed
+        overspeed_ang_vel =  0.78540        # soglia in rad/sec per l'overspeed
         episode_length_s = 120              # soglia in secondi per la terminazione di una singola simulazione
         
         clip_actions = np.Inf
@@ -56,6 +56,23 @@ class SatelliteConfig(BaseConfig):
 
         init_pos_p = [0, 0, 0]    # posizione iniziale del satellite [x,y,z]
         init_pos_r = [0, 0, 0, 1] # attitude iniziale del satellite [x,y,z,w]
+
+        #disable_gravity
+        #collapse_fixed_joints
+        #slices_per_cylinder
+        #replace_cylinder_with_capsule
+        #fix_base_link
+        #default_dof_drive_mode
+        #self_collisions
+        #flip_visual_attachments
+
+        #density
+        #angular_damping
+        #linear_damping
+        #max_angular_velocity
+        #max_linear_velocity
+        #armature
+        #thickness
 
     class sim:
         dt = 1.0 / 60.0
