@@ -30,7 +30,16 @@ class RewardFunction(ABC):
         omega_err = torch.norm(ang_vels - goal_ang_vel, dim=1)
         # angular acceleration error (rad/s^2)
         acc_err = torch.norm(ang_accs - goal_ang_acc, dim=1)
-        return self._compute(phi, omega_err, acc_err, actions)
+
+        assert not torch.isnan(phi).any() and not torch.isinf(phi).any(), "phi has NaN or Inf"
+        assert not torch.isnan(omega_err).any() and not torch.isinf(omega_err).any(), "omega_err has NaN or Inf"
+        assert not torch.isnan(acc_err).any() and not torch.isinf(acc_err).any(), "acc_err has NaN or Inf"
+
+        reward = self._compute(phi, omega_err, acc_err, actions)
+
+        assert not torch.isnan(reward).any() and not torch.isinf(reward).any(), "reward has NaNs or Infs"
+
+        return reward
 
     @abstractmethod
     def _compute(self,
@@ -53,7 +62,7 @@ class TestReward(RewardFunction):
         print(f"[compute_reward]: angle_diff[0]={math.degrees(phi[0].item()):.2f}° ang_vel_diff[0]={math.degrees(omega_err[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(acc_err[0].item()):.2f}°/s²")
         print(f"[compute_reward]: angle_diff[1]={math.degrees(phi[1].item()):.2f}° ang_vel_diff[1]={math.degrees(omega_err[1].item()):.2f}°/s ang_acc_diff[1]={math.degrees(acc_err[1].item()):.2f}°/s²")
         print(f"[compute_reward]: angle_diff[2]={math.degrees(phi[2].item()):.2f}° ang_vel_diff[2]={math.degrees(omega_err[2].item()):.2f}°/s ang_acc_diff[2]={math.degrees(acc_err[2].item()):.2f}°/s²")
-    
+
         weight = 1.0 / (1.0 + phi)
         r_q = self.alpha_q * 1.0 / (1.0 + phi)
         r_omega = self.alpha_omega * weight * (1.0 / (1.0 + omega_err))
