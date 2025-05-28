@@ -21,6 +21,7 @@ class SatelliteAttitudeController:
         rate_error = actions - measured_angvels
         raw_torque = self.pid_rate.update(rate_error, actions, measured_angvels)
 
+        # Apply low-pass filter to the torque command
         self.torque_cmd = (
             self.torque_tau * raw_torque + (1 - self.torque_tau) * self.prev_torque
         )
