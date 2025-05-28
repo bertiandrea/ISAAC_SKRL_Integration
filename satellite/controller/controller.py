@@ -8,7 +8,7 @@ from isaacgym import gymtorch
 import torch
 
 class SatelliteAttitudeController:
-    def __init__(self, num_envs, device, dt, pid_rate, torque_tau=0.02):
+    def __init__(self, num_envs, device, dt, pid_rate, torque_tau):
         self.device = device
         self.num_envs = num_envs
         self.dt = dt

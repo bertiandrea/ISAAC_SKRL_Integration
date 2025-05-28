@@ -163,9 +163,5 @@ class SatelliteConfig(BaseConfig):
             kp = 0.5
             ki = 0.0
             kd = 0.1
-        class attitude:
-            kp = 0.5
-            ki = 0.0
-            kd = 0.1
     class controller:
-        inertia = [1.0, 1.0, 1.0]
+        controller_logic = False

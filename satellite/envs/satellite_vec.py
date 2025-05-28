@@ -6,6 +6,8 @@ from satellite.rewards.satellite_reward import (
     TestReward,
     RewardFunction
 )
+from satellite.pid.pid import PID
+from satellite.controller.controller import SatelliteAttitudeController
 
 import isaacgym #BugFix
 from isaacgym import gymapi
@@ -43,6 +45,24 @@ class SatelliteVec(VecTask):
             self.reward_fn: RewardFunction = TestReward()
         else:
             self.reward_fn = reward_fn
+
+        self.controller_logic = getattr(cfg.controller, "controller_logic", False)
+        if self.controller_logic:
+            self.pid_rate = PID(
+                num_envs=self.num_envs,
+                kp=getattr(cfg.pid.rate, "kp", 1.0),
+                ki=getattr(cfg.pid.rate, "ki", 0.1),
+                kd=getattr(cfg.pid.rate, "kd", 0.01),
+                dt=self.dt,
+                device=self.device
+            )
+            self.controller = SatelliteAttitudeController(
+                num_envs=self.num_envs,
+                device=self.device,
+                dt=self.dt,
+                pid_rate=self.pid_rate,
+                torque_tau=getattr(cfg.controller, "torque_tau", 0.02)
+            )
                     
     ################################################################################################################################
     
@@ -101,6 +121,15 @@ class SatelliteVec(VecTask):
 
 
     def apply_torque(self, actions: torch.Tensor) -> None:
+        ############## CONTROLLER ###############
+        if self.controller_logic:
+            self.actions = self.controller.compute_control(
+                ang_acc_des=actions, 
+                ang_vel=self.satellite_angvels,
+            )
+            self.actions = torch.clamp(actions, -self.clip_actions, self.clip_actions) * self.torque_scale
+        #########################################
+
         if self.actuation_noise_std > 0.0:
             actions = actions + torch.normal(mean=0.0, std=self.actuation_noise_std, 
                                              size=actions.shape, device=self.device)
