@@ -85,6 +85,9 @@ class VecTask(Params):
             self.num_envs, device=self.device, dtype=torch.long)
 
     def render(self):
+        if self.headless or self.device_type == 'cpu':
+            return
+
         if self.gym.query_viewer_has_closed(self.viewer):
             self.close()
 
