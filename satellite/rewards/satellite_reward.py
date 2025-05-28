@@ -67,6 +67,7 @@ class TestReward(RewardFunction):
         r_q = self.alpha_q * 1.0 / (1.0 + phi)
         r_omega = self.alpha_omega * weight * (1.0 / (1.0 + omega_err))
         r_acc = self.alpha_acc * weight * (1.0 / (1.0 + acc_err))
+        
         return r_q + r_omega + r_acc
 
 class WeightedSumReward(RewardFunction):
