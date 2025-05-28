@@ -7,7 +7,7 @@ from isaacgym import gymapi
 from isaacgym import gymtorch
 import torch
 
-import sys
+import time
 import numpy as np
 from typing import Dict, Any, Tuple
 
@@ -18,17 +18,19 @@ class VecTask(Params):
         self.create_sim()
         
         self.viewer = None
-        if not self.headless:
+        if not self.headless and self.device_type != 'cpu':
+            self.last_frame_time: float = 0.0
             self.set_viewer()
         
         self.allocate_buffers()
         
-        self.gym.prepare_sim(self.sim)
-
     def create_sim(self) -> None:
+        torch._C._jit_set_profiling_mode(False)
+        torch._C._jit_set_profiling_executor(False)
         self.gym = gymapi.acquire_gym()
         self.sim = self.gym.create_sim(self.device_id, self.device_id, self.physics_engine, self.sim_params)
         self.create_envs(self.env_spacing, int(np.sqrt(self.num_envs)))
+        self.gym.prepare_sim(self.sim)
 
     def create_envs(self, spacing, num_per_row: int) -> None:
         self.asset = self.load_asset()
@@ -76,9 +78,9 @@ class VecTask(Params):
         self.reward_buf = torch.zeros(
             self.num_envs, device=self.device, dtype=torch.float)
         self.reset_buf = torch.zeros(
-            self.num_envs, device=self.device, dtype=torch.long)
+            self.num_envs, device=self.device, dtype=torch.int)
         self.timeout_buf = torch.zeros(
-             self.num_envs, device=self.device, dtype=torch.long)
+             self.num_envs, device=self.device, dtype=torch.int)
         self.progress_buf = torch.zeros(
             self.num_envs, device=self.device, dtype=torch.long)
 
@@ -93,6 +95,13 @@ class VecTask(Params):
         self.gym.draw_viewer(self.viewer, self.sim, True)
 
         self.gym.sync_frame_time(self.sim)
+
+        # Seems like in some cases sync_frame_time still results in higher-than-realtime framerate
+        # This code will slow down the rendering to real time
+        delta = time.time() - self.last_frame_time
+        if delta < self.dt:
+            time.sleep(self.dt - delta)
+        self.last_frame_time = time.time()
 
     def pre_physics_step(self, actions: torch.Tensor) -> None:        
         self.termination()
@@ -112,8 +121,10 @@ class VecTask(Params):
         self.pre_physics_step(actions)
 
         ######################################################################
+        if not self.headless and self.device_type != 'cpu':
+            self.render()
         self.gym.simulate(self.sim)
-        if self.device_type == "cpu":
+        if self.device_type == 'cpu':
             self.gym.fetch_results(self.sim, True)
         ######################################################################
         

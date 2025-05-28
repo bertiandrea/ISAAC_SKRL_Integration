@@ -28,9 +28,9 @@ class SatelliteConfig(BaseConfig):
     class env:  
         num_envs = NUM_ENVS
    
-        num_observations = 11 # [x,y,z,w, dx,dy,dz,dw, ax,ay,az]
+        num_observations = 14 # [x,y,z,w, dx,dy,dz,dw, ax,ay,az, actX,actY,actZ]
 
-        num_states = 14 # [x,y,z,w, dx,dy,dz,dw, vx,vy,vz, ax,ay,az]
+        num_states = 17 # [x,y,z,w, dx,dy,dz,dw, ax,ay,az, actX,actY,actZ, vx,vy,vz]
 
         num_actions = 3
         
