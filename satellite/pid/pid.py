@@ -27,12 +27,12 @@ class PID():
         self.clamp_i = clamp_i
         self.clamp_u = clamp_u
     
-    def update(self, error, setpoint, feedback = 0.0):
+    def update(self, error: torch.Tensor, feedback: torch.Tensor = 0.0) -> torch.Tensor:
         # Proportional action
         p_term = torch.matmul(self.Kp, error)
         
         # Derivative action (with low-pass filter)
-        lpf_fb = self.alpha*feedback + (1-self.alpha)*(self.prev_feedback)
+        lpf_fb = self.alpha*feedback + (1-self.alpha)*self.prev_feedback
         d_term = torch.matmul(self.Kd, (lpf_fb - self.prev_lpf_feedback) / self.dt) 
         d_term = torch.clamp(d_term, -self.clamp_d, self.clamp_d)
 
@@ -41,7 +41,7 @@ class PID():
         i_term = torch.matmul(self.Ki, self.integral)
         i_term = torch.clamp(i_term, -self.clamp_i, self.clamp_i)
 
-        u = p_term + i_term + d_term + setpoint
+        u = p_term + i_term + d_term
         u = torch.clamp(u, -self.clamp_u, self.clamp_u)
    
         self.prev_error[:] = error

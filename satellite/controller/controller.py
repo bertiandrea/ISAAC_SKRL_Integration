@@ -8,35 +8,26 @@ from isaacgym import gymtorch
 import torch
 
 class SatelliteAttitudeController:
-    def __init__(self, num_envs, device, dt, inertia_vals, pid_rate, pid_attitude):
+    def __init__(self, num_envs, device, dt, pid_rate, torque_tau=0.02):
         self.device = device
         self.num_envs = num_envs
         self.dt = dt
-        self.inertia = torch.tensor(inertia_vals, dtype=torch.float, device=self.device).unsqueeze(0).repeat(self.num_envs, 1)
         self.pid_rate = pid_rate
-        self.pid_attitude = pid_attitude
+        self.torque_tau = torque_tau
+        self.torque_cmd = torch.zeros((num_envs, 3), device=device, dtype=torch.float)
+        self.prev_torque = torch.zeros((num_envs, 3), device=device, dtype=torch.float)
 
-    def compute_control(self, ang_acc_des, ang_acc, ang_vel, quat, goal_quat, goal_ang_vel, goal_ang_acc):
-        quat_error = quat_diff(quat, goal_quat)
+    def compute_control(self, actions: torch.Tensor, measured_angvels: torch.Tensor) -> torch.Tensor:
+        rate_error = actions - measured_angvels
+        raw_torque = self.pid_rate.update(rate_error, actions, measured_angvels)
 
-        angvel_sp = self.pid_attitude.update(
-            error=quat_error,
-            setpoint=torch.zeros_like(quat_error),
-            feedback=quat_error
+        self.torque_cmd = (
+            self.torque_tau * raw_torque + (1 - self.torque_tau) * self.prev_torque
         )
+        self.prev_torque = self.torque_cmd.clone()
 
-        angvel_error = angvel_sp - ang_vel
-        
-        torque_fb = self.pid_rate.update(
-            error=angvel_error,
-            setpoint=angvel_sp,
-            feedback=ang_vel
-        )
-
-        torque = torque_fb + (self.inertia * ang_acc_des)
-
-        return torque
+        return self.torque_cmd
 
     def reset(self, env_ids):
+        self.prev_torque[env_ids] = 0.0
         self.pid_rate.reset(env_ids)
-        self.pid_attitude.reset(env_ids)
