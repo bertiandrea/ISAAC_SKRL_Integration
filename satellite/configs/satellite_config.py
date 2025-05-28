@@ -157,3 +157,15 @@ class SatelliteConfig(BaseConfig):
 
         class memory:
             rollouts = 16
+
+    class pid:
+        class rate:
+            kp = 0.5
+            ki = 0.0
+            kd = 0.1
+        class attitude:
+            kp = 0.5
+            ki = 0.0
+            kd = 0.1
+    class controller:
+        inertia = [1.0, 1.0, 1.0]
