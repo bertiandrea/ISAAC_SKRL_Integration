@@ -121,12 +121,11 @@ class SatelliteVec(VecTask):
         #######################################
     
     def compute_reward(self) -> None:
-        #self.reward_buf = self.reward_fn.compute(
-        #    self.satellite_quats, self.satellite_angvels, self.satellite_angacc,
-        #    self.goal_quat, self.goal_ang_vel, self.goal_ang_acc,
-        #    self.actions
-        #)
-        self.reward_buf = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
+        self.reward_buf = self.reward_fn.compute(
+            self.satellite_quats, self.satellite_angvels, self.satellite_angacc,
+            self.goal_quat, self.goal_ang_vel, self.goal_ang_acc,
+            self.actions
+        )
         print(f"[compute_reward]: reward_buf[0]={self.reward_buf[0].item():.2f}")
         print(f"[compute_reward]: reward_buf[1]={self.reward_buf[1].item():.2f}")
         print(f"[compute_reward]: reward_buf[2]={self.reward_buf[2].item():.2f}")
