@@ -27,9 +27,9 @@ class RewardFunction(ABC):
         # attitude error (radians)
         phi = quat_diff_rad(quats, goal_quat)
         # angular velocity error (rad/s)
-        omega_err = torch.norm(ang_vels - goal_ang_vel, dim=1)
+        omega_err = torch.norm(torch.sub(ang_vels, goal_ang_vel), dim=1)
         # angular acceleration error (rad/s^2)
-        acc_err = torch.norm(ang_accs - goal_ang_acc, dim=1)
+        acc_err   = torch.norm(torch.sub(ang_accs, goal_ang_acc), dim=1)
 
         assert not torch.isnan(phi).any() and not torch.isinf(phi).any(), "phi has NaN or Inf"
         assert not torch.isnan(omega_err).any() and not torch.isinf(omega_err).any(), "omega_err has NaN or Inf"
@@ -62,13 +62,43 @@ class TestReward(RewardFunction):
         #print(f"[compute_reward]: angle_diff[0]={math.degrees(phi[0].item()):.2f}° ang_vel_diff[0]={math.degrees(omega_err[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(acc_err[0].item()):.2f}°/s²")
         #print(f"[compute_reward]: angle_diff[1]={math.degrees(phi[1].item()):.2f}° ang_vel_diff[1]={math.degrees(omega_err[1].item()):.2f}°/s ang_acc_diff[1]={math.degrees(acc_err[1].item()):.2f}°/s²")
         #print(f"[compute_reward]: angle_diff[2]={math.degrees(phi[2].item()):.2f}° ang_vel_diff[2]={math.degrees(omega_err[2].item()):.2f}°/s ang_acc_diff[2]={math.degrees(acc_err[2].item()):.2f}°/s²")
-
-        weight = 1.0 / (1.0 + phi)
-        r_q = self.alpha_q * 1.0 / (1.0 + phi)
-        r_omega = self.alpha_omega * weight * (1.0 / (1.0 + omega_err))
-        r_acc = self.alpha_acc * weight * (1.0 / (1.0 + acc_err))
         
-        return r_q + r_omega + r_acc
+        # weight = 1.0 / (1.0 + phi)
+        weight   = torch.div(
+            torch.ones_like(phi),
+            torch.add(torch.ones_like(phi), phi)
+        )
+
+        # r_q = self.alpha_q * 1.0 / (1.0 + phi)
+        r_q      = torch.mul(self.alpha_q, weight)
+
+        # r_omega = self.alpha_omega * weight * (1.0 / (1.0 + omega_err))
+        r_omega  = torch.mul(
+            self.alpha_omega,
+            torch.mul(
+                weight,
+                torch.div(
+                    torch.ones_like(omega_err),
+                    torch.add(torch.ones_like(omega_err), omega_err)
+                )
+            )
+        )
+
+        # r_acc = self.alpha_acc * weight * (1.0 / (1.0 + acc_err))
+        r_acc    = torch.mul(
+            self.alpha_acc,  
+            torch.mul(
+                weight,
+                torch.div(
+                    torch.ones_like(acc_err),
+                    torch.add(torch.ones_like(acc_err), acc_err)
+                )
+            )
+        )
+
+        reward   = torch.add(torch.add(r_q, r_omega), r_acc)
+
+        return reward
 
 class WeightedSumReward(RewardFunction):
     """

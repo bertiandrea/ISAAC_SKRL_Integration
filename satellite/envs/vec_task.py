@@ -78,9 +78,9 @@ class VecTask(Params):
         self.reward_buf = torch.zeros(
             self.num_envs, device=self.device, dtype=torch.float)
         self.reset_buf = torch.zeros(
-            self.num_envs, device=self.device, dtype=torch.int)
+            self.num_envs, device=self.device, dtype=torch.bool)
         self.timeout_buf = torch.zeros(
-             self.num_envs, device=self.device, dtype=torch.int)
+             self.num_envs, device=self.device, dtype=torch.bool)
         self.progress_buf = torch.zeros(
             self.num_envs, device=self.device, dtype=torch.long)
 
@@ -118,7 +118,7 @@ class VecTask(Params):
 
         self.check_termination()
 
-        self.progress_buf += 1
+        self.progress_buf = torch.add(self.progress_buf, 1)
 
     def step(self, actions: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, Dict[str, Any]]:
         self.pre_physics_step(actions)
@@ -133,17 +133,17 @@ class VecTask(Params):
         
         self.post_physics_step()
         
-        return self.states_buf.to(self.device), \
-            self.reward_buf.view(-1, 1).to(self.device), \
-            self.reset_buf.view(-1, 1).to(self.device), \
-            self.timeout_buf.view(-1, 1).to(self.device), \
+        return self.states_buf, \
+            self.reward_buf.view(-1, 1), \
+            self.reset_buf.view(-1, 1), \
+            self.timeout_buf.view(-1, 1), \
             {}
 
     def reset(self):
-        ids = torch.arange(self.num_envs, device=self.device)
+        ids = torch.arange(self.num_envs, dtype=torch.int32, device=self.device)
         self.reset_idx(ids)
         
-        return self.states_buf.to(self.device), {}
+        return self.states_buf, {}
 
     def close(self) -> None:
         #print("Close Called")
