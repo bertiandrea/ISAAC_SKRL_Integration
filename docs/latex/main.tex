@@ -1,0 +1,1031 @@
+\documentclass[a4paper,oneside]{book}
+\linespread{1.5}
+\usepackage[left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[italian]{babel}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb,amsmath,color}
+\usepackage{cite}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{algorithmicx}
+\usepackage{pdfpages}
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[section]
+
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\leftmark}
+\fancyfoot[C]{\thepage}
+
+\tolerance=1
+\emergencystretch=\maxdimen
+\hyphenpenalty=10000
+\hbadness=10000
+
+\usepackage{underscore}
+\setlength\parindent{0pt}
+
+\usepackage{seqsplit}
+\usepackage{tcolorbox}
+\usepackage{listings}
+
+\usepackage{color}
+
+\graphicspath{{./figs/}}
+
+\usepackage{hyperref}
+\hypersetup{
+     colorlinks=true,
+     linkcolor=black,
+     urlcolor=blue,
+}
+
+\usepackage{dirtree}
+
+\newtcolorbox{redbox}[1]{
+colback=red!5!white,
+colframe=red!75,
+fonttitle=\bfseries,
+title=1,
+}
+
+
+\definecolor{lightgray}{gray}{0.95}
+
+\lstset{
+basicstyle=\ttfamily\footnotesize,
+showspaces=false,
+showstringspaces=false,
+columns=flexible,
+breaklines=true,
+breakatwhitespace=true,
+tabsize=4,
+backgroundcolor=\color{lightgray},
+numbersep=5pt
+}
+
+\begin{document}
+
+%%%%%% ABSTRACT %%%%%%%%%%
+
+\begin{center}
+	\chapter*{}
+	\thispagestyle{empty}
+	{\Huge\textbf{Abstract}}\\
+	\vspace{15mm}
+\end{center}
+
+Recent advancements in deep reinforcement learning have opened new strategies for developing intelligent and autonomous robots, such as unmanned aerial vehicles (UAVs). Drones are among the most agile UAVs and can solve highly dynamic tasks using flight policies learned through deep reinforcement learning techniques. Specifically, a neural network can be trained to directly map sensory data to control actions. 
+
+This end-to-end approach is capable of producing outputs with less latency and information loss compared to approaches that separate perception, planning, and control. For this reason, it represents a valid solution for agile flight. In addition, new parallel software simulators are capable of providing large volumes of high-quality data in a short amount of time, which can be used to rapidly learn control policies that are robust to domain transfers.
+
+In this thesis, a drone is trained using the deep reinforcement learning algorithm Proximal Policy Optimization (PPO), with three different reward functions. The resulting control policy emerges from the imposed constraints and the feedback provided during training. The outcomes are compared across randomized scenarios. The best policy achieves success rates of 97.52\% in the randomized training scenarios and 77.30\% in the test scenarios.
+
+The results demonstrate that a learning-based control stack, without any planning or sensing stages, can maneuver the quadrotor and solve agile tasks, even in previously unseen scenarios. These results pave the way for future developments to implement such solutions in real-world applications.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\tableofcontents\thispagestyle{empty}
+\listoffigures\thispagestyle{empty}
+
+%%%%%% INTRODUZIONE %%%%%%%%%%
+
+\chapter*{Introduction}
+\addcontentsline{toc}{chapter}{Introduction}
+\section*{Motivations}
+Recent breakthroughs in many engineering fields have highlighted what the near future may look like. Thanks to new discoveries in power management and battery manufacturing, we are now able to produce mobile platforms that can operate for days without servicing. With advancements in mechanical and electronic system design, powerful actuators, reliable sensors, and strong yet lightweight mechanical structures can be built to house fast and efficient microcontrollers—effectively giving them a physical body.
+
+Last but not least, new Artificial Intelligence (AI) paradigms and sophisticated optimization algorithms are achieving impressive results, reaching superhuman capabilities by leveraging large datasets, realistic physical simulations, and improved hardware accelerators for massively parallel computation.
+
+All of these are key enabling factors in the realization of autonomous and intelligent robotic systems, which have the potential to revolutionize human daily life. This new wave of intelligent robots will be able to fully replace humans in performing dangerous and repetitive tasks, expanding our possibilities and reshaping our societies—from how we perceive education and work to our place in the universe.
+
+Yet, we are not there yet. What is missing are reliable algorithms capable of enabling robots to understand and operate within a human-shaped world as we do.
+
+Quadrotors are a hot topic in the robotics community because they challenge engineers on multiple fronts. Due to their mechanical design, they are capable of performing high-speed maneuvers in complex environments, making them one of the most agile robotic platforms. However, lightness comes at a cost: flight autonomy is limited by the small batteries and their low energy density. Furthermore, hovering in air requires controlling an unstable and highly nonlinear system with the limited computational power of embedded systems. These challenges make quadcopters ideal benchmarks for testing robotic autonomy and extreme dynamical performance.
+
+Deep Reinforcement Learning (DRL) techniques have recently demonstrated their capability to master intricate strategies and control complex systems to reach desired goals, thanks to the contributions of numerous research labs and major tech companies.
+
+DRL is based on a simple idea: robots can learn from experience by interacting with their environment and being guided by rewards toward a solution. This makes DRL one of the most promising tools for achieving robotic intelligence and autonomous drone navigation. In particular, the Proximal Policy Optimization (PPO) algorithm, a state-of-the-art DRL method, has shown great effectiveness in training neural networks (NNs) for robotic applications.
+
+One key enabler of the widespread use of these techniques is the recent advancement of simulation software. These simulators partially address a major limitation: the massive quantity of training data and trial-and-error cycles required to learn a feasible policy—something that would be impractical in real-world training alone.
+
+\section*{Contribution}
+
+The primary goal of this thesis is to lay the foundation for a robotic learning framework capable of discovering complex, agile behaviors through environmental interaction—similar to how humans and animals learn. For instance, animals learn to find food by imitating others and satisfying their hunger, which serves as a reward.
+
+This study focuses on a specific application of that broader goal: how a quadrotor can learn agile flight by leveraging Deep Reinforcement Learning techniques. Agile flight is evaluated by testing the drone's ability to traverse a fast-moving gate to reach a spatial target without collisions—similar to how a human pilot would perform.
+
+The navigation policy is learned using a neural network trained to map state observations directly into low-level motor control commands to steer the platform toward the goal. No explicit perception, trajectory planning, or model-based control is used.
+
+The agile flight setup is created using the Nvidia Isaac Gym simulator, a tool that runs entirely on Nvidia GPUs to generate massive numbers of parallel environments with realistic physics. This enables significant speedup in neural network training convergence.
+
+This research is significant as it opens new avenues for robotic autonomy. The robot can discover a wide range of behaviors and policies that emerge from environmental constraints and are difficult to engineer explicitly. Additionally, the policy is learned in a high-fidelity, randomized environment—an essential step toward zero-shot sim-to-real transfer. This paves the way for robust and general frameworks for the fast development and prototyping of high-performance robotic systems, with minimal manual tuning.
+
+\section*{Organization}
+
+This thesis begins with Chapter~1, which introduces the theoretical concepts necessary to understand the experimental setup and the mechanisms that enable learning in robots. Chapter~2 presents a review of some of the most successful works in agile drone flight, especially those that use learning-based approaches. This provides context and outlines the research that inspired this thesis.
+
+Chapter~3 details the experimental setup, including the design decisions made to ensure efficient experimentation. Chapter~4 discusses the results, comparing different solutions to determine how autonomous and intelligent navigation can be achieved in challenging scenarios.
+
+The thesis concludes with final remarks and directions for future work.
+
+\newpage
+
+\chapter{Background}
+In this chapter, the key concepts needed to understand and build autonomous robotic systems will be examined.
+
+\begin{itemize}
+    \item \textbf{Section 1.1} introduces the core concepts behind Artificial Intelligence (AI), focusing on how neural networks can be trained to perform intelligent tasks.
+    
+    \item \textbf{Section 1.2} describes the reinforcement learning framework and presents some of the most promising algorithms currently used to implement it.
+    
+    \item \textbf{Section 1.3} derives the dynamical model of a drone and discusses methodologies for achieving autonomous navigation.
+    
+    \item \textbf{Section 1.4} reviews fundamental concepts of simulation environments and presents various software tools commonly used for simulating robotic systems.
+\end{itemize}
+\section{Deep Learning}
+The core challenge that Artificial Intelligence (AI) tackles is enabling computers to solve tasks that are easy for humans to perform but difficult to describe formally. The solution to this problem lies in allowing machines to learn from experience and understand the world through a hierarchy of concepts, as illustrated in Figure~\ref{fig:concept_hierarchy}, where each concept is defined in relation to simpler ones~\cite{ref10}.
+
+If we draw a graph to represent this hierarchy, it would reveal a structure in which nodes are built on top of one another, forming a deep graph. This layered structure is the basis for the AI technique known as \textit{Deep Learning} (DL).
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{concept_hierarchy.png}
+    \caption{Hierarchical representation of concepts in Deep Learning.}
+    \label{fig:concept_hierarchy}
+\end{figure}
+\subsection{Deep Neural Networks}
+Deep Neural Networks (DNNs) are the core components of many modern learning techniques. Their goal is to approximate a function \( y = f(x) \), where \( x \) represents the input (features), and \( y \) the output (labels). A neural network defines a mapping \( y = f(x, \theta) \), where \( \theta \) represents the parameters that are optimized during training. The training phase aims to find the set of parameters that best approximate the target function \( f \).
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.85\textwidth]{faces_hierarchy.png}
+    \caption{Hierarchical representations of face image features learned with deep networks~\cite{ref11}. Left: edges. Center: face parts. Right: full faces.}
+    \label{fig:faces_hierarchy}
+\end{figure}
+
+DNNs are called ``networks'' because they consist of a composition of multiple functions arranged in layers. These networks are commonly represented as directed acyclic graphs (DAGs), where each node corresponds to a computation. The input layer receives data whose dimensionality matches the input space, while the output layer's dimension corresponds to the task's output. Between them, there can be an arbitrary number of \textit{hidden layers}. The more hidden layers, the \textit{deeper} the network.
+
+Each layer applies a vector-to-vector function, and the network as a whole can model highly complex input-output relationships. 
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.75\textwidth]{dnn_neurons.png}
+    \caption{Neuron units in a DNN with four hidden layers.}
+    \label{fig:dnn_neurons}
+\end{figure}
+
+These networks are termed ``neural'' because they are inspired by neuroscience. Each layer can be viewed as composed of many parallel computational units called \textit{neurons}, as shown in Figure~\ref{fig:dnn_neurons}. A neuron receives multiple inputs and produces a single output. This mimics the structure of biological neurons, which collect inputs from other neurons via dendrites and send outputs via an axon.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.55\textwidth]{neuron_operations.png}
+    \caption{Input-output operations performed by neuron \( j \).}
+    \label{fig:neuron_operations}
+\end{figure}
+
+Figure~\ref{fig:neuron_operations} shows the operations performed by a neuron \( j \) in the network. The neuron's total input \( x_j \) is computed as a weighted sum of outputs from connected neurons \( y_i \), plus a bias term:
+
+\begin{align}
+x_j = \sum_i y_i w_{ji} + b_j \label{eq:neuron_input}
+\end{align}
+
+The output \( y_j \) of neuron \( j \) is then obtained by applying a nonlinear \textit{activation function} \( f \):
+
+\begin{align}
+y_j = f(x_j) \label{eq:activation}
+\end{align}
+
+The activation function is critical; without it, deep networks would collapse into simple linear models regardless of depth. The \textit{Universal Approximation Theorem}~\cite{ref12} states that a feedforward network with at least one hidden layer and a nonlinear activation function can approximate any continuous function under certain conditions. This establishes the theoretical need for both depth and nonlinearity.
+
+\subsection*{Learning Paradigms}
+
+To improve the parameter estimates \( \theta \) and learn the correct mapping for a given task, the neural network (or agent) may or may not require feedback. Based on the type and presence of feedback, we can categorize learning into three main paradigms:
+
+\begin{itemize}
+    \item \textbf{Unsupervised Learning}
+    \item \textbf{Supervised Learning}
+    \item \textbf{Reinforcement Learning}
+\end{itemize}
+
+\paragraph{Unsupervised Learning.}
+In unsupervised learning, the model receives no explicit output labels. It must discover hidden structures or patterns in the input data. A common task is \textit{clustering}, which involves identifying underlying groups or distributions in the data.
+
+\paragraph{Supervised Learning.}
+In supervised learning, the model is given input-output pairs and must learn the underlying mapping between them. Each training example is associated with a label—the correct output for that input. While the target output for each example is known, the behavior of the hidden layers is not specified. It is the role of the learning algorithm to discover how to configure the hidden layers to produce the correct output at the end.
+
+\paragraph{Reinforcement Learning.}
+In reinforcement learning (RL), the agent does not learn from predefined input-output examples but instead learns from feedback in the form of rewards or penalties. There is no labeled dataset; the agent generates its own data through interaction with the environment. It must determine which actions were responsible for receiving positive or negative feedback and adjust its strategy accordingly.
+
+\subsection{Training}
+In both supervised and reinforcement learning, the algorithm adopted to learn the parameters \( \theta \), which characterize the function \( y = f(x, \theta) \), is based on evaluating the output that the neural network produces, denoted \( \hat{y} = f(x, \theta) \), known as the predicted value.
+
+To obtain the output, an input sample \( x \) is fed into the neural network and propagates from the input layer to the output layer, producing \( \hat{y} \). This process is called \textit{forward propagation}, as described by Equations~\eqref{eq:neuron_input} and~\eqref{eq:activation}.
+
+The prediction is evaluated using a cost function \( \mathcal{L}(y, \hat{y}) \), known as the \textit{loss function}. This scalar function measures the difference between the predicted output \( \hat{y} \) and the provided feedback \( y \) (either labels or rewards). The loss function quantifies a metric to be minimized—such as classification error—or maximized—such as accumulated reward.
+
+Typically, the total loss includes a primary term (e.g., prediction error) and a \textit{regularization} term, which improves generalization to unseen data. If a model fails to generalize, it is said to be \textit{overfitted}. Generalization is fundamental for reliable algorithms in real-world applications.
+
+Given a loss function, the parameters are learned by minimizing it:
+
+\begin{equation}
+\min_{\theta} \mathcal{L}(y, \hat{y}(\theta))
+\label{eq:loss_min}
+\end{equation}
+
+This minimization is performed using \textit{gradient descent}: parameters are updated in the direction of steepest descent of the loss surface. The update rule is:
+
+\begin{equation}
+\theta \leftarrow \theta - \eta \nabla_\theta \mathcal{L}
+\label{eq:gradient_descent}
+\end{equation}
+
+where \( \eta \) is the \textit{learning rate}, determining the step size in parameter space.
+
+Computing the gradient \( \nabla_\theta \mathcal{L} \) efficiently is non-trivial in deep networks. Fortunately, the \textit{backpropagation algorithm}, originally popularized in, performs this computation using the chain rule of calculus.
+
+During a training step, the output yields a scalar cost via the loss function. Backpropagation enables this information to flow backward through the network, adjusting parameters to minimize \( \mathcal{L} \).
+
+\paragraph{Loss Derivatives:}
+
+The gradient is calculated by differentiating the loss with respect to each network parameter. First, define the total loss over predictions as:
+
+\begin{equation}
+\mathcal{L} = \frac{1}{2} \sum_{c} \sum_{j} (y_{j,c} - d_{j,c})^2
+\label{eq:loss_function}
+\end{equation}
+
+Here, \( c \) indexes input-output pairs, \( j \) indexes output neurons, \( y_{j,c} \) is the actual output, and \( d_{j,c} \) is the desired output (label).
+
+The derivative of the loss with respect to output \( y_j \) is:
+
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial y_j} = y_j - d_j
+\label{eq:loss_derivative_output}
+\end{equation}
+
+Using the chain rule, the derivative with respect to the neuron's total input \( x_j \) becomes:
+
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial x_j} = \frac{\partial \mathcal{L}}{\partial y_j} \cdot \frac{dy_j}{dx_j}
+\label{eq:chain_rule}
+\end{equation}
+
+To compute this, the activation function \( f(x) \) must be differentiable. The derivative \( \frac{dy_j}{dx_j} \) is substituted based on the chosen activation function.
+
+From Equation~\eqref{eq:neuron_input}, the input \( x_j \) is a linear function of the outputs \( y_i \) of previous neurons and weights \( w_{ji} \):
+
+\begin{equation}
+x_j = \sum_i y_i w_{ji} + b_j
+\end{equation}
+
+The gradient with respect to the weight \( w_{ji} \) is:
+
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial w_{ji}} = \frac{\partial \mathcal{L}}{\partial x_j} \cdot \frac{\partial x_j}{\partial w_{ji}} = \frac{\partial \mathcal{L}}{\partial x_j} \cdot y_i
+\label{eq:gradient_weight}
+\end{equation}
+
+The contribution of unit \( i \) to the loss via its influence on unit \( j \) is:
+
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial y_i} = \frac{\partial \mathcal{L}}{\partial x_j} \cdot \frac{\partial x_j}{\partial y_i} = \frac{\partial \mathcal{L}}{\partial x_j} \cdot w_{ji}
+\label{eq:gradient_output}
+\end{equation}
+
+Considering all neurons \( j \) to which neuron \( i \) is connected, the total contribution is:
+
+\begin{equation}
+\frac{\partial \mathcal{L}}{\partial y_i} = \sum_j \frac{\partial \mathcal{L}}{\partial x_j} \cdot w_{ji}
+\label{eq:full_gradient}
+\end{equation}
+
+These recursive formulas allow us to propagate gradients layer-by-layer, enabling efficient computation of the total gradient \( \nabla_\theta \mathcal{L} \). This makes it possible to update all parameters through backpropagation and gradient descent.
+
+\section{Deep Reinforcement Learning}
+Deep Reinforcement Learning (DRL) is an artificial intelligence technique in which an agent learns to accomplish a task by interacting with its environment through trial and error.
+
+This learning paradigm does not fall strictly under either supervised or unsupervised learning. It differs from supervised learning in that the feedback used to train the neural network is not derived from a pre-labeled dataset. Instead, the data used for learning are gathered during the training process itself. On the other hand, it also diverges from unsupervised learning because reinforcement learning incorporates feedback—rewards or penalties—throughout the training process.
+
+Reinforcement learning (RL) problems can be described as a system comprising two main components: an \textit{agent} and an \textit{environment}, as illustrated in Figure~\ref{fig:rl_loop}.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{agent_environment_loop.png}
+    \caption{Agent-environment interaction in a reinforcement learning loop.}
+    \label{fig:rl_loop}
+\end{figure}
+
+The environment produces a \textit{state} \( s_t \), which describes the current situation of the system. This state belongs to the \textit{state space}, the set of all possible states the environment may encounter. States can be represented in various forms: integers, real values, vectors, matrices, or even structured and unstructured data.
+
+The agent observes the current state (or part of it) and selects an \textit{action} \( a_t \) based on this observation. The action is chosen from the \textit{action space}, which defines all permissible actions the agent can take. Action spaces can be:
+
+\begin{itemize}
+    \item \textbf{Discrete}, where actions are selected from a finite set (e.g., \( \{0, 1, 2\} \)),
+    \item \textbf{Continuous}, where actions take values in a continuous domain (e.g., \( \mathbb{R}^n \)).
+\end{itemize}
+
+Once the agent selects an action, the environment transitions to a new state and returns a scalar \textit{reward} \( r_t \), which reflects the quality of the taken action. The reward can be positive, negative, or zero, depending on the outcome.
+
+Each interaction cycle—comprising a state \( s_t \), an action \( a_t \), and a reward \( r_t \)—constitutes one time step \( t \). This process continues either until a terminal state is reached or a maximum time step \( T \) is exceeded.
+
+The primary objective in reinforcement learning is to learn a policy that maximizes the cumulative reward over time. The policy \( \pi \) is the agent’s strategy for selecting actions given states or observations, i.e.,
+
+\[
+\pi(a \mid s) = \text{Probability of taking action } a \text{ given state } s
+\]
+
+In deep reinforcement learning, a neural network is often used to approximate the policy function, making it the core of the agent in the learning loop.
+
+The sequence of agent-environment interactions unfolds over time as a series of experiences, where each \textit{experience} is defined as a tuple:
+
+\[
+(s_t, a_t, r_t)
+\]
+
+These experiences accumulate into an \textit{episode}, which spans from time step \( t = 0 \) to termination. The ordered sequence of experiences is called a \textit{trajectory}:
+
+\[
+\tau = [(s_0, a_0, r_0), (s_1, a_1, r_1), \ldots, (s_T, a_T, r_T)]
+\]
+
+This interaction process can be viewed as a sequential decision-making problem. The standard mathematical framework used to model such systems is the \textit{Markov Decision Process} (MDP), which provides the foundation for modern RL algorithms.
+
+\subsection{DRL as Markov Decision Process}
+The \textit{transition function} defines the rule by which the environment transitions from one state to the next. This function can be viewed as a probability distribution that depends on the entire history of states and actions observed since the beginning of the episode:
+
+\begin{equation}
+s_{t+1} \sim P(s_{t+1} \mid (s_0, a_0), (s_1, a_1), \dots, (s_t, a_t))
+\label{eq:transition_full}
+\end{equation}
+
+As shown in Equation~\eqref{eq:transition_full}, the next state is sampled from a complex probability distribution conditioned on all previous state-action pairs. For long episodes, this dependency becomes computationally intractable, making it difficult to model the transition function or derive a suitable policy.
+
+To make the problem more manageable, we assume the \textit{Markov property}, which states that the transition to the next state \( s_{t+1} \) depends only on the current state \( s_t \) and action \( a_t \). With this assumption, the transition function simplifies to:
+
+\begin{equation}
+s_{t+1} \sim P(s_{t+1} \mid s_t, a_t)
+\label{eq:markov_transition}
+\end{equation}
+
+Despite being a simplification, many real-world systems can still be modeled this way if the state is defined to include all the information necessary to determine the future evolution of the system. This ensures that the Markov property holds.
+
+However, in some settings, the agent cannot observe the true state of the environment. Instead, it receives a partial observation. This leads to a formulation known as a \textit{Partially Observable Markov Decision Process} (POMDP), where the Markov assumption does not hold. In such cases, additional methods are used—e.g., feeding past observations into the model—to compensate for the missing information.
+
+A Markov Decision Process (MDP) is formally defined by a 4-tuple:
+
+\begin{itemize}
+    \item \( \mathcal{S} \): the set of all possible states,
+    \item \( \mathcal{A} \): the set of all possible actions,
+    \item \( P(s_{t+1} \mid s_t, a_t) \): the transition function,
+    \item \( R(s_t, a_t, s_{t+1}) \): the reward function, assigning scalar feedback \( r_t \) for each transition.
+\end{itemize}
+
+The agent does not have access to the transition and reward functions directly. It must infer them through interaction with the environment, receiving rewards in response to actions taken in particular states.
+
+\subsection*{Return and Objective}
+
+As discussed earlier, the goal of the agent is to maximize the cumulative reward obtained over an episode. This can be formalized using the concept of \textit{return}, defined over a trajectory \( \tau \) that ends at time step \( T \):
+
+\begin{equation}
+R(\tau) = r_0 + \gamma r_1 + \gamma^2 r_2 + \dots + \gamma^T r_T = \sum_{t=0}^T \gamma^t r_t, \quad \gamma \in [0, 1]
+\label{eq:return}
+\end{equation}
+
+The discount factor \( \gamma \) determines how much future rewards contribute to the total return. A small \( \gamma \) places more emphasis on immediate rewards, while a value close to 1 gives more weight to long-term rewards.
+
+The agent's objective is to find a policy \( \pi \) that maximizes the expected return. This objective can be written as:
+
+\begin{equation}
+J(\pi) = \mathbb{E}_{\tau \sim \pi} \left[ R(\tau) \right] = \mathbb{E}_{\tau \sim \pi} \left[ \sum_{t=0}^T \gamma^t r_t \right]
+\label{eq:objective}
+\end{equation}
+
+The value of \( \gamma \) influences the behavior of the learned policy: for low values, the agent prioritizes short-term rewards; for higher values, it focuses on maximizing long-term returns. Choosing an appropriate \( \gamma \) depends on the specific task and environment dynamics.
+
+\subsection{Q- and V- Functions}
+There are three primary functions that can be learned during training in reinforcement learning:
+
+\begin{enumerate}
+    \item \textbf{The policy} \( \pi \), which maps states to actions.
+    \item \textbf{The environment model} \( P(s_{t+1} \mid s_t, a_t) \), the transition function.
+    \item \textbf{The value function} \( V^\pi(s) \) or \( Q^\pi(s, a) \), which estimate expected return and guide learning.
+\end{enumerate}
+
+\paragraph{Policy.} The policy \( \pi \) is the core function that the agent learns to maximize the objective. A common approach is to define \( \pi \) as a \textit{stochastic policy}, which allows the agent to output a probability distribution over actions given a state. This stochasticity helps balance the exploration-exploitation trade-off:
+
+\begin{itemize}
+    \item \textbf{Exploration} enables the agent to try different actions, potentially discovering better strategies, even at the cost of short-term performance.
+    \item \textbf{Exploitation} leverages known high-reward actions to improve performance based on past experience.
+\end{itemize}
+
+The right balance between exploration and exploitation is critical for training success: exploration enables the agent to visit diverse and potentially optimal states, while exploitation ensures steady performance improvement.
+
+\paragraph{Transition Function.} The transition model \( P(s_{t+1} \mid s_t, a_t) \) provides predictive information about the environment. Learning this model allows the agent to simulate future states and plan actions accordingly—an essential component in \textit{model-based} reinforcement learning.
+
+\paragraph{Value Functions.} Value functions encapsulate knowledge about the objective and help the agent estimate the long-term utility of states and actions. They serve as internal critics, guiding the policy toward regions of higher expected reward.
+
+\subsection*{State Value Function}
+
+The \textit{state value function} \( V^\pi(s) \) estimates how good it is to be in state \( s \) under policy \( \pi \), defined as the expected return starting from \( s \) and following \( \pi \):
+
+\begin{equation}
+V^\pi(s) = \mathbb{E}_{s_0 = s, \pi} \left[ \sum_{t=0}^T \gamma^t r_t \right]
+\label{eq:v_function}
+\end{equation}
+
+This function provides a forward-looking measure: it ignores past rewards and only considers the expected future cumulative return.
+
+\subsection*{Action-Value Function}
+
+The \textit{action-value function} \( Q^\pi(s, a) \) estimates the expected return of taking action \( a \) in state \( s \), and then continuing to act according to policy \( \pi \):
+
+\begin{equation}
+Q^\pi(s, a) = \mathbb{E}_{s_0 = s, a_0 = a, \pi} \left[ \sum_{t=0}^T \gamma^t r_t \right]
+\label{eq:q_function}
+\end{equation}
+
+This function captures both the immediate reward and the future rewards resulting from following the policy after taking action \( a \).
+
+\subsection*{Relationship Between \( V^\pi \) and \( Q^\pi \)}
+
+The two functions are closely related. The value of a state under policy \( \pi \) is the expected Q-value over all actions weighted by the policy’s action probabilities:
+
+\begin{equation}
+V^\pi(s) = \mathbb{E}_{a \sim \pi(\cdot \mid s)} \left[ Q^\pi(s, a) \right]
+\label{eq:v_from_q}
+\end{equation}
+
+Conversely, the Q-function can be expressed in terms of the immediate reward and the value of the subsequent state:
+
+\begin{equation}
+Q^\pi(s, a) = \mathbb{E} \left[ r_t + \gamma r_{t+1} + \gamma^2 r_{t+2} + \dots + \gamma^n r_{t+n} + \gamma^{n+1} V^\pi(s_{t+n+1}) \right]
+\label{eq:q_from_v}
+\end{equation}
+
+Thus, using Equation~\eqref{eq:q_from_v}, one can derive \( Q^\pi \) from \( V^\pi \) and vice versa, making these functions fundamental and mutually supportive in reinforcement learning algorithms.
+
+
+\subsection{DRL Algorithms}
+There exist three major families of deep reinforcement learning (DRL) algorithms, each corresponding to one of the key learnable functions in reinforcement learning: \textbf{policy-based}, \textbf{value-based}, and \textbf{model-based} algorithms.
+
+\subsection*{Policy-Based Algorithms}
+
+Algorithms in the policy-based family learn the action-producing function directly—i.e., the policy \( \pi \). These methods are general-purpose optimization techniques, capable of handling:
+
+\begin{itemize}
+    \item Discrete action spaces,
+    \item Continuous action spaces,
+    \item Hybrid action spaces.
+\end{itemize}
+
+A major advantage is that they directly optimize the agent’s objective \( J(\pi) \), which depends on the expected return. By maximizing the return, they optimize the policy explicitly. Furthermore, policy-based methods are guaranteed to converge to a \textit{locally optimal} policy under certain conditions, as established by the \textit{Policy Gradient Theorem}~\cite{ref16}.
+
+However, these methods also have key drawbacks:
+
+\begin{itemize}
+    \item They suffer from \textbf{high variance} in gradient estimates~\cite{ref17}, leading to unstable training dynamics.
+    \item They are typically \textbf{sample-inefficient}, as they rely heavily on fresh data and discard past trajectories.
+\end{itemize}
+
+\subsection*{Value-Based Algorithms}
+
+Value-based methods learn a value function—typically \( Q^\pi(s, a) \)—and derive a policy indirectly by selecting actions that maximize the estimated value. This allows them to:
+
+\begin{itemize}
+    \item Reuse past experience more effectively,
+    \item Be more sample-efficient than policy-based methods.
+\end{itemize}
+
+Nonetheless, they come with limitations:
+
+\begin{itemize}
+    \item There is no formal guarantee of convergence to an optimal policy,
+    \item Most practical implementations are restricted to \textbf{discrete action spaces}.
+\end{itemize}
+
+\subsection*{Model-Based Algorithms}
+
+Model-based methods either learn the environment's transition dynamics or assume a known model. With access to such a model, the agent can simulate trajectories offline and evaluate many possible outcomes before acting.
+
+This approach has the following benefits:
+
+\begin{itemize}
+    \item Greatly reduced need for environment interactions,
+    \item Ideal for situations where data collection is costly or limited.
+\end{itemize}
+
+However, they are hindered by:
+
+\begin{itemize}
+    \item The difficulty of learning an accurate model,
+    \item \textbf{Compounding error}—predictions become increasingly unreliable when propagated far into the future.
+\end{itemize}
+
+\subsection*{Hybrid Approaches: Actor-Critic Methods}
+
+To combine the strengths of the above approaches and mitigate their individual weaknesses, \textit{hybrid} algorithms have been proposed. The most popular of these are \textbf{Actor-Critic (AC)} methods.
+
+Actor-Critic algorithms simultaneously learn:
+
+\begin{itemize}
+    \item A \textbf{policy} (the actor), which selects actions,
+    \item A \textbf{value function} (the critic), which provides more stable feedback by estimating expected returns.
+\end{itemize}
+
+The critic helps the actor by providing informative gradients, reducing variance and improving learning efficiency. The name \textit{Actor-Critic} derives from this cooperative dynamic: the \textit{critic} evaluates the \textit{actor}'s behavior and helps shape the learning updates accordingly.
+
+
+\subsection{Advanced Actor-Critic (A2C)}
+
+The Advantage Actor-Critic (A2C) algorithm belongs to the class of combined Actor-Critic (AC) methods. The core structure of all AC algorithms consists of two components:
+
+\begin{itemize}
+\item \textbf{The Actor}: learns a parameterized policy $\pi_\theta$.
+\item \textbf{The Critic}: learns a value function to evaluate state-action pairs and provide a learning signal to the actor.
+\end{itemize}
+
+The value function offers a richer signal than sparse rewards by estimating future returns, thus guiding the actor more effectively.
+
+Both the policy and value functions are modeled using deep neural networks. These are often implemented as a shared architecture with two heads: one for the policy (actor) and one for the value (critic). Sharing lower layers allows both components to learn a shared representation of the state space, while maintaining task-specific outputs.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.7\textwidth]{ac\_architecture.png}
+    \caption{Actor-Critic network architectures: shared vs. separate networks.}
+    \label{fig\:ac\_architecture}
+\end{figure}
+
+\subsection{Actor: Policy Optimization}
+
+The actor optimizes a parameterized policy $\pi_\theta$ using the policy gradient method. The objective is:
+
+\begin{equation}
+    \max\_\theta J(\theta) = \mathbb{E}[R(\tau)]
+    \label{eq\:policy\_objective}
+\end{equation}
+
+This is solved via gradient ascent:
+
+\begin{equation}
+\theta \leftarrow \theta + \eta \nabla\_\theta J(\theta)
+\label{eq\:policy\_update}
+\end{equation}
+
+Using the identity:
+
+\begin{equation}
+\nabla\_\theta \mathbb{E}*{x \sim p(x|\theta)}[f(x)] = \mathbb{E}[f(x) \nabla*\theta \log p(x|\theta)]
+\label{eq\:score\_function}
+\end{equation}
+
+The policy gradient can be expressed as:
+
+\begin{equation}
+\nabla\_\theta J(\theta) = \mathbb{E}*t [A*\pi(s\_t, a\_t) \nabla\_\theta \log \pi\_\theta(a\_t | s\_t)]
+\label{eq\:policy\_gradient}
+\end{equation}
+
+To handle continuous actions, the policy $\pi_\theta$ is modeled as a Gaussian distribution with learned mean $\mu$ and variance $\sigma^2$. The log-probability for a sampled action $a_t \sim \mathcal{N}(\mu, \sigma^2)$ is:
+
+\begin{equation}
+\log \pi\_\theta(a\_t | s\_t) = -\frac{(a\_t - \mu)^2}{2\sigma^2} - \log(\sigma\sqrt{2\pi})
+\label{eq\:gaussian\_log\_prob}
+\end{equation}
+
+As learning progresses, the mean centers around high-reward actions and the variance shrinks to exploit promising regions (see Figure\~\ref{fig\:actor_learning}).
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.75\textwidth]{actor_learning.png}
+\caption{Actor learning the policy as a Gaussian distribution.}
+\label{fig\:actor\_learning}
+\end{figure}
+
+\subsection{Critic: Advantage Estimation}
+
+The critic estimates the \textit{advantage function}:
+
+\begin{equation}
+A\_\pi(s\_t, a\_t) = Q\_\pi(s\_t, a\_t) - V\_\pi(s\_t)
+\label{eq\:advantage\_function}
+\end{equation}
+
+This captures how much better or worse an action is compared to the expected return of the state. If all actions are equally valuable, the advantage is zero: $\mathbb{E}_a [A_\pi(s, a)] = 0$.
+
+To reduce computation, the critic estimates only $V_\pi$, and $Q_\pi$ is approximated using \textit{n-step returns}:
+
+\begin{equation}
+Q\_\pi(s\_t, a\_t) \approx \sum\_{i=0}^{n-1} \gamma^i r\_{t+i} + \gamma^n \hat{V}*\pi(s*{t+n})
+\label{eq\:n\_step\_return}
+\end{equation}
+
+The advantage estimate becomes:
+
+\begin{equation}
+A\_\pi(s\_t, a\_t) = \left( \sum\_{i=0}^{n-1} \gamma^i r\_{t+i} + \gamma^n \hat{V}*\pi(s*{t+n}) \right) - \hat{V}\_\pi(s\_t)
+\label{eq\:advantage\_estimate}
+\end{equation}
+
+This balances bias and variance: the immediate rewards are unbiased but high variance, and the value function is biased but low variance.
+
+\subsection{Training the Critic}
+
+The critic is trained using \textit{Temporal Difference (TD)} learning. The n-step return becomes the training target:
+
+\begin{equation}
+V\_{\text{target}}(s\_t) = \sum\_{i=0}^{n-1} \gamma^i r\_{t+i} + \gamma^n \hat{V}*\pi(s*{t+n})
+\label{eq\:td\_target}
+\end{equation}
+
+A regression loss such as Mean Squared Error (MSE) is used to minimize the difference between the predicted $\hat{V}_\pi(s_t)$ and the target.
+
+Combining the actor and critic with this training scheme results in the full A2C algorithm.
+
+
+\subsection{Proximal Policy Optimization (PPO)}
+\section{Proximal Policy Optimization (PPO)}
+
+One of the main challenges in training agents with policy gradient algorithms is the risk of \textit{performance collapse}. This occurs when, after a network update, the agent's performance degrades significantly. Poor performance results in the generation of low-quality trajectories, which are then used to update the policy further—leading to a feedback loop of degradation.
+
+This collapse stems from the indirect optimization of the policy. Specifically, policy gradients search in the \textit{parameter space} of the neural network, not directly in the \textit{policy space}. Because the mapping between parameter space and policy space is typically \textit{non-isometric}, small changes in parameters can yield disproportionately large and potentially detrimental changes in the resulting policy.
+
+\textit{Proximal Policy Optimization} (PPO), introduced by Schulman et al.\~\cite{ref5}, addresses this instability by modifying the A2C objective. The goal is to ensure \textit{monotonic policy improvement} by introducing a new objective function known as the \textbf{surrogate objective}, which evaluates the ratio between the new and old policy probabilities scaled by the advantage:
+
+\begin{equation}
+J(\theta) = \mathbb{E}*t \left\[ \frac{\pi*\theta(a\_t | s\_t)}{\pi\_{\theta\_{\text{old}}}(a\_t | s\_t)} A\_t^{\text{old}} \right]
+\label{eq\:ppo\_surrogate}
+\end{equation}
+
+However, directly maximizing this expression can still result in large policy updates. To mitigate this, PPO introduces the \textbf{clipped surrogate objective}. Defining the probability ratio:
+
+\begin{equation}
+r\_t(\theta) = \frac{\pi\_\theta(a\_t | s\_t)}{\pi\_{\theta\_{\text{old}}}(a\_t | s\_t)}
+\label{eq\:ppo\_ratio}
+\end{equation}
+
+the clipped objective becomes:
+
+\begin{equation}
+J\_{\text{clip}}(\theta) = \mathbb{E}\_t \left\[ \min \left( r\_t(\theta) A\_t, \text{clip}(r\_t(\theta), 1 - \epsilon, 1 + \epsilon) A\_t \right) \right]
+\label{eq\:ppo\_clipped}
+\end{equation}
+
+This formulation constrains the policy update by clipping $r_t(\theta)$ to the interval $[1 - \epsilon, 1 + \epsilon]$, where $\epsilon$ is a hyperparameter. This mechanism discourages drastic policy changes, ensuring more stable and reliable learning.
+
+
+\section{Satellite Modeling and Control}
+Most of the research in autonomous drone navigation has the objective to push the
+maximum physical limit of these systems and achieve what is called agile flight. This is
+a very demanding goal because of the difficulties in controlling a resource-constrained
+flying platform.
+Exploiting the hardware’s maximum performances is useful to accomplish missions
+in highly dynamic scenarios such as outdoor environments, or is needed to minimize
+the amount of time required to execute the task, for example, to win a drone race
+competition. Executing a task faster is also a way to limit the battery life constraint
+and is vital in life-threatening situations, for example when quadrotors are used in
+search-and-rescue scenarios.
+
+\subsection{Satellite Dynamics}
+In order to be able to design a control stack for agile drone flight, the dynamical behavior of the hardware platform has to be characterized. A quadrotor can be modeled using the following dynamical equations~\cite{reference20}:
+\begin{align}
+\dot{\mathbf{r}} &= \mathbf{v} \tag{1.34} \\
+\dot{\mathbf{v}} &= \mathbf{g} + \mathbf{R} \cdot \mathbf{c} \tag{1.35} \\
+\dot{\mathbf{R}} &= \mathbf{R} \cdot \hat{\boldsymbol{\omega}} \tag{1.36} \\
+\dot{\boldsymbol{\omega}} &= \mathbf{J}^{-1} \cdot (\boldsymbol{\tau} - \boldsymbol{\omega} \times \mathbf{J} \boldsymbol{\omega}) \tag{1.37}
+\end{align}
+
+The vectors $\mathbf{r}$ and $\mathbf{v}$ are respectively the position and velocity vectors, defined as
+\[
+\mathbf{r} = \begin{bmatrix} x & y & z \end{bmatrix}^T, \quad
+\mathbf{v} = \begin{bmatrix} v_x & v_y & v_z \end{bmatrix}^T
+\]
+and expressed in world coordinates. $\mathbf{R}$ is the rotation matrix that defines the orientation of the body frame with respect to the world frame, and 
+\[
+\boldsymbol{\omega} = \begin{bmatrix} p & q & r \end{bmatrix}^T
+\]
+denotes the body rates (roll, pitch, and yaw respectively) in body coordinates. The skew-symmetric matrix associated with the angular velocity vector $\boldsymbol{\omega}$ is $\hat{\boldsymbol{\omega}}$, and is defined as
+\[
+\hat{\boldsymbol{\omega}} = 
+\begin{bmatrix}
+0 & -r & q \\
+r & 0 & -p \\
+-q & p & 0
+\end{bmatrix} \tag{1.38}
+\]
+
+The gravity vector is defined as $\mathbf{g} = \begin{bmatrix} 0 & 0 & -g \end{bmatrix}^T$, and $\mathbf{J} = \text{diag}(J_{xx}, J_{yy}, J_{zz})$ is the second-order moment-of-inertia matrix of the quadrotor.
+
+The drone can be modeled as a rigid body moving in space, controlled by four single rotor thrusts $f_i$, as illustrated in Figure~1.7.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{quadrotor_diagram.png}
+\caption{Quadrotor with coordinate system and single rotor forces~\cite{reference21}.}
+\end{figure}
+
+By changing each one of these four single rotor thrusts, a three-axis resulting torque $\boldsymbol{\tau}$ and a mass-normalized collective thrust (or lift) $\mathbf{c}$ can be applied to the quadrotor’s frame. The relation between the single rotor thrusts, the collective thrust, and the body torques can be formulated, following the coordinate system and numbering of Figure~1.7, as in equations~(1.39) and (1.40):
+
+\begin{align}
+\boldsymbol{\tau} &= 
+\begin{bmatrix}
+\frac{l}{\sqrt{2}}(f_1 - f_2 - f_3 + f_4) \\
+\frac{l}{\sqrt{2}}(-f_1 - f_2 + f_3 + f_4) \\
+k(f_1 - f_2 + f_3 - f_4)
+\end{bmatrix} \tag{1.39} \\
+mc &= f_1 + f_2 + f_3 + f_4 \tag{1.40}
+\end{align}
+
+The quadrotor’s arm length is denoted by $l$, which is the distance between the center of mass and the axis of the propeller. Its total mass is $m$, and $k$ is the rotor-torque coefficient. The coefficient $k$ is an experimentally determined constant, as done in~\cite{reference22, reference23, reference24}, and relates the torque and thrust produced by each rotor.
+
+
+\subsection{Autonomous Satellite Orientation}
+Once the dynamic model of the drone is known, it is possible to develop a software pipeline to autonomously control the platform’s flight behavior.
+
+Many approaches have been developed to sense and interpret the surrounding environment and take autonomous decisions, but it is possible to highlight two main paradigms: \textbf{model-based approaches} and \textbf{learning-based approaches}.
+
+\section*{Model-Based Approach}
+
+The model-based architecture has become the most widely adopted over the years. Based on first-principles methods, this architecture divides the control stack into three major components: perception, planning, and control, as illustrated in Figure~\ref{fig:model_based_architecture}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\textwidth]{model_based_architecture.png}
+\caption{A classic control architecture for an autonomous system programmed using a model-based approach~\cite{reference25}.}
+\label{fig:model_based_architecture}
+\end{figure}
+
+The perception block allows the robot to sense the surrounding environment and estimate its state. It receives information directly from the robot’s onboard sensors.
+
+Typical onboard measurements available to the drone include data from the Inertial Measurement Unit (IMU), such as acceleration and orientation in space. These measurements are received at high frequencies and are integrated over time to obtain position and velocity. However, this estimation remains reliable only for a limited time, as sensor noise and integration cause drift. Thus, additional sensors are required to accurately perceive the environment state.
+
+A second source of information—common and low-cost—is camera data. This source provides richer and more complex data than the IMU, but at lower frequencies and with higher-level information that must be extracted using complex algorithms. Moreover, the quality of camera data can be unreliable in low-light conditions or under motion blur. Combining IMU and camera data can mitigate their respective shortcomings and provide reliable state estimation for the drone and its surroundings.
+
+Sensor data is processed by the perception block and passed to the planning module, whose role is to generate an optimal trajectory with respect to a desired metric (e.g., minimum time), while satisfying the constraints imposed by the task setup and hardware platform. Once a feasible path is planned, it must be followed by controlling the drone’s thrusters accordingly.
+
+The controller subsystem is typically divided into two cascaded structures: a high-level controller and a low-level controller. The high-level controller receives as input the desired space trajectory, velocity, and acceleration profiles from the planner, and generates reference signals such as linear velocities, body rates, and collective thrust. These are passed down to a low-level flight controller that directly controls the individual rotors of the quadrotor~\cite{reference26}.
+
+Model-based approaches rely on the mathematical model of the system. However, creating such models for complex systems can introduce undesirable approximations. These techniques show outstanding performance when the models are accurate, but they lack adaptability in the presence of model mismatches and unstructured or noisy environments like outdoors.
+
+Moreover, the model-based control pipeline must be carefully tailored to each specific application and setup, requiring expert knowledge and time-consuming manual tuning. This has motivated the growing interest in learning-based approaches, which require less engineering effort during tuning and are more robust to modeling inaccuracies.
+
+\section*{Learning-Based Approach}
+
+Learning-based approaches replace the perception, planning, and control blocks with neural networks. As explained in Section~1.1.1, deep neural networks are powerful tools for function approximation~\cite{reference27} and can substitute some or all of the model-based components by learning input-output mappings.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.6\textwidth]{end_to_end_learning.png}
+\caption{End-to-End learning approach~\cite{reference25}.}
+\label{fig:end_to_end_learning}
+\end{figure}
+
+Neural networks can handle both high-dimensional and low-dimensional inputs such as images, positions, and velocities. The main challenge of learning-based methods is collecting sufficient and diverse data to ensure successful training. The training data must include enough randomness to promote generalization and prevent overfitting to specific setups. Furthermore, the interactions must closely resemble real-world scenarios to ease transfer to real hardware.
+
+Figure~\ref{fig:end_to_end_learning} illustrates one of the most promising learning paradigms for autonomous navigation: end-to-end flight. This approach mimics human pilot behavior by using one or more neural networks to directly map raw sensory inputs to control commands. In this architecture, the network internally develops a hierarchical representation of the task, interprets observations, determines goals, and generates appropriate actions—all as an emergent behavior from artificial neuron interactions.
+
+One major drawback of learning-based controllers is the difficulty in proving robustness and stability, unlike classical methods. While they may outperform traditional controllers in some scenarios, their practical use can be hindered by a lack of theoretical guarantees. Nevertheless, due to recent advancements in simulation technologies, which enable generation of large and diverse datasets, and the networks’ adaptability to disturbances and model variations, research continues to shift toward learning-based and end-to-end approaches~\cite{reference28}.
+
+
+\section{Simulators}
+\section*{Simulators for Reinforcement Learning in Robotics}
+
+Simulators are powerful software tools used across all engineering fields to develop and test solutions for complex real-world problems without the need for actual hardware implementation, thus saving time and money. They are essential for implementing robot learning solutions based on reinforcement learning (RL) algorithms.
+
+This is because the robot learns by interacting with the environment through trial-and-error and, therefore, needs to fail. Failing in the real world could damage the hardware, potentially requiring partial or complete replacement. For example, when a quadcopter learns to fly using RL, it will crash repeatedly during early training iterations in the attempt to achieve flight stability. Robotics simulators prevent unnecessary hardware sacrifices that would otherwise be unaffordable.
+
+An ideal simulator for robotics applications should be:
+
+\begin{itemize}
+    \item \textbf{Fast}: RL algorithms are not sample-efficient and require a vast number of interactions to learn suitable policies. To address this, simulators can parallelize workloads across multiple computing units, accelerating data collection and convergence.
+    \item \textbf{Physically accurate}: Simulators must closely mimic real-world physics, including rigid and flexible body dynamics, by reproducing all acting forces.
+    \item \textbf{Photo-realistic}: When camera-based sensors are used, visual realism is key to reducing the gap between simulated and real-world sensor observations. This includes the simulation of lighting, refraction, reflection, distortion, and surface textures.
+\end{itemize}
+
+These objectives often conflict with one another. For instance, higher realism generally results in slower simulations. Thus, building a simulator that satisfies all requirements simultaneously remains a challenging task.
+
+In the following sections, we present an overview of some widely used simulators for robotic RL applications.
+
+\subsection*{Isaac Gym}
+
+The Isaac Gym platform~\cite{isaacgym} offers a high-performance solution for training RL agents in robotic tasks using NVIDIA GPUs. It allows both physics simulation and policy training to run on the GPU, eliminating CPU-GPU bottlenecks. This architecture enables the training of complex robotic tasks on a single GPU in significantly less time compared to traditional setups that use CPU-based simulation combined with GPU-based neural networks.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{isaac_gym_pipeline.png}
+\caption{(Left) Traditional RL experience collection pipeline. (Right) Isaac Gym RL experience collection pipeline~\cite{isaacgym}.}
+\label{fig:isaac_pipeline}
+\end{figure}
+
+Isaac Gym provides utilities to wrap raw data buffers (implemented in C++ and CUDA) as tensor objects compatible with common ML frameworks like PyTorch. Additionally, it offers an API for creating and populating environments with robots and objects rendered photo-realistically. These environments can be duplicated many times for parallelization, with randomized initial conditions to promote generalization and prevent overfitting.
+
+Thanks to these features, Isaac Gym is considered one of the most promising simulators for RL applications~\cite{isaacphotorealism}. However, as a relatively new platform, it lacks many ready-to-use task-specific features (e.g., flight controllers or sensor suites) found in more mature simulators.
+
+\subsection*{Gazebo}
+
+The Robot Operating System (ROS)~\cite{ros} is the most popular software framework for robot programming and control. It is often used in conjunction with the Gazebo simulator for simulating robotic tasks such as manipulation and mobile robot navigation.
+
+Gazebo is designed to accurately reproduce the dynamic conditions robots may face in real environments. However, it does not support photo-realistic rendering~\cite{gazebolimitations} and lacks built-in capabilities to parallelize workloads across computing units, a critical feature for efficient RL training~\cite{gazebolimitations}.
+
+\subsection*{Flightmare}
+
+Flightmare~\cite{flightmare} is a simulator specifically developed for flying robots. It consists of two main components:
+
+\begin{enumerate}
+    \item A configurable rendering engine built on Unity, capable of producing photo-realistic visuals.
+    \item A flexible physics engine to simulate quadrotor dynamics.
+\end{enumerate}
+
+These two components are decoupled and can run independently. Flightmare comes with a built-in sensor suite, including RGB images, IMU, depth sensors, segmentation outputs, and an API for reinforcement learning. It supports parallel simulation of quadrotors using a classical pipeline leveraging both CPU and GPU resources.
+
+\vspace{1em}
+
+Each of these simulators presents different trade-offs in terms of speed, realism, and extensibility. Selecting the right tool depends on the specific requirements of the task at hand and the available computational resources.
+
+
+\chapter{Methods}
+\section{Environment Setup}
+\subsection{Reset Policy}
+\subsection{Training Randomization}
+
+\section{Agent Setup}
+\subsection{NN Architecture}
+\subsection{NN Training}
+\subsection{Low-Level Controller}
+
+\section{Reward Functions}
+\subsection{Target Reward}
+\subsection{Sparse Reward}
+\subsection{Synchronization Reward}
+
+\chapter{Experimental Results}
+\section{Training Results}
+
+\section{Experimental Setup}
+
+\section{Training Scenario Evaluation}
+
+\section{Generalization}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\chapter{NVIDIA Isaac Gym}
+NVIDIA Isaac Gym is a high-performance physics simulation environment for reinforcement learning (RL) research. It uses GPU acceleration to simulate thousands of parallel environments in real time, enabling rapid data collection. Key features:
+\begin{itemize}
+\item \textbf{GPU-based Physics:} Leverages PhysX on the GPU for fast rigid body dynamics.
+\item \textbf{Vectorized Environments:} Batch simulation of numerous task instances.
+\item \textbf{PyTorch Integration:} Exposes simulation data as PyTorch tensors for zero-copy exchanges.
+\end{itemize}
+
+\chapter{SKRL}
+SKRL is an open-source library for RL emphasizing modularity, scalability, and performance:
+\begin{itemize}
+\item \textbf{Torch-based Agents:} Native PyTorch implementations of RL algorithms.
+\item \textbf{Flexible Configuration:} Customizable algorithms, memories, preprocessors, and schedulers.
+\item \textbf{Training Ecosystem:} Supports synchronous and asynchronous trainers.
+\end{itemize}
+
+\chapter{IsaacGym and SKRL Integration}
+
+\section{Software Architecture and Directory Structure}
+The project is organized as follows:
+
+\dirtree{%
+.1 satellite.
+.2 configs.
+.2 envs.
+.2 isaacgymenvs.
+.2 models.
+.2 rewards.
+.2 utils.
+.2 satellite.urdf.
+.2 train.py.
+.1 README.md.
+}
+
+Descriptions:
+\begin{itemize}
+\item \texttt{configs/}: Nested configuration classes for sim, env, asset parameters.
+\item \texttt{envs/SatelliteVec}, the vectorized Gym environment.
+\item \texttt{isaacgymenvs/vec_task}: Base \texttt{VecTask} managing simulation and buffers.
+\item \texttt{models/custom_model}: Custom policy and value networks via SKRL mixins.
+\item \texttt{rewards/satellite_reward}: Modular reward shaping strategies.
+\item \texttt{utils/util}: Utilities for config conversion and quaternion sampling.
+\item \texttt{train.py}: Entry point for environment, agent, and PPO training.
+\end{itemize}
+
+\section{Configuration Management}
+
+\subsection{BaseConfig}
+\texttt{BaseConfig} (\texttt{configs/base\_config.py}) uses Python introspection to instantiate nested configuration classes. This yields: declarative syntax, nested scoping, and automatic conversion to dictionaries via \texttt{class\_to\_dict}.
+
+\subsection{SatelliteConfig}
+\texttt{SatelliteConfig} (\texttt{configs/satellite\_config.py}) specifies:
+\begin{itemize}
+\item \textbf{Environment hyperparameters}: \texttt{num\_envs}=128, observation/state/action dimensions, rollout lengths, thresholds.
+\item \textbf{Simulation settings}: physics engine (physx), time step, gravity, GPU pipeline.
+\item \textbf{Assets}: URDF path, initial pose, naming.
+\end{itemize}
+
+\section{Environment Implementation}
+
+\subsection{VecTask Base Class}
+Located in \texttt{isaacgymenvs/vec\_task.py}, \texttt{VecTask} covers:
+\begin{itemize}
+\item Simulation lifecycle: creation, preparation, destruction.
+\item Viewer and rendering controls.
+\item Buffers: observations, states, rewards, resets, timeouts, progress.
+\item Stepping logic: pre- and post-physics hooks, Gym API compliance.
+\end{itemize}
+
+\subsection{SatelliteVec}
+In \texttt{envs/satellite\_vec.py}, \texttt{SatelliteVec} extends \texttt{VecTask}:
+\begin{itemize}
+\item Actor creation: loading URDF, grid placement.
+\item State and observation computation: quaternions, velocities, accelerations.
+\item Torque application: mapping actions to rigid body forces.
+\item Reward integration: pluggable \texttt{RewardFunction}.
+\item Termination: goal attainment, overspeed, timeouts.
+\end{itemize}
+
+\section{Reward Functions}
+In \texttt{rewards/satellite\_reward.py}, seven strategies:
+\begin{enumerate}
+\item \textbf{TestReward}: Baseline quaternion, velocity, acceleration errors with dynamic weight.
+\item \textbf{WeightedSumReward}: Error penalties plus bonuses/penalties at thresholds.
+\item \textbf{TwoPhaseReward}: Early improvement rewards and exponential shaping.
+\item \textbf{ExponentialStabilizationReward}: Exponential error shaping with static bonus.
+\item \textbf{ContinuousDiscreteEffortReward}: Combines error penalty, bonus, and fail penalty.
+\item \textbf{ShapingReward}: Potential-based shaping variants R1–R4.
+\item \textbf{Custom extension}: Inherit \texttt{RewardFunction}.
+\end{enumerate}
+
+\section{Neural Network Models}
+\texttt{models/custom\_model.py} defines:
+\begin{itemize}
+\item \textbf{Policy}: Gaussian stochastic policy with MLP (256,256,128) hidden layers, learnable log-std.
+\item \textbf{Value}: Deterministic value network with similar architecture, single-output.
+\end{itemize}
+
+\section{Training Pipeline}
+\texttt{train.py} workflow:
+\begin{enumerate}
+\item Parse reward function argument.
+\item Seed setting for reproducibility.
+\item Instantiate \texttt{SatelliteConfig} and \texttt{SatelliteVec}.
+\item Configure PPO (rollouts, epochs, clipping, KL scheduler).
+\item Memory and preprocessors: \texttt{RandomMemory}, \texttt{RunningStandardScaler}.
+\item Agent and trainer: \texttt{PPO}, \texttt{SequentialTrainer}.
+\item Launch training: \texttt{trainer.train()}, logging to TensorBoard.
+\end{enumerate}
+
+\chapter{Experimental Results}
+% Placeholder: inserire curve di apprendimento, metriche di convergenza, analisi qualitativa.
+
+\section{Learning Curves}
+% Grafici di reward vs timesteps.
+
+\section{Policy Behavior}
+% Descrizione qualitativa del comportamento del satellite.
+
+\chapter{Conclusion and Future Work}
+This thesis explored a novel state-of-the-art framework in which massive parallel simulation is adopted to learn an agile control policy. The latter is able to maneuver a
+drone in a highly dynamic environment: a fast-moving gate.
+The policy is found with deep reinforcement learning PPO algorithm which trains
+a neural network fed with synthetic data coming from the randomized agile flight task
+setup. The dynamic gate setup is recreated and parallelized inside the Isaac Gym
+reinforcement learning simulator. Moreover, to interface the neural network control
+with the simulated quadrotor and, at the same time to maintain the simulation software
+full GPU pipeline, a low-level flight controller is implemented from scratch using the
+PyTorch framework. Different strategies have been tested to guide the agent toward the
+goal, starting from a reward that only stimulates a stable flight primitive to an increase
+of the informative task-related content in the next reward functions. As a matter of
+fact, while all the trained policies were able to learn a stabilizing flight controller, only
+the one trained with the most informative reward function was able to solve the agile
+benchmark in the 97.52\% of cases and generalize across unseen configurations with
+77.30\% of success rate.
+In conclusion, this thesis remarks the efficacy of the end-to-end approach in quadrotor control, which is able to follow a path that traverses a fast-moving gate without
+any planning and preception stages. The obtained results can serve as starting point
+for future work, for example testing the policy on even more challenging scenarios obtained by adding more gates and reducing the sensory information. On top of that,
+new and more sophisticated reward functions could be designed to avoid undesired
+oscillatory residual movements. Finally, other neural network architectures could be
+tested in the context of agile flight. For example, recursive neural networks, e.g. long
+short-term memory networks, aiming to better exploit the temporal nature of such
+dynamical tasks. In addition to this, even smaller and minimal neural networks, that
+can be quantized and loaded on low-power and low-cost embedded quadrotor platforms, could be analyzed in the direction of fully onboard sensing autonomous flight.
+Performing these tests will be valuable in pursuing the goal of sim-to-real transfer of
+the robust learned policy on the actual drone platform making it able to navigate an
+unconstrained and dynamic environment with only onboard sensing.
+
+\bibliography{bibliografia}
+\bibliographystyle{IEEEtran}
+\addcontentsline{toc}{chapter}{Bibliografia}
+
+
+\end{document}
+

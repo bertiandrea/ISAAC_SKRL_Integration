@@ -72,7 +72,7 @@ class SatelliteVec(VecTask):
             self.reset_idx(ids)
         
     def reset_idx(self, ids: torch.Tensor) -> None:      
-        print(f"[reset_idx] Reset envs: {ids.tolist()}")
+        #print(f"[reset_idx] Reset envs: {ids.tolist()}")
 
         ################# SIM #################
         self.root_states[ids] = self.initial_root_states[ids]
@@ -108,9 +108,9 @@ class SatelliteVec(VecTask):
             (self.obs_buf, self.satellite_angvels), dim=-1)
         ########################################
 
-        print(f"[compute_observations]: satellite_quats[0]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[0].tolist())}]")
-        print(f"[compute_observations]: satellite_quats[1]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[1].tolist())}]")
-        print(f"[compute_observations]: satellite_quats[2]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[2].tolist())}]")
+        #print(f"[compute_observations]: satellite_quats[0]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[0].tolist())}]")
+        #print(f"[compute_observations]: satellite_quats[1]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[1].tolist())}]")
+        #print(f"[compute_observations]: satellite_quats[2]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[2].tolist())}]")
 
         if self.sensor_noise_std > 0.0:
             noise = torch.normal(mean=0.0, std=self.sensor_noise_std, size=self.state_space.shape, device=self.device)
@@ -135,9 +135,9 @@ class SatelliteVec(VecTask):
                                              size=actions.shape, device=self.device)
         self.actions = torch.clamp(actions, -self.clip_actions, self.clip_actions) * self.torque_scale
 
-        print(f"[apply_torque]: actions[0]=[{', '.join(f'{v:.2f}' for v in self.actions[0].tolist())}]")
-        print(f"[apply_torque]: actions[1]=[{', '.join(f'{v:.2f}' for v in self.actions[1].tolist())}]")
-        print(f"[apply_torque]: actions[2]=[{', '.join(f'{v:.2f}' for v in self.actions[2].tolist())}]")
+        #print(f"[apply_torque]: actions[0]=[{', '.join(f'{v:.2f}' for v in self.actions[0].tolist())}]")
+        #print(f"[apply_torque]: actions[1]=[{', '.join(f'{v:.2f}' for v in self.actions[1].tolist())}]")
+        #print(f"[apply_torque]: actions[2]=[{', '.join(f'{v:.2f}' for v in self.actions[2].tolist())}]")
 
         ################# SIM #################
         self.torque_tensor[self.root_indices] = self.actions
@@ -155,9 +155,9 @@ class SatelliteVec(VecTask):
             self.goal_quat, self.goal_ang_vel, self.goal_ang_acc,
             self.actions
         )
-        print(f"[compute_reward]: reward_buf[0]={self.reward_buf[0].item():.2f}")
-        print(f"[compute_reward]: reward_buf[1]={self.reward_buf[1].item():.2f}")
-        print(f"[compute_reward]: reward_buf[2]={self.reward_buf[2].item():.2f}")
+        #print(f"[compute_reward]: reward_buf[0]={self.reward_buf[0].item():.2f}")
+        #print(f"[compute_reward]: reward_buf[1]={self.reward_buf[1].item():.2f}")
+        #print(f"[compute_reward]: reward_buf[2]={self.reward_buf[2].item():.2f}")
 
     def check_termination(self) -> None:
         angle_diff = quat_diff_rad(self.satellite_quats, self.goal_quat)
@@ -170,13 +170,13 @@ class SatelliteVec(VecTask):
         self.timeout_buf = torch.where(timeout | overspeed, True, False)
         self.reset_buf = torch.where(goal, True, False)
         
-        timeout_ids = torch.nonzero(timeout, as_tuple=False).flatten()
-        if len(timeout_ids) > 0:
-            print(f"[check_termination] TIMEOUT or OVERSPEED in envs: {timeout_ids.tolist()}")
+        #timeout_ids = torch.nonzero(timeout, as_tuple=False).flatten()
+        #if len(timeout_ids) > 0:
+        #    print(f"[check_termination] TIMEOUT or OVERSPEED in envs: {timeout_ids.tolist()}")
         
-        reset_ids = torch.nonzero(self.reset_buf, as_tuple=False).flatten()
-        if len(reset_ids) > 0:
-            print(f"[check_termination] GOAL envs: {reset_ids.tolist()}")
+        #reset_ids = torch.nonzero(self.reset_buf, as_tuple=False).flatten()
+        #if len(reset_ids) > 0:
+        #    print(f"[check_termination] GOAL envs: {reset_ids.tolist()}")
         
         
         

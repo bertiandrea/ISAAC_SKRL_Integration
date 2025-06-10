@@ -146,8 +146,8 @@ class VecTask(Params):
         return self.states_buf.to(self.device), {}
 
     def close(self) -> None:
-        print("Close Called")
+        #print("Close Called")
         if self.viewer is not None:
             self.gym.destroy_viewer(self.viewer)
         self.gym.destroy_sim(self.sim)
-        print("Close Done")
+        #print("Close Done")

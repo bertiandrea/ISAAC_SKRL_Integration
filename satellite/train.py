@@ -116,7 +116,7 @@ def main():
                                 env=env,
                                 agents=agent)
 
-    print("###################### DONE INIT ######################")
+    #print("###################### DONE INIT ######################")
     trainer.train()
     
 if __name__ == "__main__":
