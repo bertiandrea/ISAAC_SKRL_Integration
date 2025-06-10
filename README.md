@@ -198,4 +198,13 @@ conda activate base
 pip install tensorboard
 pip install standard-imghdr
 ```
+## ⚙️ Opt. Installa tensorboard torch profiler
+
+```bash
+conda activate base
+pip install torch_tb_profiler
+conda activate rlgpu
+pip install torch_tb_profiler
+```
+
 ---
