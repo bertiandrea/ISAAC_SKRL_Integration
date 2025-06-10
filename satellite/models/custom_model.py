@@ -24,7 +24,7 @@ class Policy(GaussianMixin, Model):
                                  nn.ELU(), #Also Tanh() or ReLU()
                                  )
         self.mean_layer = nn.Linear(hidden_size // 2, self.num_actions)
-        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions))
+        self.log_std_parameter = nn.Parameter(torch.zeros(self.num_actions, device=device))
     
     def act(self, inputs, role):
         return GaussianMixin.act(self, inputs, "policy")
