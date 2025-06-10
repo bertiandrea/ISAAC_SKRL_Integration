@@ -140,7 +140,7 @@ class VecTask(Params):
             {}
 
     def reset(self):
-        ids = torch.arange(self.num_envs, dtype=torch.int32, device=self.device)
+        ids = torch.arange(self.num_envs, dtype=torch.int64, device=self.device)
         self.reset_idx(ids)
         
         return self.states_buf, {}

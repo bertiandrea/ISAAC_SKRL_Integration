@@ -76,8 +76,9 @@ class SatelliteVec(VecTask):
 
         ################# SIM #################
         self.root_states[ids] = self.initial_root_states[ids]
+        idx32 = ids.to(dtype=torch.int32)
         self.gym.set_actor_root_state_tensor_indexed(
-            self.sim, self.actor_root_state, gymtorch.unwrap_tensor(ids), len(ids)
+            self.sim, self.actor_root_state, gymtorch.unwrap_tensor(idx32), len(idx32)
         )
         #######################################
 
