@@ -27,8 +27,6 @@ class VecTask(Params):
         self.allocate_buffers()
         
     def create_sim(self) -> None:
-        torch._C._jit_set_profiling_mode(False)
-        torch._C._jit_set_profiling_executor(False)
         self.gym = gymapi.acquire_gym()
         self.sim = self.gym.create_sim(self.device_id, self.device_id, self.physics_engine, self.sim_params)
         self.create_envs(self.env_spacing, int(np.sqrt(self.num_envs)))
@@ -123,7 +121,7 @@ class VecTask(Params):
         self.progress_buf = torch.add(self.progress_buf, 1)
 
     def step(self, actions: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, Dict[str, Any]]:
-        with record_function("VecTask_step"):
+        with record_function("VecTask__step"):
             self.pre_physics_step(actions)
 
             ######################################################################

@@ -12,7 +12,7 @@ import numpy as np
 
 CUDA = torch.cuda.is_available()
 NUM_ENVS = 4096
-N_EPOCHS = 1
+N_EPOCHS = 16
 
 class SatelliteConfig(BaseConfig):
     set_seed = False

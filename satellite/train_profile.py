@@ -137,10 +137,11 @@ def main():
     )
     # ──────────────────────────────────────────────────────────────────────────
 
-    #print("###################### DONE INIT ######################")
     prof.start()
     trainer.train()
     prof.stop()
+    print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=50))
+    print(prof.key_averages().table(sort_by="self_cpu_memory_usage", row_limit=50))
 
 if __name__ == "__main__":
     main()
