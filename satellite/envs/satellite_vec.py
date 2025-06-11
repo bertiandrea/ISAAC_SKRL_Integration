@@ -92,8 +92,10 @@ class SatelliteVec(VecTask):
                 self.prev_angvel = self.satellite_angvels.clone()
                 ########################################
                     
-            with record_function("SatelliteVec__reset_idx__reset_buffers"):
+            with record_function("SatelliteVec__reset_idx__sample_goal"):
                 self.goal_quat[ids] = sample_random_quaternion_batch(self.device, len(ids))
+
+            with record_function("SatelliteVec__reset_idx__reset_buffers"):
                 self.goal_ang_vel[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
                 self.goal_ang_acc[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
 
