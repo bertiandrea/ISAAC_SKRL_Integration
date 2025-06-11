@@ -26,6 +26,8 @@ from skrl.utils import set_seed
 
 import argparse
 
+import os
+
 # ──────────────────────────────────────────────────────────────────────────────
 # Profiler imports
 from torch.profiler import (
@@ -140,8 +142,34 @@ def main():
     prof.start()
     trainer.train()
     prof.stop()
-    print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=50))
-    print(prof.key_averages().table(sort_by="self_cpu_memory_usage", row_limit=50))
+
+    output_path = "/home/andreaberti/ISAAC_SKRL_Integration/profiler_text/text_output.txt"
+    if os.path.exists(output_path):
+        os.remove(output_path)
+
+    metrics = {
+        "CPU_TIME_AVG":     "cpu_time",
+        "CUDA_TIME_AVG":    "device_time",
+
+        "CPU_TIME_TOTAL":     "cpu_time_total",
+        "CUDA_TIME_TOTAL":    "device_time_total",
+
+        "SELF_CPU_TIME_TOTAL":     "self_cpu_time_total",
+        "SELF_CUDA_TIME_TOTAL":    "self_device_time_total",
+
+        "CPU_MEM_USAGE":       "cpu_memory_usage",
+        "CUDA_MEM_USAGE":      "device_memory_usage",
+        "SELF_CPU_MEM_USAGE":  "self_cpu_memory_usage",
+        "SELF_CUDA_MEM_USAGE": "self_device_memory_usage",
+    }
+    
+    events = prof.key_averages()
+
+    with open(output_path, "w") as f:
+        for title, key in metrics.items():
+            f.write(f"\n{title} (sort_by='{key}')\n")
+            f.write(events.table(sort_by=key, row_limit=10))
+            f.write("\n" + "#" * 80 + "\n")
 
 if __name__ == "__main__":
     main()
