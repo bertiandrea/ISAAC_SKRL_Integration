@@ -69,14 +69,14 @@ class SatelliteVec(VecTask):
     ################################################################################################################################
     
     def termination(self) -> None:
-        with record_function("SatelliteVec__termination"):      
+        with record_function("$SatelliteVec__termination"):      
             ids  = torch.nonzero(torch.logical_or(self.reset_buf, self.timeout_buf), as_tuple=False).flatten()
             if len(ids) > 0:
                 self.reset_idx(ids)
         
     def reset_idx(self, ids: torch.Tensor) -> None:
-        with record_function("SatelliteVec__reset_idx"):
-            with record_function("SatelliteVec__reset_idx__sim"):
+        with record_function("$SatelliteVec__reset_idx"):
+            with record_function("$SatelliteVec__reset_idx__sim"):
                 #print(f"[reset_idx] Reset envs: {ids.tolist()}")
 
                 ################# SIM #################
@@ -92,10 +92,10 @@ class SatelliteVec(VecTask):
                 self.prev_angvel = self.satellite_angvels.clone()
                 ########################################
                     
-            with record_function("SatelliteVec__reset_idx__sample_goal"):
+            with record_function("$SatelliteVec__reset_idx__sample_goal"):
                 self.goal_quat[ids] = sample_random_quaternion_batch(self.device, len(ids))
 
-            with record_function("SatelliteVec__reset_idx__reset_buffers"):
+            with record_function("$SatelliteVec__reset_idx__reset_buffers"):
                 self.goal_ang_vel[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
                 self.goal_ang_acc[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
 
@@ -106,15 +106,15 @@ class SatelliteVec(VecTask):
                 self.reward_buf[ids] = 0.0
 
     def compute_observations(self) -> None:
-        with record_function("SatelliteVec__compute_observations"):
+        with record_function("$SatelliteVec__compute_observations"):
             ################# SIM #################
-            with record_function("SatelliteVec__compute_observations__sim"):
+            with record_function("$SatelliteVec__compute_observations__sim"):
                 self.gym.refresh_actor_root_state_tensor(self.sim)
                 self.satellite_angacc = torch.div(
                     torch.sub(self.satellite_angvels, self.prev_angvel),
                     self.dt
                 )
-            with record_function("SatelliteVec__compute_observations__compute_buffers"):
+            with record_function("$SatelliteVec__compute_observations__compute_buffers"):
                 self.prev_angvel = self.satellite_angvels.clone()
                 self.obs_buf = torch.cat(
                     (self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), self.satellite_angacc, self.actions), dim=-1)
@@ -126,7 +126,7 @@ class SatelliteVec(VecTask):
             #print(f"[compute_observations]: satellite_quats[1]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[1].tolist())}]")
             #print(f"[compute_observations]: satellite_quats[2]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[2].tolist())}]")
 
-            with record_function("SatelliteVec__compute_observations__noise_and_clamp"):
+            with record_function("$SatelliteVec__compute_observations__noise_and_clamp"):
                 if self.sensor_noise_std > 0.0:
                     noise = torch.normal(mean=0.0, std=self.sensor_noise_std, size=self.state_space.shape, device=self.device)
                     self.obs_buf = torch.add(self.obs_buf, noise[:, :self.num_observations])
@@ -137,7 +137,7 @@ class SatelliteVec(VecTask):
 
 
     def apply_torque(self, actions: torch.Tensor) -> None:
-        with record_function("SatelliteVec__apply_torque"):
+        with record_function("$SatelliteVec__apply_torque"):
             ############## CONTROLLER ###############
             #if self.controller_logic:
             #    actions = self.controller.compute_control(
@@ -146,7 +146,7 @@ class SatelliteVec(VecTask):
             #    )
             #########################################
 
-            with record_function("SatelliteVec__apply_torque__noise_and_clamp"):
+            with record_function("$SatelliteVec__apply_torque__noise_and_clamp"):
                 if self.actuation_noise_std > 0.0:
                     actions = torch.add(
                         actions,
@@ -163,7 +163,7 @@ class SatelliteVec(VecTask):
             #print(f"[apply_torque]: actions[2]=[{', '.join(f'{v:.2f}' for v in self.actions[2].tolist())}]")
 
             ################# SIM #################
-            with record_function("SatelliteVec__apply_torque__sim"):
+            with record_function("$SatelliteVec__apply_torque__sim"):
                 self.torque_tensor[self.root_indices] = self.actions
                 self.gym.apply_rigid_body_force_tensors(
                     self.sim,
@@ -174,7 +174,7 @@ class SatelliteVec(VecTask):
             #######################################
     
     def compute_reward(self) -> None:
-        with record_function("SatelliteVec__compute_reward"):
+        with record_function("$SatelliteVec__compute_reward"):
             self.reward_buf = self.reward_fn.compute(
                 self.satellite_quats, self.satellite_angvels, self.satellite_angacc,
                 self.goal_quat, self.goal_ang_vel, self.goal_ang_acc,
@@ -186,7 +186,7 @@ class SatelliteVec(VecTask):
         #print(f"[compute_reward]: reward_buf[2]={self.reward_buf[2].item():.2f}")
 
     def check_termination(self) -> None:
-        with record_function("SatelliteVec__check_termination"):
+        with record_function("$SatelliteVec__check_termination"):
             angle_diff = quat_diff_rad(self.satellite_quats, self.goal_quat)
             ang_vel_diff = torch.norm(
                 torch.sub(self.satellite_angvels, self.goal_ang_vel),

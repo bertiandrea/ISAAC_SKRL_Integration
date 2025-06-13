@@ -25,8 +25,8 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
 
 import argparse
-
 import os
+import pandas as pd
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Profiler imports
@@ -146,30 +146,46 @@ def main():
     output_path = "/home/andreaberti/ISAAC_SKRL_Integration/profiler_text/text_output.txt"
     if os.path.exists(output_path):
         os.remove(output_path)
-
-    metrics = {
-        "CPU_TIME_AVG":     "cpu_time",
-        "CUDA_TIME_AVG":    "device_time",
-
-        "CPU_TIME_TOTAL":     "cpu_time_total",
-        "CUDA_TIME_TOTAL":    "device_time_total",
-
-        "SELF_CPU_TIME_TOTAL":     "self_cpu_time_total",
-        "SELF_CUDA_TIME_TOTAL":    "self_device_time_total",
-
-        "CPU_MEM_USAGE":       "cpu_memory_usage",
-        "CUDA_MEM_USAGE":      "device_memory_usage",
-        "SELF_CPU_MEM_USAGE":  "self_cpu_memory_usage",
-        "SELF_CUDA_MEM_USAGE": "self_device_memory_usage",
-    }
     
-    events = prof.key_averages()
-
     with open(output_path, "w") as f:
-        for title, key in metrics.items():
-            f.write(f"\n{title} (sort_by='{key}')\n")
-            f.write(events.table(sort_by=key, row_limit=10))
-            f.write("\n" + "#" * 80 + "\n")
+        f.write(prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=500))
+
+        f.write("\n\n\n")
+
+        f.write(prof.key_averages().table(sort_by="self_cpu_time_total", row_limit=500))
+
+    rows = []
+    for e in prof.key_averages():
+        rows.append({
+            "name":               e.key[:50],  # Truncate to 50 characters
+            "self_cpu_time_ms":   e.self_cpu_time_total / 1e3,
+            "cpu_time_ms":        e.cpu_time_total / 1e3,
+
+            "self_cuda_time_ms":  e.self_device_time_total / 1e3,
+            "cuda_time_ms":       e.device_time_total / 1e3,
+
+            "self_cpu_memory_bytes":   e.self_cpu_memory_usage,
+            "self_cuda_memory_bytes":  e.self_device_memory_usage,
+
+            "cpu_memory_bytes":   e.cpu_memory_usage,
+            "cuda_memory_bytes":  e.device_memory_usage,
+
+            "count":              e.count,
+            "flops":              e.flops,
+
+            "device_type":        str(e.device_type),
+        })
+    df = pd.DataFrame(rows)
+    
+    df['order'] = df['name'].str[0].map({'#': 0, '$': 1}).fillna(2).astype(int)
+    df = df.sort_values(['order', 'name'], ascending=[True, True])
+    df = df.drop(columns='order')
+
+    print(df.head(40))
+
+    csv_path = "/home/andreaberti/ISAAC_SKRL_Integration/profiler_text/csv_output.csv"
+    df.to_csv(csv_path, index=False)
+
 
 if __name__ == "__main__":
     main()
