@@ -121,23 +121,20 @@ class VecTask(Params):
         self.progress_buf = torch.add(self.progress_buf, 1)
 
     def step(self, actions: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, Dict[str, Any]]:
-        with record_function("$VecTask__step"):
-            with record_function("$VecTask__step__pre_physics_step"):
-                self.pre_physics_step(actions)
+        self.pre_physics_step(actions)
 
-            ######################################################################
+        ######################################################################
+        if not self.headless and self.device_type != 'cpu':
             with record_function("#VecTask__step__RENDER"):
-                if not self.headless and self.device_type != 'cpu':
-                    self.render()
-            with record_function("#VecTask__step__SIMULATE"):
-                self.gym.simulate(self.sim)
+                self.render()
+        with record_function("#VecTask__step__SIMULATE"):
+            self.gym.simulate(self.sim)
+        if self.device_type == 'cpu':
             with record_function("#VecTask__step__FETCH_RESULTS"):
-                if self.device_type == 'cpu':
-                    self.gym.fetch_results(self.sim, True)
-            ######################################################################
-            
-            with record_function("$VecTask__step__post_physics_step"):
-                self.post_physics_step()
+                self.gym.fetch_results(self.sim, True)
+        ######################################################################
+        
+        self.post_physics_step()
         
         return self.states_buf, \
             self.reward_buf.view(-1, 1), \

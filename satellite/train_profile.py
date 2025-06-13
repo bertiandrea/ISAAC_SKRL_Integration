@@ -147,15 +147,25 @@ def main():
     if os.path.exists(output_path):
         os.remove(output_path)
     
+    events = prof.key_averages()
+
     with open(output_path, "w") as f:
-        f.write(prof.key_averages().table(sort_by="self_cuda_time_total", row_limit=500))
+        f.write(events.table(sort_by="self_cuda_time_total", row_limit=500))
 
         f.write("\n\n\n")
 
-        f.write(prof.key_averages().table(sort_by="self_cpu_time_total", row_limit=500))
+        f.write(events.table(sort_by="self_cpu_time_total", row_limit=500))
+
+        f.write("\n\n\n")
+
+        f.write(events.table(sort_by="self_cuda_memory_usage", row_limit=500))
+
+        f.write("\n\n\n")
+
+        f.write(events.table(sort_by="self_cpu_memory_usage", row_limit=500))
 
     rows = []
-    for e in prof.key_averages():
+    for e in events:
         rows.append({
             "name":               e.key[:50],  # Truncate to 50 characters
             "self_cpu_time_ms":   e.self_cpu_time_total / 1e3,
