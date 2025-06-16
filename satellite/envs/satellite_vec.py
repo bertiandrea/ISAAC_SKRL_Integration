@@ -104,6 +104,9 @@ class SatelliteVec(VecTask):
             self.timeout_buf[ids] = False
 
             self.reward_buf[ids] = 0.0
+        
+        #if self.controller_logic:
+        #    self.controller.reset(ids)
 
     def compute_observations(self) -> None:
         ################# SIM #################
@@ -139,8 +142,8 @@ class SatelliteVec(VecTask):
         ############## CONTROLLER ###############
         #if self.controller_logic:
         #    actions = self.controller.compute_control(
-        #        ang_acc_des=actions, 
-        #        ang_vel=self.satellite_angvels,
+        #        actions=actions, 
+        #        measured_angvels=self.satellite_angvels,
         #    )
         #########################################
 
