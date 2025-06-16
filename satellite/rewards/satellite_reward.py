@@ -100,6 +100,73 @@ class TestReward(RewardFunction):
 
         return reward
 
+class TestRewardSmooth(RewardFunction):
+    """
+    Simple test reward: weighted inverse errors with dynamic scaling.
+    """
+    def __init__(self, alpha_q=1.0, alpha_omega=0.5, alpha_acc=0.2, alpha_smooth=0.1):
+        self.alpha_q = alpha_q
+        self.alpha_omega = alpha_omega
+        self.alpha_acc = alpha_acc
+        self.alpha_smooth = alpha_smooth
+        self.prev_actions = None
+
+    def _compute(self, phi, omega_err, acc_err, actions):
+        #print(f"[compute_reward]: angle_diff[0]={math.degrees(phi[0].item()):.2f}° ang_vel_diff[0]={math.degrees(omega_err[0].item()):.2f}°/s ang_acc_diff[0]={math.degrees(acc_err[0].item()):.2f}°/s²")
+        #print(f"[compute_reward]: angle_diff[1]={math.degrees(phi[1].item()):.2f}° ang_vel_diff[1]={math.degrees(omega_err[1].item()):.2f}°/s ang_acc_diff[1]={math.degrees(acc_err[1].item()):.2f}°/s²")
+        #print(f"[compute_reward]: angle_diff[2]={math.degrees(phi[2].item()):.2f}° ang_vel_diff[2]={math.degrees(omega_err[2].item()):.2f}°/s ang_acc_diff[2]={math.degrees(acc_err[2].item()):.2f}°/s²")
+        
+        # weight = 1.0 / (1.0 + phi)
+        weight   = torch.div(
+            torch.ones_like(phi),
+            torch.add(torch.ones_like(phi), phi)
+        )
+
+        # r_q = self.alpha_q * 1.0 / (1.0 + phi)
+        r_q      = torch.mul(self.alpha_q, weight)
+
+        # r_omega = self.alpha_omega * weight * (1.0 / (1.0 + omega_err))
+        r_omega  = torch.mul(
+            self.alpha_omega,
+            torch.mul(
+                weight,
+                torch.div(
+                    torch.ones_like(omega_err),
+                    torch.add(torch.ones_like(omega_err), omega_err)
+                )
+            )
+        )
+
+        # r_acc = self.alpha_acc * weight * (1.0 / (1.0 + acc_err))
+        r_acc    = torch.mul(
+            self.alpha_acc,  
+            torch.mul(
+                weight,
+                torch.div(
+                    torch.ones_like(acc_err),
+                    torch.add(torch.ones_like(acc_err), acc_err)
+                )
+            )
+        )
+
+        if self.prev_actions is not None:
+            smooth_penalty = torch.mul(
+                self.alpha_smooth,
+                torch.sum(
+                    torch.square(
+                        torch.sub(actions, self.prev_actions), dim=1)
+                    ),
+                dim=1
+            )
+        else:
+            smooth_penalty = torch.zeros(actions.shape[0], device=actions.device)
+        self.prev_actions = actions
+        
+        reward   = torch.add(torch.add(r_q, r_omega), r_acc)
+        reward   = torch.sub(reward, smooth_penalty)
+
+        return reward
+
 class WeightedSumReward(RewardFunction):
     """
     Weighted sum of inverse errors with bonuses and penalties.

@@ -5,6 +5,7 @@ from satellite.envs.satellite_vec import SatelliteVec
 from satellite.models.custom_model import Policy, Value
 from satellite.rewards.satellite_reward import (
     TestReward,
+    TestRewardSmooth,
     WeightedSumReward,
     TwoPhaseReward,
     ExponentialStabilizationReward,
@@ -39,6 +40,7 @@ from torch.profiler import (
 
 REWARD_MAP = {
     "test": TestReward,
+    "test_smooth": TestRewardSmooth,
     "weighted_sum": WeightedSumReward,
     "two_phase": TwoPhaseReward,
     "exp_stabilization": ExponentialStabilizationReward,

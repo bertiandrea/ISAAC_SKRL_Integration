@@ -957,6 +957,7 @@ In \texttt{envs/satellite\_vec.py}, \texttt{SatelliteVec} extends \texttt{VecTas
 In \texttt{rewards/satellite\_reward.py}, seven strategies:
 \begin{enumerate}
 \item \textbf{TestReward}: Baseline quaternion, velocity, acceleration errors with dynamic weight.
+\item \textbf{TestRewardSmooth}: Baseline quaternion, velocity, acceleration errors with dynamic weight and smoothing penality.
 \item \textbf{WeightedSumReward}: Error penalties plus bonuses/penalties at thresholds.
 \item \textbf{TwoPhaseReward}: Early improvement rewards and exponential shaping.
 \item \textbf{ExponentialStabilizationReward}: Exponential error shaping with static bonus.

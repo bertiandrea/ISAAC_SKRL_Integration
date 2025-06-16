@@ -4,6 +4,7 @@ from satellite.utils.satellite_util import sample_random_quaternion_batch, quat_
 from satellite.envs.vec_task import VecTask
 from satellite.rewards.satellite_reward import (
     TestReward,
+    TestRewardSmooth,
     RewardFunction
 )
 from satellite.pid.pid import PID
