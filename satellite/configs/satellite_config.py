@@ -11,7 +11,7 @@ from pathlib import Path
 import numpy as np
 
 CUDA = torch.cuda.is_available()
-NUM_ENVS = 4096
+NUM_ENVS = 32768
 N_EPOCHS = 1
 
 class SatelliteConfig(BaseConfig):
