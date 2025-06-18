@@ -146,8 +146,8 @@ def main():
     prof.stop()
 
     output_path = "/home/andreaberti/profiler_text/ISAAC_SKRL_Integration/text_output.txt"
-    if os.path.exists(output_path):
-        os.remove(output_path)
+    if not os.path.exists(os.path.dirname(output_path)):
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
     events = prof.key_averages()
 
@@ -196,6 +196,8 @@ def main():
     print(df.head(40))
 
     csv_path = "/home/andreaberti/profiler_text/ISAAC_SKRL_Integration/csv_output.csv"
+    if not os.path.exists(os.path.dirname(csv_path)):
+        os.makedirs(os.path.dirname(csv_path), exist_ok=True)
     df.to_csv(csv_path, index=False)
 
 
