@@ -91,10 +91,8 @@ class Satellite(VecTask):
             self.draw_arrows()
 
     def create_sim(self) -> None:
-        self.gym = gymapi.acquire_gym()
-        self.sim = self.gym.create_sim(self.device_id, self.device_id, self.physics_engine, self.sim_params)
+        self.sim = super().create_sim(self.device_id, self.graphics_device_id, self.physics_engine, self.sim_params) # Acquires the sim pointer
         self.create_envs(self.env_spacing, int(np.sqrt(self.num_envs)))
-        self.gym.prepare_sim(self.sim)
 
     def create_envs(self, spacing, num_per_row: int) -> None:
         self.asset = self.load_asset()

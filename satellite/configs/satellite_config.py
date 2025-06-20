@@ -5,7 +5,7 @@ from satellite.configs.base_config import BaseConfig
 from pathlib import Path
 import numpy as np
 
-NUM_ENVS = 65536
+NUM_ENVS = 32768
 N_EPOCHS = 2
 HEADLESS = True
 FORCE_RENDER = False
