@@ -129,7 +129,7 @@ def main():
                                 agents=agent)
     # ──────────────────────────────────────────────────────────────────────────
     # Setup PyTorch profiler
-    log_dir = "/home/andreaberti/profiler_logs/ISAAC_SKRL_Integration/satellite"
+    log_dir = "/home/andreaberti/profiler_logs/ISAAC_SKRL_Integration_old/satellite"
     if not os.path.exists(log_dir):
         os.makedirs(log_dir, exist_ok=True)
     prof = profile(
@@ -147,7 +147,7 @@ def main():
     trainer.train()
     prof.stop()
 
-    output_path = "/home/andreaberti/profiler_text/ISAAC_SKRL_Integration/satellite/text_output.txt"
+    output_path = "/home/andreaberti/profiler_text/ISAAC_SKRL_Integration_old/satellite/text_output.txt"
     if not os.path.exists(os.path.dirname(output_path)):
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
@@ -197,7 +197,7 @@ def main():
 
     print(df.head(40))
 
-    csv_path = "/home/andreaberti/profiler_text/ISAAC_SKRL_Integration/satellite/csv_output.csv"
+    csv_path = "/home/andreaberti/profiler_text/ISAAC_SKRL_Integration_old/satellite/csv_output.csv"
     if not os.path.exists(os.path.dirname(csv_path)):
         os.makedirs(os.path.dirname(csv_path), exist_ok=True)
     df.to_csv(csv_path, index=False)
