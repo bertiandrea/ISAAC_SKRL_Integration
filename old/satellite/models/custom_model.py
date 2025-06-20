@@ -1,6 +1,8 @@
 # custom_model.py
 
 import isaacgym #BugFix
+from isaacgym import gymapi
+from isaacgym import gymtorch
 import torch
 import torch.nn as nn
 
