@@ -1,25 +1,22 @@
 # controller.py
 
-from satellite.utils.satellite_util import quat_diff
-
 import isaacgym #BugFix
-from isaacgym import gymapi
-from isaacgym import gymtorch
 import torch
 
+from satellite.pid.pid import PID
+
 class SatelliteAttitudeController:
-    def __init__(self, num_envs, device, dt, pid_rate, torque_tau):
-        self.device = device
+    def __init__(self, torque_tau, pid, num_envs, device):
         self.num_envs = num_envs
-        self.dt = dt
-        self.pid_rate = pid_rate
+        self.device = device
         self.torque_tau = torque_tau
-        self.prev_torque = torch.zeros((num_envs, 3), device=device, dtype=torch.float)
+        self.pid = pid
+        self.prev_torque = torch.zeros((num_envs, 3), dtype=torch.float, device=device)
 
-    def compute_control(self, actions: torch.Tensor, measured_angvels: torch.Tensor) -> torch.Tensor:
-        rate_error = actions - measured_angvels
-        raw_torque = self.pid_rate.update(rate_error, measured_angvels)
-
+    def compute_control(self, actions: torch.Tensor, measured_angacc: torch.Tensor) -> torch.Tensor:
+        error = torch.sub(actions, measured_angacc)
+        raw_torque = self.pid.update(error)
+        
         # Apply low-pass filter to the torque command
         torque_cmd = self.torque_tau * raw_torque + (1 - self.torque_tau) * self.prev_torque
         
@@ -28,5 +25,5 @@ class SatelliteAttitudeController:
         return torque_cmd
 
     def reset(self, env_ids):
-        self.prev_torque[env_ids] = 0.0
-        self.pid_rate.reset(env_ids)
+        self.prev_torque[env_ids] = torch.zeros((len(env_ids), 3), dtype=torch.float, device=self.device)
+        self.pid.reset(env_ids)

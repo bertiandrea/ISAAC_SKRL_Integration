@@ -13,6 +13,11 @@ import numpy as np
 CUDA = torch.cuda.is_available()
 NUM_ENVS = 32768
 N_EPOCHS = 1
+HEADLESS = True
+FORCE_RENDER = False
+PROFILE = True
+DEBUG_ARROWS = False
+HEARTBEAT = True
 
 class SatelliteConfig(BaseConfig):
     set_seed = False
@@ -25,6 +30,10 @@ class SatelliteConfig(BaseConfig):
     screen_width = 1920
     screen_height = 1080
     
+    profile = PROFILE
+    
+    heartbeat = HEARTBEAT
+
     class env:  
         num_envs = NUM_ENVS
    
@@ -49,6 +58,8 @@ class SatelliteConfig(BaseConfig):
 
         torque_scale = 10
         
+        debug_arrows = DEBUG_ARROWS
+
     class asset:
         root = str(Path(__file__).resolve().parent.parent)
         file = "satellite.urdf"
@@ -153,7 +164,7 @@ class SatelliteConfig(BaseConfig):
             n_epochs = N_EPOCHS
             timesteps = rollouts * n_epochs
             disable_progressbar = False
-            headless = True
+            headless = HEADLESS
 
         class memory:
             rollouts = 16
@@ -163,5 +174,6 @@ class SatelliteConfig(BaseConfig):
             kp = 0.5
             ki = 0.0
             kd = 0.1
+    
     class controller:
         controller_logic = False
