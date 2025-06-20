@@ -38,6 +38,7 @@ class Satellite(VecTask):
         self.overspeed_ang_vel = cfg["env"].get('overspeed_ang_vel', 0.78540)  # radians/sec
         self.max_episode_length = cfg["env"].get('episode_length_s', 120) / self.dt  # seconds
         self.debug_arrows = cfg["env"].get('debug_arrows', False)
+        self.heartbeat = cfg.get('heartbeat', False)
         
         super().__init__(config=cfg, rl_device=rl_device, sim_device=sim_device, graphics_device_id=graphics_device_id, headless=headless, virtual_screen_capture=virtual_screen_capture, force_render=force_render)
 
@@ -71,20 +72,19 @@ class Satellite(VecTask):
 
         self.controller_logic = cfg["controller"].get("controller_logic", False)
         if self.controller_logic:
-            self.pid_rate = PID(
-                num_envs=self.num_envs,
-                kp=cfg["pid"]["rate"].get("kp", 1.0),
-                ki=cfg["pid"]["rate"].get("ki", 0.1),
-                kd=cfg["pid"]["rate"].get("kd", 0.01),
-                dt=self.dt,
-                device=self.device
-            )
-            self.controller = SatelliteAttitudeController(
+            self.pid = PID(
                 num_envs=self.num_envs,
                 device=self.device,
                 dt=self.dt,
-                pid_rate=self.pid_rate,
-                torque_tau=cfg["controller"].get("torque_tau", 0.02)
+                kp=cfg["pid"]["rate"].get("kp", 1.0),
+                ki=cfg["pid"]["rate"].get("ki", 0.1),
+                kd=cfg["pid"]["rate"].get("kd", 0.01),
+            )
+            self.controller = SatelliteAttitudeController(
+                torque_tau=cfg["controller"].get("torque_tau", 0.02),
+                pid=self.pid,
+                num_envs=self.num_envs,
+                device=self.device,
             )
 
         if self.debug_arrows:
@@ -160,8 +160,9 @@ class Satellite(VecTask):
 
             self.rew_buf[ids] = 0.0
         
-        #if self.controller_logic:
-        #    self.controller.reset(ids)
+        if self.controller_logic:
+            with record_function("$SatelliteVec__reset_idx__reset_controller"):
+                self.controller.reset(ids)
         
         if self.debug_arrows:
             with record_function("$SatelliteVec__reset_idx__draw_arrows"):
@@ -171,11 +172,11 @@ class Satellite(VecTask):
 
     def apply_torque(self, actions: torch.Tensor) -> None:
         ############## CONTROLLER ###############
-        #if self.controller_logic:
-        #    actions = self.controller.compute_control(
-        #        actions=actions, 
-        #        measured_angvels=self.satellite_angvels,
-        #    )
+        if self.controller_logic:
+            actions = self.controller.compute_control(
+                actions=actions, 
+                measured_angacc=self.satellite_angacc
+            )
         #########################################
 
         with record_function("$SatelliteVec__apply_torque__noise_and_clamp"):
@@ -215,7 +216,6 @@ class Satellite(VecTask):
                 torch.sub(self.satellite_angvels, self.prev_angvel),
                 self.dt
             )
-        with record_function("$SatelliteVec__compute_observations__compute_buffers"):
             self.prev_angvel = self.satellite_angvels.clone()
             self.obs_buf = torch.cat(
                 (self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), self.satellite_angacc, self.actions), dim=-1)
@@ -227,7 +227,7 @@ class Satellite(VecTask):
             if self.sensor_noise_std > 0.0:
                 noise = torch.normal(mean=0.0, std=self.sensor_noise_std, size=self.state_space.shape, device=self.device)
                 self.obs_buf = torch.add(self.obs_buf, noise[:, :self.num_observations])
-                self.states_buf = torch.add(self.states_buf, noise[:, :self.num_states])
+                # No noise on states
             
             self.obs_buf = torch.clamp(self.obs_buf, -self.clip_obs, self.clip_obs)
             self.states_buf = torch.clamp(self.states_buf, -self.clip_obs, self.clip_obs)
@@ -267,11 +267,17 @@ class Satellite(VecTask):
                     ), True, False)
 
     def pre_physics_step(self, actions):
+        if self.heartbeat:
+            return
+        
         self.apply_torque(actions)
 
     def post_physics_step(self):
         self.progress_buf += 1
-
+        
+        if self.heartbeat:
+            return
+        
         self.termination()
         self.compute_observations()
         self.compute_reward()
