@@ -37,9 +37,11 @@ class VecTask(Params):
         env_lower = gymapi.Vec3(-spacing[0], -spacing[1], -spacing[2])
         env_upper = gymapi.Vec3(spacing[0], spacing[1], spacing[2])
 
+        self.envs = []
         for i in range(self.num_envs):
             env = self.gym.create_env(self.sim, env_lower, env_upper, num_per_row)
             self.create_actor(i, env, self.asset, self.asset_init_pos_p, self.asset_init_pos_r, 1, self.asset_name)
+            self.envs.append(env)
     
     def load_asset(self):
         asset = self.gym.load_asset(self.sim, self.asset_root, self.asset_file)
@@ -106,36 +108,44 @@ class VecTask(Params):
             time.sleep(self.dt - delta)
         self.last_frame_time = time.time()
 
-    def pre_physics_step(self, actions: torch.Tensor) -> None:        
+    def pre_physics_step(self, actions: torch.Tensor) -> None:
+        if self.heartbeat:
+            return        
+        
         self.termination()
 
         self.apply_torque(actions)
 
     def post_physics_step(self) -> None:      
+        self.progress_buf = torch.add(self.progress_buf, 1)
+
+        if self.heartbeat:
+            return
+        
         self.compute_observations()
 
         self.compute_reward()
 
         self.check_termination()
 
-        self.progress_buf = torch.add(self.progress_buf, 1)
-
     def step(self, actions: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, Dict[str, Any]]:
         with record_function("#VecTask__STEP"):
-            self.pre_physics_step(actions)
+            with record_function("$VecTask__step__pre_physics_step"):
+                self.pre_physics_step(actions)
 
             ######################################################################
             if not self.headless and self.device_type != 'cpu':
                 with record_function("#VecTask__step__RENDER"):
                     self.render()
-            with record_function("#VecTask__step__SIMULATE"):
+            with record_function("#VecTask__step__SIM"):
                 self.gym.simulate(self.sim)
             if self.device_type == 'cpu':
                 with record_function("#VecTask__step__FETCH_RESULTS"):
                     self.gym.fetch_results(self.sim, True)
             ######################################################################
-            
-            self.post_physics_step()
+
+            with record_function("$VecTask__step__post_physics_step"):
+                self.post_physics_step()
         
         return self.states_buf, \
             self.reward_buf.view(-1, 1), \
@@ -143,15 +153,8 @@ class VecTask(Params):
             self.timeout_buf.view(-1, 1), \
             {}
 
-    def reset(self):
-        ids = torch.arange(self.num_envs, dtype=torch.int64, device=self.device)
-        self.reset_idx(ids)
-        
+    def reset(self):        
         return self.states_buf, {}
 
     def close(self) -> None:
-        #print("Close Called")
-        if self.viewer is not None:
-            self.gym.destroy_viewer(self.viewer)
-        self.gym.destroy_sim(self.sim)
-        #print("Close Done")
+        pass

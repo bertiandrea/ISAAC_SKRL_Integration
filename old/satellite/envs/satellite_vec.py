@@ -1,6 +1,6 @@
 # satellite_vec.py
 
-from satellite.utils.satellite_util import sample_random_quaternion_batch, quat_diff, quat_diff_rad
+from satellite.utils.satellite_util import sample_random_quaternion_batch, quat_diff, quat_diff_rad, quat_axis
 from satellite.envs.vec_task import VecTask
 from satellite.rewards.satellite_reward import (
     TestReward,
@@ -16,6 +16,8 @@ from isaacgym import gymtorch
 import torch
 
 from torch.profiler import record_function
+
+import numpy as np
 
 class SatelliteVec(VecTask):
     def __init__(self, cfg, reward_fn: RewardFunction = None):
@@ -51,7 +53,7 @@ class SatelliteVec(VecTask):
 
         self.controller_logic = getattr(cfg.controller, "controller_logic", False)
         if self.controller_logic:
-            self.pid_rate = PID(
+            self.pid = PID(
                 num_envs=self.num_envs,
                 kp=getattr(cfg.pid.rate, "kp", 1.0),
                 ki=getattr(cfg.pid.rate, "ki", 0.1),
@@ -62,23 +64,36 @@ class SatelliteVec(VecTask):
             self.controller = SatelliteAttitudeController(
                 num_envs=self.num_envs,
                 device=self.device,
-                dt=self.dt,
-                pid_rate=self.pid_rate,
+                pid=self.pid,
                 torque_tau=getattr(cfg.controller, "torque_tau", 0.02)
             )
-                    
+        
+        self.heartbeat = getattr(cfg, 'heartbeat', False)
+        self.profile = getattr(cfg, 'profile', False)
+        self.debug_arrows = getattr(cfg.env, 'debug_arrows', False)
+
+        if self.debug_arrows:
+            self.draw_arrows()
+
+    def draw_arrows(self):
+        sat_pos = self.satellite_pos.cpu().numpy()
+        local_dir = quat_axis(self.goal_quat, 2).cpu().numpy()
+        self.gym.clear_lines(self.viewer)
+        for i, env in enumerate(self.envs):
+            start = sat_pos[i]
+            end   = sat_pos[i] + local_dir[i] * 2.0
+            self.gym.add_lines(
+                self.viewer,
+                env,
+                1,
+                np.array([start, end], dtype=np.float32),
+                np.array([1.0, 0.0, 0.0], dtype=np.float32)
+            )
+                
     ################################################################################################################################
     
-    def termination(self) -> None:
-        with record_function("$SatelliteVec__termination"):      
-            ids  = torch.nonzero(torch.logical_or(self.reset_buf, self.timeout_buf), as_tuple=False).flatten()
-            if len(ids) > 0:
-                self.reset_idx(ids)
-        
     def reset_idx(self, ids: torch.Tensor) -> None:
         with record_function("$SatelliteVec__reset_idx__sim"):
-            #print(f"[reset_idx] Reset envs: {ids.tolist()}")
-
             ################# SIM #################
             self.root_states[ids] = self.initial_root_states[ids]
             idx32 = ids.to(dtype=torch.int32)
@@ -105,46 +120,21 @@ class SatelliteVec(VecTask):
 
             self.reward_buf[ids] = 0.0
         
-        #if self.controller_logic:
-        #    self.controller.reset(ids)
+        if self.controller_logic:
+            with record_function("$SatelliteVec__reset_idx__reset_controller"):
+                self.controller.reset(ids)
 
-    def compute_observations(self) -> None:
-        ################# SIM #################
-        with record_function("$SatelliteVec__compute_observations__sim"):
-            self.gym.refresh_actor_root_state_tensor(self.sim)
-            self.satellite_angacc = torch.div(
-                torch.sub(self.satellite_angvels, self.prev_angvel),
-                self.dt
-            )
-        with record_function("$SatelliteVec__compute_observations__compute_buffers"):
-            self.prev_angvel = self.satellite_angvels.clone()
-            self.obs_buf = torch.cat(
-                (self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), self.satellite_angacc, self.actions), dim=-1)
-            self.states_buf = torch.cat(
-                (self.obs_buf, self.satellite_angvels), dim=-1)
-        ########################################
-
-        #print(f"[compute_observations]: satellite_quats[0]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[0].tolist())}]")
-        #print(f"[compute_observations]: satellite_quats[1]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[1].tolist())}]")
-        #print(f"[compute_observations]: satellite_quats[2]=[{', '.join(f'{v:.2f}' for v in self.satellite_quats[2].tolist())}]")
-
-        with record_function("$SatelliteVec__compute_observations__noise_and_clamp"):
-            if self.sensor_noise_std > 0.0:
-                noise = torch.normal(mean=0.0, std=self.sensor_noise_std, size=self.state_space.shape, device=self.device)
-                self.obs_buf = torch.add(self.obs_buf, noise[:, :self.num_observations])
-                self.states_buf = torch.add(self.states_buf, noise[:, :self.num_states])
-            
-            self.obs_buf = torch.clamp(self.obs_buf, -self.clip_obs, self.clip_obs)
-            self.states_buf = torch.clamp(self.states_buf, -self.clip_obs, self.clip_obs)
-
+        if self.debug_arrows:
+            with record_function("$SatelliteVec__reset_idx__draw_arrows"):
+                self.draw_arrows()
 
     def apply_torque(self, actions: torch.Tensor) -> None:
         ############## CONTROLLER ###############
-        #if self.controller_logic:
-        #    actions = self.controller.compute_control(
-        #        actions=actions, 
-        #        measured_angvels=self.satellite_angvels,
-        #    )
+        if self.controller_logic:
+            actions = self.controller.compute_control(
+                actions=actions, 
+                measured_angacc=self.satellite_angacc,
+            )
         #########################################
 
         with record_function("$SatelliteVec__apply_torque__noise_and_clamp"):
@@ -159,10 +149,6 @@ class SatelliteVec(VecTask):
                 self.torque_scale
             )
 
-        #print(f"[apply_torque]: actions[0]=[{', '.join(f'{v:.2f}' for v in self.actions[0].tolist())}]")
-        #print(f"[apply_torque]: actions[1]=[{', '.join(f'{v:.2f}' for v in self.actions[1].tolist())}]")
-        #print(f"[apply_torque]: actions[2]=[{', '.join(f'{v:.2f}' for v in self.actions[2].tolist())}]")
-
         ################# SIM #################
         with record_function("$SatelliteVec__apply_torque__sim"):
             self.torque_tensor[self.root_indices] = self.actions
@@ -174,6 +160,36 @@ class SatelliteVec(VecTask):
             )
         #######################################
     
+    def termination(self) -> None:
+        with record_function("$SatelliteVec__termination"):      
+            ids  = torch.nonzero(torch.logical_or(self.reset_buf, self.timeout_buf), as_tuple=False).flatten()
+            if len(ids) > 0:
+                self.reset_idx(ids)
+
+    def compute_observations(self) -> None:
+        ################# SIM #################
+        with record_function("$SatelliteVec__compute_observations__sim"):
+            self.gym.refresh_actor_root_state_tensor(self.sim)
+            self.satellite_angacc = torch.div(
+                torch.sub(self.satellite_angvels, self.prev_angvel),
+                self.dt
+            )
+            self.prev_angvel = self.satellite_angvels.clone()
+            self.obs_buf = torch.cat(
+                (self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), self.satellite_angacc, self.actions), dim=-1)
+            self.states_buf = torch.cat(
+                (self.obs_buf, self.satellite_angvels), dim=-1)
+        ########################################
+
+        with record_function("$SatelliteVec__compute_observations__noise_and_clamp"):
+            if self.sensor_noise_std > 0.0:
+                noise = torch.normal(mean=0.0, std=self.sensor_noise_std, size=self.state_space.shape, device=self.device)
+                self.obs_buf = torch.add(self.obs_buf, noise[:, :self.num_observations])
+                # No noise on states
+
+            self.obs_buf = torch.clamp(self.obs_buf, -self.clip_obs, self.clip_obs)
+            self.states_buf = torch.clamp(self.states_buf, -self.clip_obs, self.clip_obs)
+   
     def compute_reward(self) -> None:
         with record_function("$SatelliteVec__compute_reward"):
             self.reward_buf = self.reward_fn.compute(
@@ -181,10 +197,6 @@ class SatelliteVec(VecTask):
                 self.goal_quat, self.goal_ang_vel, self.goal_ang_acc,
                 self.actions
             )
-
-        #print(f"[compute_reward]: reward_buf[0]={self.reward_buf[0].item():.2f}")
-        #print(f"[compute_reward]: reward_buf[1]={self.reward_buf[1].item():.2f}")
-        #print(f"[compute_reward]: reward_buf[2]={self.reward_buf[2].item():.2f}")
 
     def check_termination(self) -> None:
         with record_function("$SatelliteVec__check_termination"):
@@ -205,16 +217,13 @@ class SatelliteVec(VecTask):
                 self.overspeed_ang_vel
             )
 
-            self.timeout_buf = torch.where(torch.logical_or(timeout, overspeed), True, False)
             self.reset_buf = torch.where(goal, True, False)
-        
-        #timeout_ids = torch.nonzero(timeout, as_tuple=False).flatten()
-        #if len(timeout_ids) > 0:
-        #    print(f"[check_termination] TIMEOUT or OVERSPEED in envs: {timeout_ids.tolist()}")
-        
-        #reset_ids = torch.nonzero(self.reset_buf, as_tuple=False).flatten()
-        #if len(reset_ids) > 0:
-        #    print(f"[check_termination] GOAL envs: {reset_ids.tolist()}")
+
+            self.timeout_buf = torch.where(
+                torch.logical_and(
+                    torch.logical_or(timeout, overspeed), torch.logical_not(self.reset_buf)
+                    ), True, False)
+
         
         
         

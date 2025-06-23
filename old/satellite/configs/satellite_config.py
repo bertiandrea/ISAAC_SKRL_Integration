@@ -13,10 +13,10 @@ import numpy as np
 CUDA = torch.cuda.is_available()
 NUM_ENVS = 32768
 N_EPOCHS = 1
-HEADLESS = True
+HEADLESS = False
 FORCE_RENDER = False
 PROFILE = True
-DEBUG_ARROWS = False
+DEBUG_ARROWS = True
 HEARTBEAT = True
 
 class SatelliteConfig(BaseConfig):

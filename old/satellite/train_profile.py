@@ -26,8 +26,6 @@ from skrl.trainers.torch import SequentialTrainer
 from skrl.utils import set_seed
 
 import argparse
-import os
-import pandas as pd
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Profiler imports
@@ -36,17 +34,9 @@ from torch.profiler import (
     ProfilerActivity,
     tensorboard_trace_handler,
 )
+import os
+import pandas as pd
 # ──────────────────────────────────────────────────────────────────────────────
-
-REWARD_MAP = {
-    "test": TestReward,
-    "test_smooth": TestRewardSmooth,
-    "weighted_sum": WeightedSumReward,
-    "two_phase": TwoPhaseReward,
-    "exp_stabilization": ExponentialStabilizationReward,
-    "continuous_discrete_effort": ContinuousDiscreteEffortReward,
-    "shaping": ShapingReward,
-}
 
 def class_to_dict(obj) -> dict:
     if not hasattr(obj, "__dict__"):
@@ -62,6 +52,16 @@ def class_to_dict(obj) -> dict:
             result[key] = class_to_dict(val)
     return result
 
+REWARD_MAP = {
+    "test": TestReward,
+    "test_smooth": TestRewardSmooth,
+    "weighted_sum": WeightedSumReward,
+    "two_phase": TwoPhaseReward,
+    "exp_stabilization": ExponentialStabilizationReward,
+    "continuous_discrete_effort": ContinuousDiscreteEffortReward,
+    "shaping": ShapingReward,
+}
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Training con reward function selezionabile")
@@ -73,63 +73,7 @@ def parse_args():
     )
     return parser.parse_args()
 
-def main():
-    # 0) parsing degli argomenti
-    args = parse_args()
-
-    # 1) setup environment
-    env_cfg = SatelliteConfig()
-    if env_cfg.set_seed:
-        set_seed(env_cfg.seed)
-
-    env = SatelliteVec(cfg=env_cfg, reward_fn=REWARD_MAP[args.reward_fn]())
-
-    # 2) PPO and Trainer config
-    env_cfg_dict = class_to_dict(env_cfg)
-
-    cfg_ppo = PPO_DEFAULT_CONFIG.copy()
-
-    env_cfg_dict["rl"]["PPO"]["state_preprocessor_kwargs"] = {
-        "size": env.state_space, "device": env.device
-    }
-    env_cfg_dict["rl"]["PPO"]["value_preprocessor_kwargs"] = {
-        "size": 1, "device": env.device
-    }
-    env_cfg_dict["rl"]["PPO"]["learning_rate_scheduler"] = KLAdaptiveRL
-    env_cfg_dict["rl"]["PPO"]["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.016}
-    env_cfg_dict["rl"]["PPO"]["state_preprocessor"] = RunningStandardScaler
-    env_cfg_dict["rl"]["PPO"]["value_preprocessor"] = RunningStandardScaler
-    env_cfg_dict["rl"]["PPO"]["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.01
-    
-    cfg_ppo.update(env_cfg_dict["rl"]["PPO"])
-
-    # 3) memoria
-    memory = RandomMemory(
-        memory_size=env_cfg_dict["rl"]["memory"]["rollouts"],
-        num_envs=env.num_envs,
-        device=env.device
-    )
-
-    # 4) modelli
-    policy = Policy(env.obs_space, env.act_space, env.device)
-    value  = Value(env.state_space, env.act_space, env.device)
-    models = { "policy": policy, "value": value }
-
-    # 5) istanzia agente e trainer
-    agent = PPO(
-        models=models,
-        memory=memory,
-        cfg=cfg_ppo,
-        observation_space=env.state_space,
-        action_space=env.act_space,
-        device=env.device
-    )
-    trainer = SequentialTrainer(cfg=env_cfg_dict["rl"]["trainer"],
-                                env=env,
-                                agents=agent)
-    # ──────────────────────────────────────────────────────────────────────────
-    # Setup PyTorch profiler
-    log_dir = "/home/andreaberti/profiler_logs/ISAAC_SKRL_Integration_old/satellite"
+def setup_profiler(log_dir = "/home/andreaberti/profiler_logs/ISAAC_SKRL_Integration_old/satellite"):
     if not os.path.exists(log_dir):
         os.makedirs(log_dir, exist_ok=True)
     prof = profile(
@@ -141,13 +85,10 @@ def main():
         with_flops=True,
         with_modules=True,
     )
-    # ──────────────────────────────────────────────────────────────────────────
+    return prof
 
-    prof.start()
-    trainer.train()
-    prof.stop()
-
-    output_path = "/home/andreaberti/profiler_text/ISAAC_SKRL_Integration_old/satellite/text_output.txt"
+def save_profiler_results(prof, log_dir="/home/andreaberti"):
+    output_path = log_dir + "/profiler_text/ISAAC_SKRL_Integration_old/satellite/text_output.txt"
     if not os.path.exists(os.path.dirname(output_path)):
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
     
@@ -197,11 +138,74 @@ def main():
 
     print(df.head(40))
 
-    csv_path = "/home/andreaberti/profiler_text/ISAAC_SKRL_Integration_old/satellite/csv_output.csv"
+    csv_path = log_dir + "/profiler_text/ISAAC_SKRL_Integration_old/satellite/csv_output.csv"
     if not os.path.exists(os.path.dirname(csv_path)):
         os.makedirs(os.path.dirname(csv_path), exist_ok=True)
     df.to_csv(csv_path, index=False)
 
+def main():
+    # 0) parsing degli argomenti
+    args = parse_args()
+
+    # 1) setup environment
+    env_cfg = SatelliteConfig()
+    if env_cfg.set_seed:
+        set_seed(env_cfg.seed)
+
+    env = SatelliteVec(cfg=env_cfg, reward_fn=REWARD_MAP[args.reward_fn]())
+
+    env_cfg_dict = class_to_dict(env_cfg)
+
+    # 2) memoria
+    memory = RandomMemory(
+        memory_size=env_cfg_dict["rl"]["memory"]["rollouts"],
+        num_envs=env.num_envs,
+        device=env.device
+    )
+
+    # 3) modelli
+    policy = Policy(env.obs_space, env.act_space, env.device)
+    value  = Value(env.state_space, env.act_space, env.device)
+    models = { "policy": policy, "value": value }
+
+    # 4) PPO and Trainer config
+    env_cfg_dict["rl"]["PPO"]["state_preprocessor_kwargs"] = {
+        "size": env.state_space, "device": env.device
+    }
+    env_cfg_dict["rl"]["PPO"]["value_preprocessor_kwargs"] = {
+        "size": 1, "device": env.device
+    }
+    env_cfg_dict["rl"]["PPO"]["learning_rate_scheduler"] = KLAdaptiveRL
+    env_cfg_dict["rl"]["PPO"]["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.016}
+    env_cfg_dict["rl"]["PPO"]["state_preprocessor"] = RunningStandardScaler
+    env_cfg_dict["rl"]["PPO"]["value_preprocessor"] = RunningStandardScaler
+    env_cfg_dict["rl"]["PPO"]["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.01
+    
+    cfg_ppo = PPO_DEFAULT_CONFIG.copy()
+    cfg_ppo.update(env_cfg_dict["rl"]["PPO"])
+
+    # 5) istanzia agente e trainer
+    agent = PPO(
+        models=models,
+        memory=memory,
+        cfg=cfg_ppo,
+        observation_space=env.state_space,
+        action_space=env.act_space,
+        device=env.device
+    )
+    trainer = SequentialTrainer(cfg=env_cfg_dict["rl"]["trainer"],
+                                env=env,
+                                agents=agent)
+
+    if env_cfg_dict["profile"]:
+        prof = setup_profiler()
+        prof.start()
+
+    trainer.train()
+
+    if env_cfg_dict["profile"]:
+        prof.stop()
+        save_profiler_results(prof)
 
 if __name__ == "__main__":
     main()
