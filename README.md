@@ -2,6 +2,8 @@
 
 Il progetto mette in piedi una pipeline completa per addestrare un agente di controllo dell’assetto orbitale di un satellite, basata su due componenti chiave: la simulazione fisica parallela offerta da NVIDIA Isaac Gym e l’algoritmo PPO (Proximal Policy Optimization) fornito da SKRL.
 
+---
+## Code
 ### Configuration
 Modulo per la definizione di tutti i parametri necessari al funzionamento del sistema: dalla gestione del seed e del dispositivo di calcolo (CPU/GPU), fino ai dettagli relativi agli ambienti paralleli. Include anche i percorsi al file URDF dell’asset, i parametri di simulazione e i setting dell’algoritmo PPO.
 
@@ -23,6 +25,7 @@ Il file URDF descrive la geometria, la massa e le proprietà fisiche del satelli
 ### Training
 Lo script di training integra tutti i componenti: legge gli argomenti da riga di comando, costruisce l’ambiente, configura l’algoritmo PPO con i suoi iperparametri, istanzia i modelli di policy e value, impacchetta il tutto in un agente SKRL e avvia il ciclo di apprendimento.
 
+---
 ## Scalability Results
 ![GPU%_vs_#env](gpu_vs_env.png)
 
