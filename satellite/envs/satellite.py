@@ -119,15 +119,18 @@ class Satellite(VecTask):
     def draw_arrows(self):
         sat_pos = self.satellite_pos.cpu().numpy()
         local_dir = quat_axis(self.goal_quat, 2).cpu().numpy()
-        verts = np.stack([sat_pos, sat_pos + local_dir * 2.0], axis=1).astype(np.float32)
-        colors = np.tile([1.0, 0.0, 0.0], (self.num_envs, 1)).astype(np.float32)
         self.gym.clear_lines(self.viewer)
-        self.gym.add_lines(self.viewer,
-                        None,               # None = batch per tutti gli env
-                        self.num_envs,      # numero di linee = N
-                        verts,              # (N, 2, 3)
-                        colors)             # (N, 3)
-    
+        for i, env in enumerate(self.envs):
+            start = sat_pos[i]
+            end   = sat_pos[i] + local_dir[i] * 2.0
+            self.gym.add_lines(
+                self.viewer,
+                env,
+                1,
+                np.array([start, end], dtype=np.float32),
+                np.array([1.0, 0.0, 0.0], dtype=np.float32)
+            )
+
     ################################################################################################################################
            
     def reset_idx(self, ids: torch.Tensor) -> None:
