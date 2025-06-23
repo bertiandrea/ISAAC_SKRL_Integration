@@ -127,34 +127,32 @@ class Satellite(VecTask):
         colors_goal    = [
             np.array([0.0, 0.0, 1.0], dtype=np.float32),  # blu → X
             np.array([0.0, 1.0, 0.0], dtype=np.float32),  # verde → Y
-            np.array([1.0, 0.0, 0.0], dtype=np.float32)   # rosso  → Z
+            np.array([1.0, 0.0, 0.0], dtype=np.float32)   # rosso  → Z -> Orientation Direction
         ]
         colors_sat = [
-            np.array([0.0, 0.0, 0.5], dtype=np.float32),
-            np.array([0.0, 0.5, 0.0], dtype=np.float32),
-            np.array([0.5, 0.0, 0.0], dtype=np.float32),
+            np.array([0.0, 0.0, 0.5], dtype=np.float32),  # blu scuro → X
+            np.array([0.0, 0.5, 0.0], dtype=np.float32),  # verde scuro → Y
+            np.array([0.5, 0.0, 0.0], dtype=np.float32),  # rosso scuro → Z -> Orientation Direction
         ]
         self.gym.clear_lines(self.viewer)
         for i, env in enumerate(self.envs):
-            start = sat_pos[i]
-
             for axis_vec, color in zip((x_goal, y_goal, z_goal), colors_goal):
-                end = start + axis_vec[i] * 2.0
+                end = sat_pos[i] + axis_vec[i] * 2.0
                 self.gym.add_lines(
                     self.viewer,
                     env,
                     1,
-                    np.array([start, end], dtype=np.float32),
+                    np.array([sat_pos[i], end], dtype=np.float32),
                     color
                 )
 
             for axis_vec, color in zip((x_sat, y_sat, z_sat), colors_sat):
-                end = start + axis_vec[i] * 2.0
+                end = sat_pos[i] + axis_vec[i] * 2.0
                 self.gym.add_lines(
                     self.viewer,
                     env,
                     1,
-                    np.array([start, end], dtype=np.float32),
+                    np.array([sat_pos[i], end], dtype=np.float32),
                     color
                 )
 
