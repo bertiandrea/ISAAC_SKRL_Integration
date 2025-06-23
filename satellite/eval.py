@@ -115,7 +115,7 @@ def main():
                 device=env.device)
 
 
-    agent.load("/home/andreaberti/ISAAC_SKRL_Integration/runs/satellite/25-06-19_13-24-01-658800_PPO/checkpoints/best_agent.pt")
+    agent.load("/home/andreaberti/ISAAC_SKRL_Integration/runs/satellite/blessed_run/checkpoints/best_agent.pt")
 
     trainer = SequentialTrainer(cfg=cfg["rl"]["trainer"], env=env, agents=agent)
 

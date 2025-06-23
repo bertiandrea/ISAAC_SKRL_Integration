@@ -19,6 +19,9 @@ import numpy as np
 
 from torch.profiler import record_function
 
+BASE_COLORS_SAT  = torch.tensor([[1,0,1], [0,1,1], [1,1,0]], dtype=torch.float32)
+BASE_COLORS_GOAL = torch.tensor([[0,0,1], [0,1,0], [1,0,0]], dtype=torch.float32)
+
 class Satellite(VecTask):
     def __init__(self, cfg, rl_device, sim_device, graphics_device_id, headless, virtual_screen_capture, force_render, reward_fn: RewardFunction = None):
         self.cfg = cfg
@@ -100,8 +103,13 @@ class Satellite(VecTask):
         env_upper = gymapi.Vec3(spacing, spacing, spacing)
 
         self.envs = []
+        self.sat_glob_pos = torch.zeros((self.num_envs, 3), dtype=torch.float32, device=self.device)
         for i in range(self.num_envs):
             env = self.gym.create_env(self.sim, env_lower, env_upper, num_per_row)
+            origin = self.gym.get_env_origin(env)
+            self.sat_glob_pos[i] = torch.tensor([origin.x, origin.y, origin.z],
+                                                dtype=torch.float32,
+                                                device=self.device)
             self.create_actor(i, env, self.asset, self.asset_init_pos_p, self.asset_init_pos_r, 1, self.asset_name)
             self.envs.append(env)
 
@@ -115,46 +123,40 @@ class Satellite(VecTask):
         init_pose.p = gymapi.Vec3(*pose_p)
         init_pose.r = gymapi.Quat(*pose_r)
         self.gym.create_actor(env, asset_handle, init_pose, f"{name}", env_idx, collision)
-       
+        
+                
     def draw_arrows(self):
-        sat_pos = self.satellite_pos.cpu().numpy()
-        x_goal    = quat_axis(self.goal_quat, 0).cpu().numpy() # (N,3)
-        y_goal    = quat_axis(self.goal_quat, 1).cpu().numpy() # (N,3)
-        z_goal    = quat_axis(self.goal_quat, 2).cpu().numpy() # (N,3)
-        x_sat = quat_axis(self.satellite_quats, 0).cpu().numpy() # (N,3)
-        y_sat = quat_axis(self.satellite_quats, 1).cpu().numpy() # (N,3)
-        z_sat = quat_axis(self.satellite_quats, 2).cpu().numpy() # (N,3)
-        colors_goal    = [
-            np.array([0.0, 0.0, 1.0], dtype=np.float32),  # blu → X
-            np.array([0.0, 1.0, 0.0], dtype=np.float32),  # verde → Y
-            np.array([1.0, 0.0, 0.0], dtype=np.float32)   # rosso  → Z -> Orientation Direction
-        ]
-        colors_sat = [
-            np.array([1.0, 0.0, 1.0], dtype=np.float32),  # magenta → X
-            np.array([0.0, 1.0, 1.0], dtype=np.float32),  # ciano → Y
-            np.array([1.0, 1.0, 0.0], dtype=np.float32),  # giallo → Z -> Orientation Direction
-        ]
-        self.gym.clear_lines(self.viewer)
-        for i, env in enumerate(self.envs):
-            for axis_vec, color in zip((x_goal, y_goal, z_goal), colors_goal):
-                end = sat_pos[i] + axis_vec[i] * 2.0
-                self.gym.add_lines(
-                    self.viewer,
-                    env,
-                    1,
-                    np.array([sat_pos[i], end], dtype=np.float32),
-                    color
-                )
+        x_goal = quat_axis(self.goal_quat, 0)
+        y_goal = quat_axis(self.goal_quat, 1)
+        z_goal = quat_axis(self.goal_quat, 2)
+        x_sat  = quat_axis(self.satellite_quats, 0)
+        y_sat  = quat_axis(self.satellite_quats, 1)
+        z_sat  = quat_axis(self.satellite_quats, 2)
 
-            for axis_vec, color in zip((x_sat, y_sat, z_sat), colors_sat):
-                end = sat_pos[i] + axis_vec[i] * 1.5
-                self.gym.add_lines(
-                    self.viewer,
-                    env,
-                    1,
-                    np.array([sat_pos[i], end], dtype=np.float32),
-                    color
-                )
+        sat_lines = torch.cat([
+            torch.stack([self.sat_glob_pos, self.sat_glob_pos + x_sat * 1.5], dim=1),
+            torch.stack([self.sat_glob_pos, self.sat_glob_pos + y_sat * 1.5], dim=1),
+            torch.stack([self.sat_glob_pos, self.sat_glob_pos + z_sat * 1.5], dim=1),
+        ], dim=0)  # → (3N,2,3)
+        goal_lines = torch.cat([
+            torch.stack([self.sat_glob_pos, self.sat_glob_pos + x_goal * 2.0], dim=1),
+            torch.stack([self.sat_glob_pos, self.sat_glob_pos + y_goal * 2.0], dim=1),
+            torch.stack([self.sat_glob_pos, self.sat_glob_pos + z_goal * 2.0], dim=1),
+        ], dim=0)  # → (3N,2,3)
+        all_lines = torch.cat([sat_lines, goal_lines], dim=0)  # → (6N,2,3)
+
+        colors_sat  = BASE_COLORS_SAT.repeat_interleave(self.num_envs, dim=0)   # (3N,3)
+        colors_goal = BASE_COLORS_GOAL.repeat_interleave(self.num_envs, dim=0)  # (3N,3)
+        all_colors = torch.cat([colors_sat, colors_goal], dim=0)  # (6N,3)
+
+        self.gym.clear_lines(self.viewer)
+        self.gym.add_lines(
+            self.viewer,
+            None,
+            6 * self.num_envs,
+            all_lines.cpu().numpy(),
+            all_colors.cpu().numpy()
+        )
 
     ################################################################################################################################
            
@@ -308,3 +310,7 @@ class Satellite(VecTask):
         self.compute_observations()
         self.compute_reward()
         self.check_termination()
+
+        if self.debug_arrows:
+            with record_function("$SatelliteVec__post_physics_step__draw_arrows"):
+                self.draw_arrows()

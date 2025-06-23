@@ -5,12 +5,12 @@ from satellite.configs.base_config import BaseConfig
 from pathlib import Path
 import numpy as np
 
-NUM_ENVS = 1024
-N_EPOCHS = 2
-HEADLESS = True
+NUM_ENVS = 64
+N_EPOCHS = 512
+HEADLESS = False
 FORCE_RENDER = False
-PROFILE = True
-DEBUG_ARROWS = False
+PROFILE = False
+DEBUG_ARROWS = True
 HEARTBEAT = False
 
 class SatelliteConfig(BaseConfig):
@@ -51,7 +51,7 @@ class SatelliteConfig(BaseConfig):
         clipActions = np.Inf
         clipObservations = np.Inf
 
-        torque_scale = 10
+        torque_scale = 1
 
         debug_arrows = DEBUG_ARROWS
         
