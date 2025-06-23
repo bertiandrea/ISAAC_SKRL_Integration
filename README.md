@@ -24,7 +24,7 @@ Il file URDF descrive la geometria, la massa e le proprietà fisiche del satelli
 Lo script di training integra tutti i componenti: legge gli argomenti da riga di comando, costruisce l’ambiente, configura l’algoritmo PPO con i suoi iperparametri, istanzia i modelli di policy e value, impacchetta il tutto in un agente SKRL e avvia il ciclo di apprendimento.
 
 ## Scalability Results
-![GPU%_vs_#env](./gpu%_vs_#env.png)
+![GPU%_vs_#env](gpu%25_vs_#env.png)
 
 ## Video Demo
 
