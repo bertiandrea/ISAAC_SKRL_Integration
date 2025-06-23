@@ -130,9 +130,9 @@ class Satellite(VecTask):
             np.array([1.0, 0.0, 0.0], dtype=np.float32)   # rosso  → Z -> Orientation Direction
         ]
         colors_sat = [
-            np.array([0.0, 0.0, 0.5], dtype=np.float32),  # blu scuro → X
-            np.array([0.0, 0.5, 0.0], dtype=np.float32),  # verde scuro → Y
-            np.array([0.5, 0.0, 0.0], dtype=np.float32),  # rosso scuro → Z -> Orientation Direction
+            np.array([1.0, 0.0, 1.0], dtype=np.float32),  # magenta → X
+            np.array([0.0, 1.0, 1.0], dtype=np.float32),  # ciano → Y
+            np.array([1.0, 1.0, 0.0], dtype=np.float32),  # giallo → Z -> Orientation Direction
         ]
         self.gym.clear_lines(self.viewer)
         for i, env in enumerate(self.envs):
@@ -147,7 +147,7 @@ class Satellite(VecTask):
                 )
 
             for axis_vec, color in zip((x_sat, y_sat, z_sat), colors_sat):
-                end = sat_pos[i] + axis_vec[i] * 2.0
+                end = sat_pos[i] + axis_vec[i] * 1.5
                 self.gym.add_lines(
                     self.viewer,
                     env,
