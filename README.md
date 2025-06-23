@@ -27,10 +27,7 @@ Lo script di training integra tutti i componenti: legge gli argomenti da riga di
 ![GPU%_vs_#env](gpu_vs_env.png)
 
 ## Video Demo
-
-<video width="640" controls>
-  <source src="isaacgym_skrl_vid.mp4" type="video/mp4">
-</video>
+![isaacgym_skrl_vid](isaacgym_skrl_vid.gif)
 
 ---
 ## 🖥️ Esecuzione Locale
