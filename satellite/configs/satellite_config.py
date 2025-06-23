@@ -6,12 +6,12 @@ from pathlib import Path
 import numpy as np
 
 NUM_ENVS = 32768
-N_EPOCHS = 2
+N_EPOCHS = 200
 HEADLESS = False
 FORCE_RENDER = False
-PROFILE = True
+PROFILE = False
 DEBUG_ARROWS = True
-HEARTBEAT = True
+HEARTBEAT = False
 
 class SatelliteConfig(BaseConfig):
     set_seed = False

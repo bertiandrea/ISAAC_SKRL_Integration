@@ -118,18 +118,45 @@ class Satellite(VecTask):
        
     def draw_arrows(self):
         sat_pos = self.satellite_pos.cpu().numpy()
-        local_dir = quat_axis(self.goal_quat, 2).cpu().numpy()
+        x_goal    = quat_axis(self.goal_quat, 0).cpu().numpy() # (N,3)
+        y_goal    = quat_axis(self.goal_quat, 1).cpu().numpy() # (N,3)
+        z_goal    = quat_axis(self.goal_quat, 2).cpu().numpy() # (N,3)
+        x_sat = quat_axis(self.satellite_quats, 0).cpu().numpy() # (N,3)
+        y_sat = quat_axis(self.satellite_quats, 1).cpu().numpy() # (N,3)
+        z_sat = quat_axis(self.satellite_quats, 2).cpu().numpy() # (N,3)
+        colors_goal    = [
+            np.array([0.0, 0.0, 1.0], dtype=np.float32),  # blu → X
+            np.array([0.0, 1.0, 0.0], dtype=np.float32),  # verde → Y
+            np.array([1.0, 0.0, 0.0], dtype=np.float32)   # rosso  → Z
+        ]
+        colors_sat = [
+            np.array([0.0, 0.0, 0.5], dtype=np.float32),
+            np.array([0.0, 0.5, 0.0], dtype=np.float32),
+            np.array([0.5, 0.0, 0.0], dtype=np.float32),
+        ]
         self.gym.clear_lines(self.viewer)
         for i, env in enumerate(self.envs):
             start = sat_pos[i]
-            end   = sat_pos[i] + local_dir[i] * 2.0
-            self.gym.add_lines(
-                self.viewer,
-                env,
-                1,
-                np.array([start, end], dtype=np.float32),
-                np.array([1.0, 0.0, 0.0], dtype=np.float32)
-            )
+
+            for axis_vec, color in zip((x_goal, y_goal, z_goal), colors_goal):
+                end = start + axis_vec[i] * 2.0
+                self.gym.add_lines(
+                    self.viewer,
+                    env,
+                    1,
+                    np.array([start, end], dtype=np.float32),
+                    color
+                )
+
+            for axis_vec, color in zip((x_sat, y_sat, z_sat), colors_sat):
+                end = start + axis_vec[i] * 2.0
+                self.gym.add_lines(
+                    self.viewer,
+                    env,
+                    1,
+                    np.array([start, end], dtype=np.float32),
+                    color
+                )
 
     ################################################################################################################################
            
