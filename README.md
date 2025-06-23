@@ -23,6 +23,15 @@ Il file URDF descrive la geometria, la massa e le proprietà fisiche del satelli
 ### Training
 Lo script di training integra tutti i componenti: legge gli argomenti da riga di comando, costruisce l’ambiente, configura l’algoritmo PPO con i suoi iperparametri, istanzia i modelli di policy e value, impacchetta il tutto in un agente SKRL e avvia il ciclo di apprendimento.
 
+## Scalability Results
+![GPU%_vs_#env](gpu%_vs_#env.png)
+
+## Video Demo
+
+<video width="640" controls>
+  <source src="isaacgym_skrl_vid.mp4" type="video/mp4">
+</video>
+
 ---
 ## 🖥️ Esecuzione Locale
 
@@ -44,10 +53,10 @@ Lo script di training integra tutti i componenti: legge gli argomenti da riga di
 
 ### 🔹 1. Sul Server Remoto
 
-Esegui lo script `run_remote_vnc.sh` specificando il numero di display (es: `1`), l'environment (es: `rlgpu`) e la reward function (es: `test`):
+Esegui lo script `train.sh` specificando il numero di display (es: `1`), l'environment (es: `rlgpu`) e la reward function (es: `test`):
 
 ```bash
-./run_remote_vnc.sh 1 rlgpu test
+./train.sh 1 rlgpu test
 ```
 
 ---
@@ -57,12 +66,12 @@ Esegui lo script `run_remote_vnc.sh` specificando il numero di display (es: `1`)
 #### a. Crea un tunnel SSH con port forwarding:
 
 ```bash
-ssh -v -L 59000:localhost:$((5900 + <PORT>)) -C -N -J betajump your_user@your.remote.ip
+ssh -v -L 59000:localhost:$((5900 + <PORT>)) -N your_user@your.remote.ip
 ```
 
 Sostituisci:
 
-* `<PORT>` con il numero usato nel comando `run_remote_vnc.sh`
+* `<PORT>` con il numero usato nel comando `train.sh`
 * `your_user` con il tuo username SSH
 * `your.remote.ip` con l’indirizzo IP del server remoto
 
@@ -70,7 +79,7 @@ Sostituisci:
 
 Connettiti a:
 
-```
+```bash
 localhost:59000
 ```
 
@@ -92,13 +101,13 @@ tensorboard --logdir ./runs --port 6006
 
 Apri PowerShell e crea un tunnel SSH:
 
-```powershell
-ssh -L 59001:localhost:6006 -C -N -J betajump andreaberti@192.168.1.3
+```bash
+ssh -L 59001:localhost:6006 -N your_user@your.remote.ip
 ```
 
 Poi apri il browser e visita:
 
-```
+```bash
 http://localhost:59001
 ```
 
@@ -122,8 +131,6 @@ bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
 rm ~/miniconda3/miniconda.sh
 ~/miniconda3/bin/conda init bash
 ```
-
-Questo installerà Miniconda in modalità batch e configurerà automaticamente la shell per l’uso di `conda`.
 
 ### 2️⃣ Download di Isaac Gym
 
@@ -175,7 +182,7 @@ conda activate rlgpu
 pip install skrl["torch"]
 ```
 
-## ⚙️ Opzionale per il funzionamento della GPU
+## ⚙️ Opzionale per il funzionamento della GPU pipeline
 
 ```bash
 export VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/nvidia_icd.json
