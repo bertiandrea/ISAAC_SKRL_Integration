@@ -5,12 +5,12 @@ from satellite.configs.base_config import BaseConfig
 from pathlib import Path
 import numpy as np
 
-NUM_ENVS = 64
-N_EPOCHS = 512
-HEADLESS = False
+NUM_ENVS = 4096
+N_EPOCHS = 16384
+HEADLESS = True
 FORCE_RENDER = False
 PROFILE = False
-DEBUG_ARROWS = True
+DEBUG_ARROWS = False
 HEARTBEAT = False
 
 class SatelliteConfig(BaseConfig):
@@ -44,7 +44,7 @@ class SatelliteConfig(BaseConfig):
         actuation_noise_std = 0.0
         
         threshold_ang_goal = 0.0872665        # soglia in radianti per orientamento
-        threshold_vel_goal = 0.0872665        # soglia in rad/sec per la differenza di velocità
+        threshold_vel_goal = 0.0174532        # soglia in rad/sec per la differenza di velocità
         overspeed_ang_vel =  0.78540        # soglia in rad/sec per l'overspeed
         episode_length_s = 30              # soglia in secondi per la terminazione di una singola simulazione
         
@@ -131,22 +131,22 @@ class SatelliteConfig(BaseConfig):
 
     class rl:
         class PPO:
-            num_envs = NUM_ENVS
-            rollouts = 8
-            learning_epochs = 8
-            mini_batches = 4
-            discount_factor = 0.99
-            lambda_ = 0.95
-            learning_rate = 1e-3
-            grad_norm_clip = 1.0
-            ratio_clip = 0.2
-            value_clip = 0.2
-            clip_predicted_values = True
-            entropy_loss_scale = 0.00
-            value_loss_scale = 1.0
-            kl_threshold = 0
-            random_timesteps = 0
-            learning_starts = 0
+            num_envs = NUM_ENVS #Number of parallel environments collecting experience; more envs yield better GPU/utilization but higher memory use.
+            rollouts = 1 #Number of steps per environment before each policy update (i.e. rollout length).
+            learning_epochs = 8 #How many times to iterate over the collected batch of data when updating the policy.
+            mini_batches = 64 #Number of chunks to split the rollout batch into for stochastic gradient descent.
+            
+            discount_factor = 0.99 #(γ) Future reward discount; balances immediate versus long-term return.
+            learning_rate = 1e-3 #Step size for optimizer (e.g. Adam) when updating policy and value networks.
+            grad_norm_clip = 0.5 #Maximum norm value to clip gradients, preventing exploding gradients.
+            ratio_clip = 0.2 #(ϵ) PPO’s clipping threshold on the policy probability ratio to constrain updates.
+            value_clip = 0.2 #Clipping range for value function targets to stabilize value updates.
+            clip_predicted_values = False #If enabled, clips the new value predictions to lie within the range defined by value_clip around the old predictions.
+            entropy_loss_scale = 0.00 #Coefficient multiplying the entropy bonus; encourages exploration when > 0.
+            value_loss_scale = 1.0 #Coefficient weighting the value function loss in the total loss.
+            kl_threshold = 0 #Optional early-stop threshold on KL divergence between old and new policies (0 disables).
+            random_timesteps = 0 #Number of initial timesteps with random actions before learning or policy-driven sampling.
+            learning_starts = 0 #Number of environment steps to collect before beginning any gradient updates.
             
             class experiment:
                     write_interval = "auto"
@@ -155,7 +155,7 @@ class SatelliteConfig(BaseConfig):
                     wandb = False
 
         class trainer:
-            rollouts = 8
+            rollouts = 1
             n_epochs = N_EPOCHS
             timesteps = rollouts * n_epochs
             disable_progressbar = False
