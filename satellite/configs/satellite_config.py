@@ -6,12 +6,14 @@ from pathlib import Path
 import numpy as np
 
 NUM_ENVS = 4096
-N_EPOCHS = 16384
+N_EPOCHS = 4096
 HEADLESS = True
 FORCE_RENDER = False
 PROFILE = False
 DEBUG_ARROWS = False
 HEARTBEAT = False
+
+ROLLOUTS = 1
 
 class SatelliteConfig(BaseConfig):
     set_seed = False
@@ -132,7 +134,7 @@ class SatelliteConfig(BaseConfig):
     class rl:
         class PPO:
             num_envs = NUM_ENVS #Number of parallel environments collecting experience; more envs yield better GPU/utilization but higher memory use.
-            rollouts = 1 #Number of steps per environment before each policy update (i.e. rollout length).
+            rollouts = ROLLOUTS #Number of steps per environment before each policy update (i.e. rollout length).
             learning_epochs = 8 #How many times to iterate over the collected batch of data when updating the policy.
             mini_batches = 64 #Number of chunks to split the rollout batch into for stochastic gradient descent.
             
@@ -142,7 +144,7 @@ class SatelliteConfig(BaseConfig):
             ratio_clip = 0.2 #(ϵ) PPO’s clipping threshold on the policy probability ratio to constrain updates.
             value_clip = 0.2 #Clipping range for value function targets to stabilize value updates.
             clip_predicted_values = False #If enabled, clips the new value predictions to lie within the range defined by value_clip around the old predictions.
-            entropy_loss_scale = 0.00 #Coefficient multiplying the entropy bonus; encourages exploration when > 0.
+            entropy_loss_scale = 0.01 #Coefficient multiplying the entropy bonus; encourages exploration when > 0.
             value_loss_scale = 1.0 #Coefficient weighting the value function loss in the total loss.
             kl_threshold = 0 #Optional early-stop threshold on KL divergence between old and new policies (0 disables).
             random_timesteps = 0 #Number of initial timesteps with random actions before learning or policy-driven sampling.
@@ -155,14 +157,14 @@ class SatelliteConfig(BaseConfig):
                     wandb = False
 
         class trainer:
-            rollouts = 1
+            rollouts = ROLLOUTS
             n_epochs = N_EPOCHS
             timesteps = rollouts * n_epochs
             disable_progressbar = False
             headless = HEADLESS
 
         class memory:
-            rollouts = 8
+            rollouts = ROLLOUTS
 
     class pid:
         class rate:

@@ -8,14 +8,18 @@ import torch
 from abc import ABC, abstractmethod
 import math
 
+from torch.utils.tensorboard import SummaryWriter
+
 class RewardFunction(ABC):
     def __init__(self):
         """
         Base class for reward functions.
         Subclasses must implement the compute method.
         """
-        super().__init__()
-        
+        self.writer = SummaryWriter(comment="_satellite_reward")
+        self.log_reward = True
+        self.global_step = 0
+                
     @abstractmethod
     def compute(self,
                  quats: torch.Tensor,
@@ -36,7 +40,8 @@ class TestReward(RewardFunction):
     """
     Simple test reward: weighted inverse errors with dynamic scaling.
     """
-    def __init__(self, alpha_q=1.0, alpha_omega=0.5, alpha_acc=0.2):
+    def __init__(self, alpha_q=2.0, alpha_omega=0.5, alpha_acc=0.2):
+        super().__init__()
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
         self.alpha_acc = alpha_acc
@@ -90,13 +95,22 @@ class TestReward(RewardFunction):
 
         assert not torch.isnan(reward).any() and not torch.isinf(reward).any(), "reward has NaNs or Infs"
 
+        if self.log_reward:
+            if self.global_step % 100 == 0:
+                self.writer.add_scalar('Reward_policy/q', r_q.mean().item(), global_step=self.global_step)
+                self.writer.add_scalar('Reward_policy/omega', r_omega.mean().item(), global_step=self.global_step)
+                self.writer.add_scalar('Reward_policy/acc', r_acc.mean().item(), global_step=self.global_step)
+                self.writer.add_scalar('Reward_policy/total', reward.mean().item(), global_step=self.global_step)
+            self.global_step += 1
+        
         return reward
 
 class TestRewardSmooth(RewardFunction):
     """
     Simple test reward: weighted inverse errors with dynamic scaling.
     """
-    def __init__(self, alpha_q=1.0, alpha_omega=0.5, alpha_acc=0.2, alpha_smooth=0.1, alpha_spin=0.1):
+    def __init__(self, alpha_q=2.0, alpha_omega=0.5, alpha_acc=0.2, alpha_smooth=0.1, alpha_spin=0.1):
+        super().__init__()
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
         self.alpha_acc = alpha_acc
@@ -175,6 +189,16 @@ class TestRewardSmooth(RewardFunction):
 
         assert not torch.isnan(reward).any() and not torch.isinf(reward).any(), "reward has NaNs or Infs"
 
+        if self.log_reward:
+            if self.global_step % 100 == 0:
+                self.writer.add_scalar('Reward_policy/q', r_q.mean().item(), global_step=self.global_step)
+                self.writer.add_scalar('Reward_policy/omega', r_omega.mean().item(), global_step=self.global_step)
+                self.writer.add_scalar('Reward_policy/acc', r_acc.mean().item(), global_step=self.global_step)
+                self.writer.add_scalar('Reward_policy/smooth_penalty', smooth_penalty.mean().item(), global_step=self.global_step)
+                self.writer.add_scalar('Reward_policy/spin_penalty', spin_penalty.mean().item(), global_step=self.global_step)
+                self.writer.add_scalar('Reward_policy/total', reward.mean().item(), global_step=self.global_step)
+            self.global_step += 1
+        
         return reward
     
 class WeightedSumReward(RewardFunction):
@@ -188,6 +212,7 @@ class WeightedSumReward(RewardFunction):
                  bonus_q=200.0, bonus_stable=1000.0,
                  penalty_lvl1=-10.0, penalty_lvl2=-50.0,
                  action_saturation_thresh=None, penalty_saturation=-10.0):
+        super().__init__()
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
         self.alpha_acc = alpha_acc
@@ -239,6 +264,7 @@ class TwoPhaseReward(RewardFunction):
                  threshold=math.radians(1.0),
                  r1_pos=0.1, r1_neg=-0.1,
                  alpha=1.0, beta=0.5):
+        super().__init__()
         self.threshold = threshold
         self.r1_pos = r1_pos
         self.r1_neg = r1_neg
@@ -268,6 +294,7 @@ class ExponentialStabilizationReward(RewardFunction):
                  scale=0.14 * 2.0 * math.pi,
                  bonus=9.0,
                  goal_deg=0.25):
+        super().__init__()
         self.scale = scale
         self.bonus = bonus
         self.goal_rad = math.radians(goal_deg)
@@ -300,6 +327,7 @@ class ContinuousDiscreteEffortReward(RewardFunction):
         fail_thresh=4.0,
         fail_penalty=-100.0
     ):
+        super().__init__()
         self.error_thresh = error_thresh
         self.bonus = bonus
         self.effort_penalty = effort_penalty
@@ -323,6 +351,7 @@ class ShapingReward(RewardFunction):
     Reward shaping variants R1-R4 with custom beta and tau functions.
     """
     def __init__(self, mode='R4'):
+        super().__init__()
         assert mode in ['R1', 'R2', 'R3', 'R4'], "Unsupported mode"
         self.mode = mode
         self._prev_phi = None

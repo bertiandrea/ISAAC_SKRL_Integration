@@ -186,7 +186,7 @@ def main():
     cfg["rl"]["PPO"]["rewards_shaper"] = lambda rewards, timestep, timesteps: rewards * 0.1
     
     cfg["rl"]["PPO"]["lambda"] = 0.95 #(λ) GAE parameter for bias–variance trade-off in advantage estimation.
-    
+
     cfg_ppo = PPO_DEFAULT_CONFIG.copy()
     cfg_ppo.update(cfg["rl"]["PPO"])
    
