@@ -5,7 +5,7 @@ from satellite.configs.base_config import BaseConfig
 from pathlib import Path
 import numpy as np
 
-NUM_ENVS = 4096
+NUM_ENVS = 1024
 N_EPOCHS = 4096
 HEADLESS = True
 FORCE_RENDER = False
@@ -13,7 +13,7 @@ PROFILE = False
 DEBUG_ARROWS = False
 HEARTBEAT = False
 
-ROLLOUTS = 1
+ROLLOUTS = 8
 
 class SatelliteConfig(BaseConfig):
     set_seed = False
@@ -135,8 +135,8 @@ class SatelliteConfig(BaseConfig):
         class PPO:
             num_envs = NUM_ENVS #Number of parallel environments collecting experience; more envs yield better GPU/utilization but higher memory use.
             rollouts = ROLLOUTS #Number of steps per environment before each policy update (i.e. rollout length).
-            learning_epochs = 8 #How many times to iterate over the collected batch of data when updating the policy.
-            mini_batches = 64 #Number of chunks to split the rollout batch into for stochastic gradient descent.
+            learning_epochs = 4 #How many times to iterate over the collected batch of data when updating the policy.
+            mini_batches = 8 #Number of chunks to split the rollout batch into for stochastic gradient descent.
             
             discount_factor = 0.99 #(γ) Future reward discount; balances immediate versus long-term return.
             learning_rate = 1e-3 #Step size for optimizer (e.g. Adam) when updating policy and value networks.
@@ -174,3 +174,7 @@ class SatelliteConfig(BaseConfig):
     
     class controller:
         controller_logic = False
+
+    class log_reward:
+        log_reward = True
+        log_reward_interval = 100

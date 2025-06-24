@@ -162,7 +162,7 @@ def main():
         headless=cfg["headless"],
         virtual_screen_capture=cfg["virtual_screen_capture"],
         force_render= cfg["force_render"],
-        reward_fn=REWARD_MAP[args.reward_fn]()
+        reward_fn=REWARD_MAP[args.reward_fn](cfg["log_reward"]["log_reward"], cfg["log_reward"]["log_reward_interval"])
     )
     
     env = IsaacGymWrapper(env)

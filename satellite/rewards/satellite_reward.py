@@ -11,13 +11,14 @@ import math
 from torch.utils.tensorboard import SummaryWriter
 
 class RewardFunction(ABC):
-    def __init__(self):
+    def __init__(self, log_reward=True, log_reward_interval=100):
         """
         Base class for reward functions.
         Subclasses must implement the compute method.
         """
         self.writer = SummaryWriter(comment="_satellite_reward")
-        self.log_reward = True
+        self.log_reward = log_reward
+        self.log_reward_interval = log_reward_interval
         self.global_step = 0
                 
     @abstractmethod
@@ -40,8 +41,8 @@ class TestReward(RewardFunction):
     """
     Simple test reward: weighted inverse errors with dynamic scaling.
     """
-    def __init__(self, alpha_q=2.0, alpha_omega=0.5, alpha_acc=0.2):
-        super().__init__()
+    def __init__(self, log_reward, log_reward_interval, alpha_q=3.0, alpha_omega=0.1, alpha_acc=0.01):
+        super().__init__(log_reward, log_reward_interval)
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
         self.alpha_acc = alpha_acc
@@ -96,7 +97,7 @@ class TestReward(RewardFunction):
         assert not torch.isnan(reward).any() and not torch.isinf(reward).any(), "reward has NaNs or Infs"
 
         if self.log_reward:
-            if self.global_step % 100 == 0:
+            if self.global_step % self.log_reward_interval == 0:
                 self.writer.add_scalar('Reward_policy/q', r_q.mean().item(), global_step=self.global_step)
                 self.writer.add_scalar('Reward_policy/omega', r_omega.mean().item(), global_step=self.global_step)
                 self.writer.add_scalar('Reward_policy/acc', r_acc.mean().item(), global_step=self.global_step)
@@ -109,8 +110,8 @@ class TestRewardSmooth(RewardFunction):
     """
     Simple test reward: weighted inverse errors with dynamic scaling.
     """
-    def __init__(self, alpha_q=2.0, alpha_omega=0.5, alpha_acc=0.2, alpha_smooth=0.1, alpha_spin=0.1):
-        super().__init__()
+    def __init__(self, log_reward, log_reward_interval, alpha_q=3.0, alpha_omega=0.1, alpha_acc=0.01, alpha_smooth=0.1, alpha_spin=0.1):
+        super().__init__(log_reward, log_reward_interval)
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
         self.alpha_acc = alpha_acc
@@ -190,7 +191,7 @@ class TestRewardSmooth(RewardFunction):
         assert not torch.isnan(reward).any() and not torch.isinf(reward).any(), "reward has NaNs or Infs"
 
         if self.log_reward:
-            if self.global_step % 100 == 0:
+            if self.global_step % self.log_reward_interval == 0:
                 self.writer.add_scalar('Reward_policy/q', r_q.mean().item(), global_step=self.global_step)
                 self.writer.add_scalar('Reward_policy/omega', r_omega.mean().item(), global_step=self.global_step)
                 self.writer.add_scalar('Reward_policy/acc', r_acc.mean().item(), global_step=self.global_step)
