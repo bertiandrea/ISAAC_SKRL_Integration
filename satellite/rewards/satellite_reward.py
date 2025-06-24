@@ -154,9 +154,9 @@ class TestRewardSmooth(RewardFunction):
                 self.alpha_smooth,
                 torch.sum(
                     torch.square(
-                        torch.sub(actions, self.prev_actions), dim=1)
-                    ),
-                dim=1
+                        torch.sub(actions, self.prev_actions)
+                    ), dim=1
+                )
             )
         else:
             smooth_penalty = torch.zeros(actions.shape[0], device=actions.device)
