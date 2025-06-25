@@ -58,7 +58,7 @@ def parse_args():
 def sample_ppo_params(trial: optuna.Trial):
     return {
         "discount_factor": trial.suggest_float("discount_factor", 0.90, 0.999),
-        "lambda":          trial.suggest_float("gamma", 0.90,   0.999),
+        "lambda":          trial.suggest_float("lambda", 0.90,   0.999),
         "learning_rate":  trial.suggest_float("learning_rate", 1e-4, 1e-2),
         "grad_norm_clip": trial.suggest_float("grad_norm_clip", 0.1, 1.0),
         "ratio_clip":   trial.suggest_float("ratio_clip", 0.1, 0.3),
