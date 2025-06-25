@@ -1,0 +1,12 @@
+{
+  "discount_factor": 0.9584295076911846,
+  "gamma": 0.9411092545558546,
+  "learning_rate": 0.004676535931526228,
+  "grad_norm_clip": 0.961393881153008,
+  "ratio_clip": 0.17367161598444092,
+  "value_clip": 0.2428720646200044,
+  "clip_predicted_values": false,
+  "entropy_loss_scale": 0.04313965625670519,
+  "value_loss_scale": 1.5957393016739536,
+  "kl_threshold": 0.050422739692332935
+}

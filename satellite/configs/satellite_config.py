@@ -5,8 +5,8 @@ from satellite.configs.base_config import BaseConfig
 from pathlib import Path
 import numpy as np
 
-NUM_ENVS = 1
-N_EPOCHS = 1
+NUM_ENVS = 8
+N_EPOCHS = 2
 HEADLESS = True
 FORCE_RENDER = False
 PROFILE = False
@@ -150,8 +150,8 @@ class SatelliteConfig(BaseConfig):
             #kl_threshold = 0 #Optional early-stop threshold on KL divergence between old and new policies (0 disables).
             #lambda = 0.90 #(λ) GAE parameter for bias–variance trade-off in advantage estimation.
 
-            random_timesteps = 20000 #Number of initial timesteps with random actions before learning or policy-driven sampling.
-            learning_starts = 20000 #Number of environment steps to collect before beginning any gradient updates.
+            #random_timesteps = 20000 #Number of initial timesteps with random actions before learning or policy-driven sampling.
+            #learning_starts = 20000 #Number of environment steps to collect before beginning any gradient updates.
             
             class experiment:
                     write_interval = "auto"
