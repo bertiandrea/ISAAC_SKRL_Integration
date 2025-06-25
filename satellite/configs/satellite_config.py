@@ -5,8 +5,8 @@ from satellite.configs.base_config import BaseConfig
 from pathlib import Path
 import numpy as np
 
-NUM_ENVS = 4096
-N_EPOCHS = 16384
+NUM_ENVS = 1
+N_EPOCHS = 1
 HEADLESS = True
 FORCE_RENDER = False
 PROFILE = False
@@ -31,6 +31,7 @@ class SatelliteConfig(BaseConfig):
     profile = PROFILE
     
     heartbeat = HEARTBEAT
+    
     class env:  
         numEnvs = NUM_ENVS
    
