@@ -1,12 +1,12 @@
 {
-  "discount_factor": 0.9458373293959799,
-  "gamma": 0.9782128761154703,
-  "learning_rate": 0.006190570418758598,
-  "grad_norm_clip": 0.28916669741147083,
-  "ratio_clip": 0.1697316589296213,
-  "value_clip": 0.28998470652849057,
-  "clip_predicted_values": false,
-  "entropy_loss_scale": 0.017377580366225293,
-  "value_loss_scale": 0.7562358721673194,
-  "kl_threshold": 0.05545823309122233
+  "discount_factor": 0.9099810556586416,
+  "gamma": 0.90675866588712,
+  "learning_rate": 0.008443775208690793,
+  "grad_norm_clip": 0.8224912997743078,
+  "ratio_clip": 0.17474773830990759,
+  "value_clip": 0.10081035092773855,
+  "clip_predicted_values": true,
+  "entropy_loss_scale": 0.006597504462382858,
+  "value_loss_scale": 0.5446319192447374,
+  "kl_threshold": 0.033458587165708834
 }

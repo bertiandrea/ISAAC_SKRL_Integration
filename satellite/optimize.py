@@ -1,6 +1,6 @@
 # train.py
 
-from satellite.configs.satellite_config_opt import SatelliteConfigOptimization
+from satellite.configs.satellite_config_opt import CONFIG
 from satellite.envs.satellite import Satellite
 from satellite.models.custom_model import Policy, Value
 from satellite.envs.wrappers.isaacgym_envs import IsaacGymWrapper
@@ -17,8 +17,6 @@ from satellite.rewards.satellite_reward import (
 import isaacgym
 import torch
 
-from skrl.resources.preprocessors.torch import RunningStandardScaler
-from skrl.resources.schedulers.torch import KLAdaptiveRL
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.memories.torch import RandomMemory
 from skrl.trainers.torch import SequentialTrainer
@@ -26,31 +24,15 @@ from skrl.utils import set_seed
 
 import argparse
 
+# ──────────────────────────────────────────────────────────────────────────────
 import json
 import optuna
 from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
 from tensorboard.backend.event_processing import event_accumulator
-
 TENSORBOARD_TAG = "Reward / Instantaneous reward (mean)"
 N_TRIALS = 25
-
-def class_to_dict(obj) -> dict:
-    if not  hasattr(obj,"__dict__"):
-        return obj
-    result = {}
-    for key in dir(obj):
-        if key.startswith("_"):
-            continue
-        element = []
-        val = getattr(obj, key)
-        if isinstance(val, list):
-            for item in val:
-                element.append(class_to_dict(item))
-        else:
-            element = class_to_dict(val)
-        result[key] = element
-    return result
+# ──────────────────────────────────────────────────────────────────────────────
 
 REWARD_MAP = {
     "test": TestReward,
@@ -88,46 +70,38 @@ def sample_ppo_params(trial: optuna.Trial):
     }
 
 def objective(trial: optuna.Trial) -> float:
-    cfg_class = SatelliteConfigOptimization()
-    cfg = class_to_dict(cfg_class)
-
-    if cfg["set_seed"]:
-        set_seed(cfg["seed"])
+    if CONFIG["set_seed"]:
+        set_seed(CONFIG["seed"])
     
     env = Satellite(
-        cfg=cfg,
-        rl_device=cfg["rl_device"],
-        sim_device=cfg["sim_device"],
-        graphics_device_id=cfg["graphics_device_id"],
-        headless=cfg["headless"],
-        virtual_screen_capture=cfg["virtual_screen_capture"],
-        force_render= cfg["force_render"],
-        reward_fn=REWARD_MAP[args.reward_fn](cfg["log_reward"]["log_reward"], cfg["log_reward"]["log_reward_interval"])
+        cfg=CONFIG,
+        rl_device=CONFIG["rl_device"],
+        sim_device=CONFIG["sim_device"],
+        graphics_device_id=CONFIG["graphics_device_id"],
+        headless=CONFIG["headless"],
+        virtual_screen_capture=CONFIG["virtual_screen_capture"],
+        force_render= CONFIG["force_render"],
+        reward_fn=REWARD_MAP[args.reward_fn](CONFIG["log_reward"]["log_reward"], CONFIG["log_reward"]["log_reward_interval"])
     )
     
     env = IsaacGymWrapper(env)
 
-    memory = RandomMemory(memory_size=cfg["rl"]["memory"]["rollouts"], num_envs=env.num_envs, device=env.device)
+    memory = RandomMemory(memory_size=CONFIG["rl"]["memory"]["rollouts"], num_envs=env.num_envs, device=env.device)
 
     models = {}
     models["policy"] = Policy(env.observation_space, env.action_space, env.device)
     models["value"] = Value(env.state_space, env.action_space, env.device)
    
-    cfg["rl"]["PPO"]["state_preprocessor_kwargs"] = {
+    CONFIG["rl"]["PPO"]["state_preprocessor_kwargs"] = {
         "size": env.state_space, "device": env.device
     }
-    cfg["rl"]["PPO"]["value_preprocessor_kwargs"] = {
+    CONFIG["rl"]["PPO"]["value_preprocessor_kwargs"] = {
         "size": 1, "device": env.device
     }
-    cfg["rl"]["PPO"]["learning_rate_scheduler"] = KLAdaptiveRL
-    cfg["rl"]["PPO"]["learning_rate_scheduler_kwargs"] = {"kl_threshold": 0.016}
-    cfg["rl"]["PPO"]["state_preprocessor"] = RunningStandardScaler
-    cfg["rl"]["PPO"]["value_preprocessor"] = RunningStandardScaler
-    cfg["rl"]["PPO"]["rewards_shaper"] = lambda rewards, t, T: rewards * 0.5
     
     cfg_ppo = PPO_DEFAULT_CONFIG.copy()
     
-    cfg_ppo.update(cfg["rl"]["PPO"])
+    cfg_ppo.update(CONFIG["rl"]["PPO"])
 
     hp = sample_ppo_params(trial)
     cfg_ppo.update({
@@ -150,14 +124,14 @@ def objective(trial: optuna.Trial) -> float:
                 action_space=env.action_space,
                 device=env.device)
 
-    trainer = SequentialTrainer(cfg=cfg["rl"]["trainer"], env=env, agents=agent)
+    trainer = SequentialTrainer(cfg=CONFIG["rl"]["trainer"], env=env, agents=agent)
 
     trainer.train()
     
     env.close() # Force environment close to avoid memory leaks
 
     #############################################################################
-    log_dir = cfg["rl"]["PPO"]["experiment"]["directory"] + "/" + cfg["rl"]["PPO"]["experiment"]["experiment_name"]
+    log_dir = CONFIG["rl"]["PPO"]["experiment"]["directory"] + "/" + CONFIG["rl"]["PPO"]["experiment"]["experiment_name"]
 
     ea = event_accumulator.EventAccumulator(log_dir, size_guidance={event_accumulator.SCALARS: 10000})
     ea.Reload()
