@@ -23,8 +23,10 @@ SCREEN_CAPTURE_RESOLUTION = (1027, 768)
 def _create_sim_once(gym, *args, **kwargs):
     global EXISTING_SIM
     if EXISTING_SIM is not None:
+        print("Using EXISTING Sim Instance")
         return EXISTING_SIM
     else:
+        print("Creating NEW Sim Instance")
         EXISTING_SIM = gym.create_sim(*args, **kwargs)
         return EXISTING_SIM
 
@@ -160,7 +162,9 @@ class VecTask(Env):
         self.extras = {}
 
     def create_sim(self, compute_device: int, graphics_device: int, physics_engine, sim_params: gymapi.SimParams):
-        sim = _create_sim_once(self.gym, compute_device, graphics_device, physics_engine, sim_params)
+        #sim = _create_sim_once(self.gym, compute_device, graphics_device, physics_engine, sim_params)
+        # WORKAROUND: BugFix for IsaacGym not handling multiple Gym instances correctly in the same process (Needed for Hyperparameter Optimization)
+        sim = self.gym.create_sim(compute_device, graphics_device, physics_engine, sim_params)
         if sim is None:
             print("*** Failed to create sim")
             quit()
@@ -281,4 +285,4 @@ class VecTask(Env):
                     setattr(sim_params.flex, opt, config_sim["flex"][opt])
 
         return sim_params
-
+    
