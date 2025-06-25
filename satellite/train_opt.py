@@ -1,6 +1,6 @@
 # train.py
 
-from satellite.configs.satellite_config import SatelliteConfig
+from satellite.configs.satellite_config_opt import SatelliteConfigOptimization
 from satellite.envs.satellite import Satellite
 from satellite.models.custom_model import Policy, Value
 from satellite.envs.wrappers.isaacgym_envs import IsaacGymWrapper
@@ -32,7 +32,7 @@ from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
 from tensorboard.backend.event_processing import event_accumulator
 
-TENSORBOARD_TAG = "Reward/ Total reward (mean)"
+TENSORBOARD_TAG = "Reward / Instantaneous reward (mean)"
 N_TRIALS = 25
 
 def class_to_dict(obj) -> dict:
@@ -88,9 +88,7 @@ def sample_ppo_params(trial: optuna.Trial):
     }
 
 def objective(trial: optuna.Trial) -> float:
-    args = parse_args()
-
-    cfg_class = SatelliteConfig()
+    cfg_class = SatelliteConfigOptimization()
     cfg = class_to_dict(cfg_class)
 
     if cfg["set_seed"]:
@@ -127,11 +125,8 @@ def objective(trial: optuna.Trial) -> float:
     cfg["rl"]["PPO"]["value_preprocessor"] = RunningStandardScaler
     cfg["rl"]["PPO"]["rewards_shaper"] = lambda rewards, t, T: rewards * 0.5
     
-    cfg["rl"]["PPO"]["experiment"]["write_interval"] = 1
-    cfg["rl"]["PPO"]["experiment"]["checkpoint_interval"] = 1
-    cfg["rl"]["PPO"]["experiment"]["experiment_name"] = "satellite_test"
-
     cfg_ppo = PPO_DEFAULT_CONFIG.copy()
+    
     cfg_ppo.update(cfg["rl"]["PPO"])
 
     hp = sample_ppo_params(trial)
@@ -155,11 +150,11 @@ def objective(trial: optuna.Trial) -> float:
                 action_space=env.action_space,
                 device=env.device)
 
-    cfg["rl"]["trainer"]["timesteps"] = cfg["rl"]["trainer"]["rollouts"] # N_EPOCHS = 1
-
     trainer = SequentialTrainer(cfg=cfg["rl"]["trainer"], env=env, agents=agent)
 
     trainer.train()
+    
+    env.close() # Force environment close to avoid memory leaks
 
     #############################################################################
     log_dir = cfg["rl"]["PPO"]["experiment"]["directory"] + "/" + cfg["rl"]["PPO"]["experiment"]["experiment_name"]
@@ -181,6 +176,9 @@ def objective(trial: optuna.Trial) -> float:
     return mean_return
 
 def main():
+    global args
+    args = parse_args()
+
     study = optuna.create_study(
         sampler=TPESampler(n_startup_trials=10, multivariate=True),
         pruner=MedianPruner(n_startup_trials=10, n_warmup_steps=1),
