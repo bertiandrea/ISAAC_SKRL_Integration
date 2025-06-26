@@ -199,12 +199,12 @@ CONFIG = {
 
     # --- logging -----------------------------------------------------------
     "log_reward": {
-        "log_reward": True,
+        "log_reward": False,
         "log_reward_interval": 100,
     },
     # --- CAPS --------------------------------------------------------------
     "CAPS": {
-        "enabled": True,
+        "enabled": False,
         "lambda_temporal_smoothness": 0.0,  # λ_t
         "lambda_spatial_smoothness": 0.0,   # λ_s
         "noise_std": 0.00,                  # σ
