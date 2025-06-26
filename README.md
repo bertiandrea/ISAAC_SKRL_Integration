@@ -29,6 +29,8 @@ Lo script di training integra tutti i componenti: legge gli argomenti da riga di
 ## Scalability Results
 ![GPU%_vs_#env](gpu_vs_env.png)
 
+![step_time%](step_time.png)
+
 ## Video Demo
 ![isaacgym_skrl_vid](isaacgym_skrl_vid.gif)
 
