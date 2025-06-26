@@ -166,11 +166,12 @@ CONFIG = {
     },
 
     # --- low-level controllers --------------------------------------------
+    "controller": {
+        "controller_logic": False
+    },
     "pid": {
         "rate": {"kp": 0.5, "ki": 0.0, "kd": 0.1},
     },
-    "controller": {"controller_logic": False},
-
     # --- logging -----------------------------------------------------------
     "log_reward": {
         "log_reward": False,
