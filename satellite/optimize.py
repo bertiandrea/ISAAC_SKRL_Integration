@@ -4,6 +4,7 @@ from satellite.configs.satellite_config_opt import CONFIG
 from satellite.envs.satellite import Satellite
 from satellite.models.custom_model import Policy, Value
 from satellite.envs.wrappers.isaacgym_envs import IsaacGymWrapper
+from satellite.CAPS.agent_wrapper_CAPS import AgentWrapperCAPS
 from satellite.rewards.satellite_reward import (
     TestReward,
     TestRewardSmooth,
@@ -117,13 +118,22 @@ def objective(trial: optuna.Trial) -> float:
         "kl_threshold":          hp["kl_threshold"],
     })
 
-    agent = PPO(models=models,
+    if CONFIG["CAPS"]["enabled"]:
+        cfg_ppo.update(CONFIG["CAPS"])
+        agent = AgentWrapperCAPS(models=models,
                 memory=memory,
                 cfg=cfg_ppo,
                 observation_space=env.state_space,
                 action_space=env.action_space,
                 device=env.device)
-
+    else:
+        agent = PPO(models=models,
+                memory=memory,
+                cfg=cfg_ppo,
+                observation_space=env.state_space,
+                action_space=env.action_space,
+                device=env.device)
+    
     trainer = SequentialTrainer(cfg=CONFIG["rl"]["trainer"], env=env, agents=agent)
 
     trainer.train()
