@@ -138,22 +138,25 @@ def objective(trial: optuna.Trial) -> float:
     
     trainer = SequentialTrainer(cfg=CONFIG["rl"]["trainer"], env=env, agents=agent)
 
-    trainer.train()
-    
-    env.close() # Force environment close to avoid memory leaks
+    try:
+        trainer.train()
+    finally:
+        env.close() # Force environment close to avoid memory leaks
 
     #############################################################################
     log_dir = CONFIG["rl"]["PPO"]["experiment"]["directory"] + "/" + CONFIG["rl"]["PPO"]["experiment"]["experiment_name"]
-
+    
     ea = event_accumulator.EventAccumulator(log_dir, size_guidance={event_accumulator.SCALARS: 10000})
     ea.Reload()
-
+    
     print(f"Available Tags: {ea.Tags()['scalars']}")
-
+    
     values = ea.Scalars(TENSORBOARD_TAG)
     if not values:
         raise RuntimeError(f"Tag '{TENSORBOARD_TAG}' non trovato in {log_dir}")
     mean_return = values[-1].value
+
+    #############################################################################
 
     trial.report(mean_return, step=0)
     if trial.should_prune():
@@ -170,7 +173,10 @@ def main():
         pruner=MedianPruner(n_startup_trials=10, n_warmup_steps=1),
         direction="maximize",
     )
-    study.optimize(objective, n_trials=N_TRIALS)
+    try:
+        study.optimize(objective, n_trials=N_TRIALS)
+    except KeyboardInterrupt:
+        pass
 
     log_dir = "/home/andreaberti"
     out_path = log_dir + "/optimizer_results/ISAAC_SKRL_Integration/satellite/best_hyperparams.json"
@@ -180,6 +186,7 @@ def main():
         json.dump(study.best_params, f, indent=2)
 
     print(f"\n✅ Salvato in {out_path}")
+    print(f"Numero di trials: {len(study.trials)}")
     print(f"➤ mean_return migliore: {study.best_value:.3f}")
     for k, v in study.best_params.items():
         print(f"   {k}: {v}")

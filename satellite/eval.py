@@ -97,7 +97,7 @@ def main():
                 action_space=env.action_space,
                 device=env.device)
     
-    agent.load("/home/andreaberti/ISAAC_SKRL_Integration/runs/satellite/blessed_run/checkpoints/best_agent.pt")
+    agent.load("/home/andreaberti/ISAAC_SKRL_Integration/best_run/checkpoints/best_agent.pt")
 
     trainer = SequentialTrainer(cfg=CONFIG["rl"]["trainer"], env=env, agents=agent)
 
