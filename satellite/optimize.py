@@ -26,6 +26,7 @@ from skrl.utils import set_seed
 import argparse
 
 # ──────────────────────────────────────────────────────────────────────────────
+import os
 import json
 import optuna
 from optuna.pruners import MedianPruner
@@ -170,7 +171,10 @@ def main():
     )
     study.optimize(objective, n_trials=N_TRIALS)
 
-    out_path = f"best_hyperparams.json"
+    log_dir = "/home/andreaberti"
+    out_path = log_dir + "/optimizer_results/ISAAC_SKRL_Integration/satellite/best_hyperparams.json"
+    if not os.path.exists(os.path.dirname(out_path)):
+        os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w") as f:
         json.dump(study.best_params, f, indent=2)
 

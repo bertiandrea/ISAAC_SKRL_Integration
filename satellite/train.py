@@ -57,12 +57,13 @@ def parse_args():
     )
     return parser.parse_args()
 
-def setup_profiler(log_dir = "/home/andreaberti/profiler_logs/ISAAC_SKRL_Integration/satellite"):
-    if not os.path.exists(log_dir):
-        os.makedirs(log_dir, exist_ok=True)
+def setup_profiler(log_dir = "/home/andreaberti"):
+    dir_path = log_dir + "/profiler_logs/ISAAC_SKRL_Integration/satellite"
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path, exist_ok=True)
     prof = profile(
         activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
-        on_trace_ready=tensorboard_trace_handler(log_dir),
+        on_trace_ready=tensorboard_trace_handler(dir_path),
         record_shapes=True,
         profile_memory=True,
         with_stack=True,
