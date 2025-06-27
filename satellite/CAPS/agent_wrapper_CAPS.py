@@ -12,7 +12,7 @@ from skrl import config
 from skrl.agents.torch.ppo import PPO
 from skrl.resources.schedulers.torch import KLAdaptiveLR
 
-class AgentWrapperCAPS(PPO):
+class PPOWrapperCAPS(PPO):
     def __init__(self, models, memory=None, observation_space=None, action_space=None,
                  device=None, cfg=None):
         super().__init__(models, memory, observation_space, action_space, device, cfg)

@@ -4,7 +4,7 @@ from satellite.configs.satellite_config import CONFIG
 from satellite.envs.satellite import Satellite
 from satellite.models.custom_model import Policy, Value
 from satellite.envs.wrappers.isaacgym_envs import IsaacGymWrapper
-from satellite.CAPS.agent_wrapper_CAPS import AgentWrapperCAPS
+from satellite.CAPS.agent_wrapper_CAPS import PPOWrapperCAPS
 from satellite.rewards.satellite_reward import (
     TestReward,
     TestRewardSmooth,
@@ -83,7 +83,7 @@ def main():
    
     if CONFIG["CAPS"]["enabled"]:
         cfg_ppo.update(CONFIG["CAPS"])
-        agent = AgentWrapperCAPS(models=models,
+        agent = PPOWrapperCAPS(models=models,
                 memory=memory,
                 cfg=cfg_ppo,
                 observation_space=env.state_space,

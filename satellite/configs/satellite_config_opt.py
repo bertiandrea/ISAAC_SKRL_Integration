@@ -11,6 +11,9 @@ from skrl.resources.schedulers.torch import KLAdaptiveRL
 
 NUM_ENVS = 8
 ROLLOUTS = 8
+MAX_EPOCHS = 100
+EPOCHS = 10
+HEADLESS = True
 
 CONFIG = {
     # --- seed & devices ----------------------------------------------------
@@ -22,7 +25,7 @@ CONFIG = {
     "rl_device": "cuda:0",
     "sim_device": "cuda:0",
     "graphics_device_id": 0,
-    "headless": True,
+    "headless": HEADLESS,
     "virtual_screen_capture": False,
     "force_render": False,
 
@@ -146,8 +149,8 @@ CONFIG = {
             "mini_batches": 8,
             
             "experiment": {
-                "write_interval": 1,
-                "checkpoint_interval": 1,
+                "write_interval": "auto",
+                "checkpoint_interval": "auto",
                 "directory": "./runs/satellite",
                 "experiment_name": "satellite_test",
                 "wandb": False,
@@ -155,10 +158,11 @@ CONFIG = {
         },
         "trainer": {
             "rollouts": ROLLOUTS,
-            "n_epochs": 2,
-            "timesteps": ROLLOUTS * 2,
+            "n_epochs": EPOCHS,
+            "max_epochs": MAX_EPOCHS,
+            "timesteps": ROLLOUTS * EPOCHS,
             "disable_progressbar": False,
-            "headless": True,
+            "headless": HEADLESS,
         },
         "memory": {
             "rollouts": ROLLOUTS,

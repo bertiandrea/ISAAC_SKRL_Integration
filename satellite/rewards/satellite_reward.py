@@ -55,9 +55,12 @@ class TestReward(RewardFunction):
         # angular acceleration error (rad/s^2)
         acc_err   = torch.norm(torch.sub(ang_accs, goal_ang_acc), dim=1)
 
-        assert not torch.isnan(phi).any() and not torch.isinf(phi).any(), "phi has NaN or Inf"
-        assert not torch.isnan(omega_err).any() and not torch.isinf(omega_err).any(), "omega_err has NaN or Inf"
-        assert not torch.isnan(acc_err).any() and not torch.isinf(acc_err).any(), "acc_err has NaN or Inf"
+        assert not torch.isnan(phi).any(), "phi has NaN"
+        assert not torch.isinf(phi).any(), "phi has Inf"
+        assert not torch.isnan(omega_err).any(), "omega_err has NaN"
+        assert not torch.isinf(omega_err).any(), "omega_err has Inf"
+        assert not torch.isnan(acc_err).any(), "acc_err has NaN"
+        assert not torch.isinf(acc_err).any(), "acc_err has Inf"
 
         # weight = 1.0 / (1.0 + phi)
         weight   = torch.div(
@@ -94,7 +97,8 @@ class TestReward(RewardFunction):
 
         reward   = torch.add(torch.add(r_q, r_omega), r_acc)
 
-        assert not torch.isnan(reward).any() and not torch.isinf(reward).any(), "reward has NaNs or Infs"
+        assert not torch.isnan(reward).any(), "reward has NaN"
+        assert not torch.isinf(reward).any(), "reward has Inf"
 
         if self.log_reward:
             if self.global_step % self.log_reward_interval == 0:
@@ -127,9 +131,12 @@ class TestRewardSmooth(RewardFunction):
         # angular acceleration error (rad/s^2)
         acc_err   = torch.norm(torch.sub(ang_accs, goal_ang_acc), dim=1)
 
-        assert not torch.isnan(phi).any() and not torch.isinf(phi).any(), "phi has NaN or Inf"
-        assert not torch.isnan(omega_err).any() and not torch.isinf(omega_err).any(), "omega_err has NaN or Inf"
-        assert not torch.isnan(acc_err).any() and not torch.isinf(acc_err).any(), "acc_err has NaN or Inf"
+        assert not torch.isnan(phi).any(), "phi has NaN"
+        assert not torch.isinf(phi).any(), "phi has Inf"
+        assert not torch.isnan(omega_err).any(), "omega_err has NaN"
+        assert not torch.isinf(omega_err).any(), "omega_err has Inf"
+        assert not torch.isnan(acc_err).any(), "acc_err has NaN"
+        assert not torch.isinf(acc_err).any(), "acc_err has Inf"
 
         # weight = 1.0 / (1.0 + phi)
         weight   = torch.div(
@@ -188,7 +195,8 @@ class TestRewardSmooth(RewardFunction):
         reward = torch.sub(reward, smooth_penalty)
         reward = torch.sub(reward, spin_penalty)
 
-        assert not torch.isnan(reward).any() and not torch.isinf(reward).any(), "reward has NaNs or Infs"
+        assert not torch.isnan(reward).any(), "reward has NaN"
+        assert not torch.isinf(reward).any(), "reward has Inf"
 
         if self.log_reward:
             if self.global_step % self.log_reward_interval == 0:

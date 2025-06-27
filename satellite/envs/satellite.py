@@ -244,12 +244,21 @@ class Satellite(VecTask):
                 torch.sub(self.satellite_angvels, self.prev_angvel),
                 self.dt
             )
+            
+            assert not torch.isnan(self.satellite_angacc).any(), f"self.satellite_angacc has NaN: {self.satellite_angvels, self.prev_angvel, self.dt}"
+            assert not torch.isinf(self.satellite_angacc).any(), f"self.satellite_angacc has Inf: {self.satellite_angvels, self.prev_angvel, self.dt}"
+
             self.prev_angvel = self.satellite_angvels.clone()
             self.obs_buf = torch.cat(
                 (self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), self.satellite_angacc, self.actions), dim=-1)
             self.states_buf = torch.cat(
                 (self.obs_buf, self.satellite_angvels), dim=-1)
         ########################################
+
+        assert not torch.isnan(self.obs_buf).any(), "self.obs_buf has NaN"
+        assert not torch.isinf(self.obs_buf).any(), "self.obs_buf has Inf"
+        assert not torch.isnan(self.states_buf).any(), "self.states_buf has NaN"
+        assert not torch.isinf(self.states_buf).any(), "self.states_buf has Inf"
 
         with record_function("$SatelliteVec__compute_observations__noise_and_clamp"):
             if self.sensor_noise_std > 0.0:
