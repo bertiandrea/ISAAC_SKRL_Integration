@@ -10,7 +10,7 @@ from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
 NUM_ENVS = 4096
-N_EPOCHS = 100
+N_EPOCHS = 1000
 HEADLESS = True
 FORCE_RENDER = False
 PROFILE = False
