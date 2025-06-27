@@ -9,7 +9,7 @@ import torch
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
-NUM_ENVS = 4096
+NUM_ENVS = 16384
 N_EPOCHS = 1000
 HEADLESS = True
 FORCE_RENDER = False
@@ -17,7 +17,7 @@ PROFILE = False
 DEBUG_ARROWS = False
 HEARTBEAT = False
 
-ROLLOUTS = 8
+ROLLOUTS = 32
 
 CONFIG = {
     # --- seed & devices ----------------------------------------------------
@@ -149,8 +149,8 @@ CONFIG = {
         "PPO": {
             "num_envs": NUM_ENVS,
             "rollouts": ROLLOUTS,
-            "learning_epochs": 8,
-            "mini_batches": 4,
+            "learning_epochs": 32,
+            "mini_batches": 16,
             
             "learning_rate_scheduler" : KLAdaptiveRL,
             "learning_rate_scheduler_kwargs" : {"kl_threshold": 0.016},
@@ -169,8 +169,8 @@ CONFIG = {
             "kl_threshold" : 0, #Optional early-stop threshold on KL divergence between old and new policies (0 disables).
             "lambda" : 0.95, #(λ) GAE parameter for bias–variance trade-off in advantage estimation.
 
-            "random_timesteps" : 1000, #Number of initial timesteps with random actions before learning or policy-driven sampling.
-            "learning_starts" : 1000, #Number of environment steps to collect before beginning any gradient updates.
+            "random_timesteps" : 0, #Number of initial timesteps with random actions before learning or policy-driven sampling.
+            "learning_starts" : 0, #Number of environment steps to collect before beginning any gradient updates.
             
             "experiment": {
                 "write_interval": "auto",

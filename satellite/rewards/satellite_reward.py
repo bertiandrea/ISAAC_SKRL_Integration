@@ -16,10 +16,11 @@ class RewardFunction(ABC):
         Base class for reward functions.
         Subclasses must implement the compute method.
         """
-        self.writer = SummaryWriter(comment="_satellite_reward")
         self.log_reward = log_reward
-        self.log_reward_interval = log_reward_interval
-        self.global_step = 0
+        if self.log_reward:
+            self.writer = SummaryWriter(comment="_satellite_reward")
+            self.log_reward_interval = log_reward_interval
+            self.global_step = 0
                 
     @abstractmethod
     def compute(self,
