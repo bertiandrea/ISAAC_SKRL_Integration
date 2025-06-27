@@ -9,10 +9,10 @@ import torch
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
-NUM_ENVS = 8
+NUM_ENVS = 4096
 ROLLOUTS = 8
 MAX_EPOCHS = 100
-EPOCHS = 10
+EPOCHS = 100
 HEADLESS = True
 
 CONFIG = {
@@ -145,8 +145,8 @@ CONFIG = {
         "PPO": {
             "num_envs": NUM_ENVS,
             "rollouts": ROLLOUTS,
-            "learning_epochs": 4,
-            "mini_batches": 8,
+            "learning_epochs": 8,
+            "mini_batches": 4,
             
             "experiment": {
                 "write_interval": "auto",

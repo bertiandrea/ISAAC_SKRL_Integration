@@ -62,36 +62,30 @@ class TestReward(RewardFunction):
         assert not torch.isnan(acc_err).any(), "acc_err has NaN"
         assert not torch.isinf(acc_err).any(), "acc_err has Inf"
 
-        # weight = 1.0 / (1.0 + phi)
-        weight   = torch.div(
-            torch.ones_like(phi),
-            torch.add(torch.ones_like(phi), phi)
-        )
-
-        # r_q = self.alpha_q * 1.0 / (1.0 + phi)
-        r_q      = torch.mul(self.alpha_q, weight)
-
-        # r_omega = self.alpha_omega * weight * (1.0 / (1.0 + omega_err))
-        r_omega  = torch.mul(
-            self.alpha_omega,
-            torch.mul(
-                weight,
-                torch.div(
-                    torch.ones_like(omega_err),
-                    torch.add(torch.ones_like(omega_err), omega_err)
-                )
+        # r_q = self.alpha_q * (1.0 / (1.0 + phi^2))
+        r_q      = torch.mul(
+            self.alpha_q,
+            torch.div(
+                torch.ones_like(phi),
+                torch.add(torch.ones_like(phi), torch.square(phi))
             )
         )
 
-        # r_acc = self.alpha_acc * weight * (1.0 / (1.0 + acc_err))
+        # r_omega = self.alpha_omega * (1.0 / (1.0 + omega_err^2))
+        r_omega  = torch.mul(
+            self.alpha_omega,
+            torch.div(
+                torch.ones_like(omega_err),
+                torch.add(torch.ones_like(omega_err), torch.square(omega_err))
+            )
+        )
+
+        # r_acc = self.alpha_acc * (1.0 / (1.0 + acc_err^2))
         r_acc    = torch.mul(
             self.alpha_acc,  
-            torch.mul(
-                weight,
-                torch.div(
-                    torch.ones_like(acc_err),
-                    torch.add(torch.ones_like(acc_err), acc_err)
-                )
+            torch.div(
+                torch.ones_like(acc_err),
+                torch.add(torch.ones_like(acc_err), torch.square(acc_err))
             )
         )
 
@@ -138,36 +132,30 @@ class TestRewardSmooth(RewardFunction):
         assert not torch.isnan(acc_err).any(), "acc_err has NaN"
         assert not torch.isinf(acc_err).any(), "acc_err has Inf"
 
-        # weight = 1.0 / (1.0 + phi)
-        weight   = torch.div(
-            torch.ones_like(phi),
-            torch.add(torch.ones_like(phi), phi)
-        )
-
-        # r_q = self.alpha_q * 1.0 / (1.0 + phi)
-        r_q      = torch.mul(self.alpha_q, weight)
-
-        # r_omega = self.alpha_omega * weight * (1.0 / (1.0 + omega_err))
-        r_omega  = torch.mul(
-            self.alpha_omega,
-            torch.mul(
-                weight,
-                torch.div(
-                    torch.ones_like(omega_err),
-                    torch.add(torch.ones_like(omega_err), omega_err)
-                )
+        # r_q = self.alpha_q * (1.0 / (1.0 + phi^2))
+        r_q      = torch.mul(
+            self.alpha_q,
+            torch.div(
+                torch.ones_like(phi),
+                torch.add(torch.ones_like(phi), torch.square(phi))
             )
         )
 
-        # r_acc = self.alpha_acc * weight * (1.0 / (1.0 + acc_err))
+        # r_omega = self.alpha_omega * (1.0 / (1.0 + omega_err^2))
+        r_omega  = torch.mul(
+            self.alpha_omega,
+            torch.div(
+                torch.ones_like(omega_err),
+                torch.add(torch.ones_like(omega_err), torch.square(omega_err))
+            )
+        )
+
+        # r_acc = self.alpha_acc * (1.0 / (1.0 + acc_err^2))
         r_acc    = torch.mul(
             self.alpha_acc,  
-            torch.mul(
-                weight,
-                torch.div(
-                    torch.ones_like(acc_err),
-                    torch.add(torch.ones_like(acc_err), acc_err)
-                )
+            torch.div(
+                torch.ones_like(acc_err),
+                torch.add(torch.ones_like(acc_err), torch.square(acc_err))
             )
         )
 
