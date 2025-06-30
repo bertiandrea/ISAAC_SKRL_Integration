@@ -21,7 +21,6 @@ import torch
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.memories.torch import RandomMemory
 from skrl.trainers.torch import SequentialTrainer
-from satellite.utils.step_trainer_fixed import StepTrainer # Fixed version of StepTrainer to handle single agent training
 from skrl.utils import set_seed
 
 import argparse
@@ -137,59 +136,52 @@ def objective(trial: optuna.Trial) -> float:
                 action_space=env.action_space,
                 device=env.device)
     
-    trainer = SequentialTrainer(cfg=CONFIG["rl"]["trainer"], env=env, agents=agent)
-    
-    log_dir = CONFIG["rl"]["PPO"]["experiment"]["directory"] + "/" + CONFIG["rl"]["PPO"]["experiment"]["experiment_name"]
-    ea = event_accumulator.EventAccumulator(log_dir, size_guidance={event_accumulator.SCALARS: 10000})
-    ea.Reload()
-
-    try:
-        trainer.train()
-    finally:
-        env.close() # Force environment close to avoid memory leaks
-
-    #############################################################################
-    ea.Reload()
-    values = ea.Scalars(TENSORBOARD_TAG)
-    if not values:
-        raise RuntimeError(f"Tag '{TENSORBOARD_TAG}' non trovato in {log_dir}")
-    mean_return = values[-1].value
-    #############################################################################
-    
-    trial.report(mean_return, step=0)
-    #if trial.should_prune():
-    #        raise optuna.exceptions.TrialPruned()
-
     #trainer = SequentialTrainer(cfg=CONFIG["rl"]["trainer"], env=env, agents=agent)
-    #step_trainer = StepTrainer(cfg=CONFIG["rl"]["trainer"], env=env, agents=agent, agents_scope=[(0, env.num_envs)])
 
     #log_dir = CONFIG["rl"]["PPO"]["experiment"]["directory"] + "/" + CONFIG["rl"]["PPO"]["experiment"]["experiment_name"]
     #ea = event_accumulator.EventAccumulator(log_dir, size_guidance={event_accumulator.SCALARS: 10000})
     #ea.Reload()
 
     #try:
-    #    for epoch in range(CONFIG["rl"]["trainer"]["max_epochs"]):
-    #        #############################################################################
-    #        trainer.train()
-    #        #for _ in range(CONFIG["rl"]["trainer"]["rollouts"]):
-    #        #    step_trainer.train()
-    #        #############################################################################
-    #        ea.Reload()            
-    #        values = ea.Scalars(TENSORBOARD_TAG)
-    #        if not values:
-    #            raise RuntimeError(f"Tag '{TENSORBOARD_TAG}' non trovato in {log_dir}")
-    #        mean_return = values[-1].value
-    #        print(f"Epoch {epoch+1}/{CONFIG['rl']['trainer']['max_epochs']}, mean_return: {mean_return:.3f}")
-    #        #############################################################################
-    #        trial.report(mean_return, step=epoch)
-    #        if trial.should_prune():
-    #            print(f"Trial {trial.number} pruned at epoch {epoch+1}")
-    #            env.close() # Force environment close to avoid memory leaks
-    #            raise optuna.exceptions.TrialPruned() 
-    #        #############################################################################
+    #    trainer.train()
     #finally:
     #    env.close() # Force environment close to avoid memory leaks
 
+    #############################################################################
+    #ea.Reload()
+    #values = ea.Scalars(TENSORBOARD_TAG)
+    #if not values:
+    #    raise RuntimeError(f"Tag '{TENSORBOARD_TAG}' non trovato in {log_dir}")
+    #mean_return = values[-1].value
+    #############################################################################
+    
+    #trial.report(mean_return, step=0)
+    
+    # Impossible to implement pruning with SequentialTrainer :(
+    #if trial.should_prune():
+    #        raise optuna.exceptions.TrialPruned()
+
+    from satellite.trainer.trainer import Trainer
+    trainer = Trainer(cfg=CONFIG["rl"]["trainer"], env=env, agent=agent)
+    
+    try:
+        states, infos = trainer.init_step_train()
+        for epoch in range(CONFIG["rl"]["trainer"]["n_epochs"]):
+            #############################################################################
+            for n in range(CONFIG["rl"]["trainer"]["rollouts"]):
+                states, infos, rewards = trainer.step_train(states, infos, (epoch * CONFIG["rl"]["trainer"]["rollouts"]) + n)
+            #############################################################################
+            mean_return = torch.sum(rewards, dim=0).item()
+            print(f"Epoch {epoch+1}/{CONFIG['rl']['trainer']['n_epochs']}, mean_return: {mean_return:.3f}")
+            #############################################################################
+            trial.report(mean_return, step=epoch)
+            if trial.should_prune():
+                print(f"Trial {trial.number} pruned at epoch {epoch+1}")
+                raise optuna.exceptions.TrialPruned() 
+            #############################################################################
+    finally:
+        env.close() # Force environment close to avoid memory leaks
+    
     return mean_return
 
 def main():

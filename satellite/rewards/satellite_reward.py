@@ -42,7 +42,7 @@ class TestReward(RewardFunction):
     """
     Simple test reward: weighted inverse errors with dynamic scaling.
     """
-    def __init__(self, log_reward, log_reward_interval, alpha_q=1.0, alpha_omega=0.1, alpha_acc=0.01):
+    def __init__(self, log_reward, log_reward_interval, alpha_q=1.0, alpha_omega=1.0, alpha_acc=1.0):
         super().__init__(log_reward, log_reward_interval)
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
@@ -109,7 +109,7 @@ class TestRewardSmooth(RewardFunction):
     """
     Simple test reward: weighted inverse errors with dynamic scaling.
     """
-    def __init__(self, log_reward, log_reward_interval, alpha_q=1.0, alpha_omega=0.1, alpha_acc=0.01, alpha_smooth=0.1, alpha_spin=0.1):
+    def __init__(self, log_reward, log_reward_interval, alpha_q=1.0, alpha_omega=1.0, alpha_acc=1.0, alpha_smooth=0.1, alpha_spin=4.0):
         super().__init__(log_reward, log_reward_interval)
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
@@ -161,28 +161,30 @@ class TestRewardSmooth(RewardFunction):
         )
 
         if self.prev_actions is not None:
-            smooth_penalty = torch.mul(
+            smooth_err = torch.norm(torch.sub(actions, self.prev_actions), dim=1)
+            r_smooth = torch.mul(
                 self.alpha_smooth,
-                torch.sum(
-                    torch.square(
-                        torch.sub(actions, self.prev_actions)
-                    ), dim=1
+                torch.div(
+                    torch.ones_like(smooth_err),
+                    torch.add(torch.ones_like(smooth_err), torch.square(smooth_err))
                 )
             )
         else:
-            smooth_penalty = torch.zeros(actions.shape[0], device=actions.device)
+            r_smooth = torch.zeros(actions.shape[0], device=actions.device)
         self.prev_actions = actions
         
-        spin_penalty = torch.mul(
-            torch.abs(
-                torch.sub(ang_vels[:, 2], goal_ang_vel[:, 2])
-            ),
-            self.alpha_spin
+        spin_err = torch.norm(torch.sub(ang_vels[:, 2], goal_ang_vel[:, 2]), dim=1)
+        r_spin = torch.mul(
+            self.alpha_spin,
+            torch.div(
+                torch.ones_like(spin_err),
+                torch.add(torch.ones_like(spin_err), torch.square(spin_err))
+            )
         )
 
         reward = torch.add(torch.add(r_q, r_omega), r_acc)
-        reward = torch.sub(reward, smooth_penalty)
-        reward = torch.sub(reward, spin_penalty)
+        reward = torch.add(reward, r_smooth)
+        reward = torch.add(reward, r_spin)
 
         assert not torch.isnan(reward).any(), "reward has NaN"
         assert not torch.isinf(reward).any(), "reward has Inf"
@@ -192,8 +194,8 @@ class TestRewardSmooth(RewardFunction):
                 self.writer.add_scalar('Reward_policy/q', r_q.mean().item(), global_step=self.global_step)
                 self.writer.add_scalar('Reward_policy/omega', r_omega.mean().item(), global_step=self.global_step)
                 self.writer.add_scalar('Reward_policy/acc', r_acc.mean().item(), global_step=self.global_step)
-                self.writer.add_scalar('Reward_policy/smooth_penalty', smooth_penalty.mean().item(), global_step=self.global_step)
-                self.writer.add_scalar('Reward_policy/spin_penalty', spin_penalty.mean().item(), global_step=self.global_step)
+                self.writer.add_scalar('Reward_policy/smooth', r_smooth.mean().item(), global_step=self.global_step)
+                self.writer.add_scalar('Reward_policy/spin', r_spin.mean().item(), global_step=self.global_step)
                 self.writer.add_scalar('Reward_policy/total', reward.mean().item(), global_step=self.global_step)
             self.global_step += 1
         

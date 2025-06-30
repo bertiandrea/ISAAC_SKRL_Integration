@@ -17,7 +17,7 @@ PROFILE = False
 DEBUG_ARROWS = False
 HEARTBEAT = False
 
-ROLLOUTS = 32
+ROLLOUTS = 16
 
 CONFIG = {
     # --- seed & devices ----------------------------------------------------
@@ -47,18 +47,18 @@ CONFIG = {
 
         "numActions": 3,
 
-        "envSpacing": 2.0,
+        "envSpacing": 3.0,
         
         "sensor_noise_std": 0.0,
         "actuation_noise_std": 0.0,
 
-        "threshold_ang_goal": 0.0872665,
-        "threshold_vel_goal": 0.0174532,
-        "overspeed_ang_vel": 0.78540,
-        "episode_length_s": 30,
+        "threshold_ang_goal": 0.15,
+        "threshold_vel_goal": 0.15,
+        "overspeed_ang_vel": 0.29,
+        "episode_length_s": 120,
 
-        "clipActions": np.inf,
-        "clipObservations": np.inf,
+        "clipActions": 1000,
+        "clipObservations": 1000,
 
         "torque_scale": 1,
 
@@ -158,16 +158,16 @@ CONFIG = {
             "value_preprocessor" : RunningStandardScaler,
             "rewards_shaper" : lambda rewards, timestep, timesteps: rewards * 0.1,
 
-            "discount_factor" : 0.99, #(γ) Future reward discount; balances immediate versus long-term return.
-            "learning_rate" : 1e-3, #Step size for optimizer (e.g. Adam) when updating policy and value networks.
+            "discount_factor" : 0.95, #(γ) Future reward discount; balances immediate versus long-term return.
+            "learning_rate" : 3e-3, #Step size for optimizer (e.g. Adam) when updating policy and value networks.
             "grad_norm_clip" : 1.0, #Maximum norm value to clip gradients, preventing exploding gradients.
-            "ratio_clip" : 0.2, #(ϵ) PPO’s clipping threshold on the policy probability ratio to constrain updates.
-            "value_clip" : 0.2, #Clipping range for value function targets to stabilize value updates.
+            "ratio_clip" : 0.3, #(ϵ) PPO’s clipping threshold on the policy probability ratio to constrain updates.
+            "value_clip" : 0.3, #Clipping range for value function targets to stabilize value updates.
             "clip_predicted_values" : True, #If enabled, clips the new value predictions to lie within the range defined by value_clip around the old predictions.
-            "entropy_loss_scale" : 0.00, #Coefficient multiplying the entropy bonus; encourages exploration when > 0.
+            "entropy_loss_scale" : 0.01, #Coefficient multiplying the entropy bonus; encourages exploration when > 0.
             "value_loss_scale" : 1.0, #Coefficient weighting the value function loss in the total loss.
             "kl_threshold" : 0, #Optional early-stop threshold on KL divergence between old and new policies (0 disables).
-            "lambda" : 0.95, #(λ) GAE parameter for bias–variance trade-off in advantage estimation.
+            "lambda" : 0.90, #(λ) GAE parameter for bias–variance trade-off in advantage estimation.
 
             "random_timesteps" : 0, #Number of initial timesteps with random actions before learning or policy-driven sampling.
             "learning_starts" : 0, #Number of environment steps to collect before beginning any gradient updates.
@@ -200,7 +200,7 @@ CONFIG = {
     },
     # --- logging -----------------------------------------------------------
     "log_reward": {
-        "log_reward": False,
+        "log_reward": True,
         "log_reward_interval": 100,
     },
     # --- CAPS --------------------------------------------------------------

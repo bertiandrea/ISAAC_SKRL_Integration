@@ -9,10 +9,9 @@ import torch
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
-NUM_ENVS = 4096
+NUM_ENVS = 16
 ROLLOUTS = 8
-MAX_EPOCHS = 100
-EPOCHS = 100
+N_EPOCHS = 100
 HEADLESS = True
 
 CONFIG = {
@@ -43,18 +42,18 @@ CONFIG = {
 
         "numActions": 3,
 
-        "envSpacing": 2.0,
+        "envSpacing": 3.0,
 
         "sensor_noise_std": 0.0,
         "actuation_noise_std": 0.0,
 
-        "threshold_ang_goal": 0.0872665,
-        "threshold_vel_goal": 0.0174532,
-        "overspeed_ang_vel": 0.78540,
-        "episode_length_s": 30,
+        "threshold_ang_goal": 0.15,
+        "threshold_vel_goal": 0.15,
+        "overspeed_ang_vel": 0.29,
+        "episode_length_s": 120,
 
-        "clipActions": np.inf,
-        "clipObservations": np.inf,
+        "clipActions": 1000,
+        "clipObservations": 1000,
 
         "torque_scale": 1,
 
@@ -158,9 +157,8 @@ CONFIG = {
         },
         "trainer": {
             "rollouts": ROLLOUTS,
-            "n_epochs": EPOCHS,
-            "max_epochs": MAX_EPOCHS,
-            "timesteps": ROLLOUTS * EPOCHS,
+            "n_epochs": N_EPOCHS,
+            "timesteps": ROLLOUTS * N_EPOCHS,
             "disable_progressbar": False,
             "headless": HEADLESS,
         },
