@@ -109,7 +109,7 @@ class TestRewardSmooth(RewardFunction):
     """
     Simple test reward: weighted inverse errors with dynamic scaling.
     """
-    def __init__(self, log_reward, log_reward_interval, alpha_q=1.0, alpha_omega=1.0, alpha_acc=1.0, alpha_smooth=0.1, alpha_spin=4.0):
+    def __init__(self, log_reward, log_reward_interval, alpha_q=4.0, alpha_omega=1.0, alpha_acc=1.0, alpha_smooth=1.0, alpha_spin=1.0):
         super().__init__(log_reward, log_reward_interval)
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
@@ -160,20 +160,23 @@ class TestRewardSmooth(RewardFunction):
             )
         )
 
-        if self.prev_actions is not None:
-            smooth_err = torch.norm(torch.sub(actions, self.prev_actions), dim=1)
-            r_smooth = torch.mul(
-                self.alpha_smooth,
-                torch.div(
-                    torch.ones_like(smooth_err),
-                    torch.add(torch.ones_like(smooth_err), torch.square(smooth_err))
-                )
+        if self.prev_actions is None:
+            self.prev_actions = actions
+
+        # r_smooth = self.alpha_smooth * (1.0 / (1.0 + smooth_err^2))
+        smooth_err = torch.norm(torch.sub(actions, self.prev_actions), dim=1)
+        r_smooth = torch.mul(
+            self.alpha_smooth,
+            torch.div(
+                torch.ones_like(smooth_err),
+                torch.add(torch.ones_like(smooth_err), torch.square(smooth_err))
             )
-        else:
-            r_smooth = torch.zeros(actions.shape[0], device=actions.device)
+        )
+
         self.prev_actions = actions
         
-        spin_err = torch.norm(torch.sub(ang_vels[:, 2], goal_ang_vel[:, 2]), dim=1)
+        # r_spin = self.alpha_spin * (1.0 / (1.0 + spin_err^2))
+        spin_err = torch.sub(ang_vels[:, 2], goal_ang_vel[:, 2])
         r_spin = torch.mul(
             self.alpha_spin,
             torch.div(

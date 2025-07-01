@@ -197,7 +197,13 @@ class Satellite(VecTask):
                 self.draw_arrows()
 
     ################################################################################################################################
-
+                
+    def termination(self) -> None:
+        with record_function("$SatelliteVec__termination"):      
+            ids  = torch.nonzero(torch.logical_or(self.reset_buf, self.timeout_buf), as_tuple=False).flatten()
+            if len(ids) > 0:
+                self.reset_idx(ids)
+    
     def apply_torque(self, actions: torch.Tensor) -> None:
         ############## CONTROLLER ###############
         if self.controller_logic:
@@ -229,12 +235,6 @@ class Satellite(VecTask):
                 gymapi.ENV_SPACE
             )
         #######################################
-    
-    def termination(self) -> None:
-        with record_function("$SatelliteVec__termination"):      
-            ids  = torch.nonzero(torch.logical_or(self.reset_buf, self.timeout_buf), as_tuple=False).flatten()
-            if len(ids) > 0:
-                self.reset_idx(ids)
                 
     def compute_observations(self) -> None:
         ################# SIM #################
@@ -302,11 +302,13 @@ class Satellite(VecTask):
                 torch.logical_and(
                     torch.logical_or(timeout, overspeed), torch.logical_not(self.reset_buf)
                     ), True, False)
-
+    
     def pre_physics_step(self, actions):
         if self.heartbeat:
             return
-        
+
+        self.termination()
+
         self.apply_torque(actions)
 
     def post_physics_step(self):
@@ -315,9 +317,10 @@ class Satellite(VecTask):
         if self.heartbeat:
             return
         
-        self.termination()
         self.compute_observations()
+
         self.compute_reward()
+
         self.check_termination()
 
         if self.debug_arrows:
