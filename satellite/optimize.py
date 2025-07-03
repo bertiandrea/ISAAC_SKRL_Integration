@@ -3,7 +3,7 @@
 from satellite.configs.satellite_config_opt import CONFIG
 from satellite.envs.satellite import Satellite
 from satellite.models.custom_model import Policy, Value
-from satellite.envs.wrappers.isaacgym_envs import IsaacGymWrapper
+from satellite.envs.wrappers.isaacgym_envs_wrapper import IsaacGymWrapper
 from satellite.CAPS.agent_wrapper_CAPS import PPOWrapperCAPS
 from satellite.rewards.satellite_reward import (
     TestReward,
@@ -20,7 +20,7 @@ import torch
 
 from skrl.agents.torch.ppo import PPO, PPO_DEFAULT_CONFIG
 from skrl.memories.torch import RandomMemory
-from skrl.trainers.torch import SequentialTrainer
+from satellite.trainer.trainer import Trainer
 from skrl.utils import set_seed
 
 import argparse
@@ -73,9 +73,6 @@ def sample_ppo_params(trial: optuna.Trial):
     }
 
 def objective(trial: optuna.Trial) -> float:
-    if CONFIG["set_seed"]:
-        set_seed(CONFIG["seed"])
-    
     env = Satellite(
         cfg=CONFIG,
         rl_device=CONFIG["rl_device"],
@@ -136,32 +133,6 @@ def objective(trial: optuna.Trial) -> float:
                 action_space=env.action_space,
                 device=env.device)
     
-    #trainer = SequentialTrainer(cfg=CONFIG["rl"]["trainer"], env=env, agents=agent)
-
-    #log_dir = CONFIG["rl"]["PPO"]["experiment"]["directory"] + "/" + CONFIG["rl"]["PPO"]["experiment"]["experiment_name"]
-    #ea = event_accumulator.EventAccumulator(log_dir, size_guidance={event_accumulator.SCALARS: 10000})
-    #ea.Reload()
-
-    #try:
-    #    trainer.train()
-    #finally:
-    #    env.close() # Force environment close to avoid memory leaks
-
-    #############################################################################
-    #ea.Reload()
-    #values = ea.Scalars(TENSORBOARD_TAG)
-    #if not values:
-    #    raise RuntimeError(f"Tag '{TENSORBOARD_TAG}' non trovato in {log_dir}")
-    #mean_return = values[-1].value
-    #############################################################################
-    
-    #trial.report(mean_return, step=0)
-    
-    # Impossible to implement pruning with SequentialTrainer :(
-    #if trial.should_prune():
-    #        raise optuna.exceptions.TrialPruned()
-
-    from satellite.trainer.trainer import Trainer
     trainer = Trainer(cfg=CONFIG["rl"]["trainer"], env=env, agent=agent)
     
     try:
@@ -188,6 +159,11 @@ def main():
     global args
     args = parse_args()
 
+    if CONFIG["set_seed"]:
+        set_seed(CONFIG["seed"])
+    
+    ##################################################################
+    
     study = optuna.create_study(
         sampler=TPESampler(n_startup_trials=10, multivariate=True),
         pruner=MedianPruner(n_startup_trials=10, n_warmup_steps=1),
@@ -197,6 +173,8 @@ def main():
         study.optimize(objective, n_trials=N_TRIALS)
     except KeyboardInterrupt:
         pass
+
+    ##################################################################
 
     log_dir = "/home/andreaberti"
     out_path = log_dir + "/optimizer_results/ISAAC_SKRL_Integration/satellite/best_hyperparams.json"
