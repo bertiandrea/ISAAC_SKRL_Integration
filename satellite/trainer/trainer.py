@@ -5,7 +5,6 @@ import atexit
 import sys
 import tqdm
 import copy
-import time
 
 import torch
 
