@@ -60,13 +60,13 @@ class Env(ABC):
         self.num_observations = config["env"].get("numObservations", 0)
         self.num_states = config["env"].get("numStates", 0)
 
-        self.observation_space = spaces.Box(np.ones(self.num_observations) * -np.Inf, np.ones(self.num_observations) * np.Inf)
-        self.state_space = spaces.Box(np.ones(self.num_states) * -np.Inf, np.ones(self.num_states) * np.Inf)
+        self.observation_space = spaces.Box(np.ones(self.num_observations) * -np.Inf, np.ones(self.num_observations) * np.Inf, dtype=np.float64)
+        self.state_space = spaces.Box(np.ones(self.num_states) * -np.Inf, np.ones(self.num_states) * np.Inf, dtype=np.float64)
 
         self.num_actions = config["env"]["numActions"]
         self.control_freq_inv = config["env"].get("controlFrequencyInv", 1)
 
-        self.action_space = spaces.Box(np.ones(self.num_actions) * -1., np.ones(self.num_actions) * 1.)
+        self.action_space = spaces.Box(np.ones(self.num_actions) * -1., np.ones(self.num_actions) * 1., dtype=np.float64)
 
         self.clip_obs = config["env"].get("clipObservations", np.Inf)
         self.clip_actions = config["env"].get("clipActions", np.Inf)
@@ -108,10 +108,6 @@ class VecTask(Env):
         torch._C._jit_set_profiling_executor(False)
 
         self.gym = gymapi.acquire_gym()
-
-        self.extern_actor_params = {}
-        for env_id in range(self.num_envs):
-            self.extern_actor_params[env_id] = None
 
         self.create_sim()
         self.gym.prepare_sim(self.sim)
