@@ -10,14 +10,14 @@ from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
 NUM_ENVS = 4096
-N_EPOCHS = 10000
+N_EPOCHS = 1250
 HEADLESS = False
 FORCE_RENDER = False
 PROFILE = False
-DEBUG_ARROWS = False
+DEBUG_ARROWS = True
 HEARTBEAT = False
 
-ROLLOUTS = 8
+ROLLOUTS = 16
 
 CONFIG = {
     # --- seed & devices ----------------------------------------------------
@@ -41,9 +41,9 @@ CONFIG = {
     "env": {
         "numEnvs": NUM_ENVS,
 
-        "numObservations": 14,
+        "numObservations": 14, # satellite_quats (4) + quat_diff (4) + satellite_angacc (3) + actions (3)
 
-        "numStates": 17,
+        "numStates": 17, # satellite_quats (4) + quat_diff (4) + satellite_angacc (3) + actions (3) + satellite_angvels (3)
 
         "numActions": 3,
 
@@ -52,15 +52,15 @@ CONFIG = {
         "sensor_noise_std": 0.0,
         "actuation_noise_std": 0.0,
 
-        "threshold_ang_goal": 0.15,
-        "threshold_vel_goal": 0.15,
-        "overspeed_ang_vel": 0.29,
-        "episode_length_s": 120,
+        "threshold_ang_goal": 0.15, # radians
+        "threshold_vel_goal": 0.15, # radians/sec
+        "overspeed_ang_vel": 3.1416,  # radians/sec
+        "episode_length_s": 60,
 
-        "clipActions": 1000,
-        "clipObservations": 1000,
+        "clipActions": 1,
+        "clipObservations": 10,
 
-        "torque_scale": 1,
+        "torque_scale": 10,
 
         "debug_arrows": DEBUG_ARROWS,
         
@@ -165,8 +165,8 @@ CONFIG = {
             "value_clip" : 0.2, #Clipping range for value function targets to stabilize value updates.
             "clip_predicted_values" : True, #If enabled, clips the new value predictions to lie within the range defined by value_clip around the old predictions.
             "entropy_loss_scale" : 0.00, #Coefficient multiplying the entropy bonus; encourages exploration when > 0.
-            "value_loss_scale" : 2.0, #Coefficient weighting the value function loss in the total loss.
-            "kl_threshold" : 0.016, #Optional early-stop threshold on KL divergence between old and new policies (0 disables).
+            "value_loss_scale" : 1.0, #Coefficient weighting the value function loss in the total loss.
+            "kl_threshold" : 0, #Optional early-stop threshold on KL divergence between old and new policies (0 disables).
             "lambda" : 0.95, #(λ) GAE parameter for bias–variance trade-off in advantage estimation.
 
             "random_timesteps" : 0, #Number of initial timesteps with random actions before learning or policy-driven sampling.

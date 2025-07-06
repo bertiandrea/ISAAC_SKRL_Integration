@@ -174,11 +174,9 @@ class Satellite(VecTask):
             self.gym.refresh_actor_root_state_tensor(self.sim)
             self.prev_angvel = self.satellite_angvels.clone()
             ########################################
-                
-        with record_function("$SatelliteVec__reset_idx__sample_goal"):
-            self.goal_quat[ids] = sample_random_quaternion_batch(self.device, len(ids))
 
         with record_function("$SatelliteVec__reset_idx__reset_buffers"):
+            self.goal_quat[ids] = sample_random_quaternion_batch(self.device, len(ids))
             self.goal_ang_vel[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
             self.goal_ang_acc[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
 
@@ -200,7 +198,7 @@ class Satellite(VecTask):
                 
     def termination(self) -> None:
         with record_function("$SatelliteVec__termination"):      
-            ids  = torch.nonzero(torch.logical_or(self.reset_buf, self.timeout_buf), as_tuple=False).flatten()
+            ids  = torch.nonzero(self.reset_buf, as_tuple=False).flatten()
             if len(ids) > 0:
                 self.reset_idx(ids)
     
@@ -225,6 +223,12 @@ class Satellite(VecTask):
                 self.torque_scale
             )
 
+        #########################################
+        print(f"Actions - MAX:{self.actions.max().item():.2f} MIN: {self.actions.min().item():.2f}")  # Debugging output
+        assert not torch.isnan(self.actions).any(), f"actions has NaN: {self.actions, self.states_buf}"
+        assert not torch.isinf(self.actions).any(), f"actions has Inf: {self.actions, self.states_buf}"
+        #########################################
+
         ################# SIM #################
         with record_function("$SatelliteVec__apply_torque__sim"):
             self.torque_tensor[self.root_indices] = self.actions
@@ -244,9 +248,6 @@ class Satellite(VecTask):
                 torch.sub(self.satellite_angvels, self.prev_angvel),
                 self.dt
             )
-            
-            assert not torch.isnan(self.satellite_angacc).any(), f"self.satellite_angacc has NaN: {self.satellite_angvels, self.prev_angvel, self.dt}"
-            assert not torch.isinf(self.satellite_angacc).any(), f"self.satellite_angacc has Inf: {self.satellite_angvels, self.prev_angvel, self.dt}"
 
             self.prev_angvel = self.satellite_angvels.clone()
             self.obs_buf = torch.cat(
@@ -254,11 +255,6 @@ class Satellite(VecTask):
             self.states_buf = torch.cat(
                 (self.obs_buf, self.satellite_angvels), dim=-1)
         ########################################
-
-        assert not torch.isnan(self.obs_buf).any(), "self.obs_buf has NaN"
-        assert not torch.isinf(self.obs_buf).any(), "self.obs_buf has Inf"
-        assert not torch.isnan(self.states_buf).any(), "self.states_buf has NaN"
-        assert not torch.isinf(self.states_buf).any(), "self.states_buf has Inf"
 
         with record_function("$SatelliteVec__compute_observations__noise_and_clamp"):
             if self.sensor_noise_std > 0.0:
@@ -268,6 +264,14 @@ class Satellite(VecTask):
             
             self.obs_buf = torch.clamp(self.obs_buf, -self.clip_obs, self.clip_obs)
             self.states_buf = torch.clamp(self.states_buf, -self.clip_obs, self.clip_obs)
+
+        ########################################
+        print(f"States - MAX:{self.states_buf.max().item():.2f} MIN: {self.states_buf.min().item():.2f}")  # Debugging output
+        assert not torch.isnan(self.obs_buf).any(), f"self.obs_buf has NaN: {self.actions, self.obs_buf}"
+        assert not torch.isinf(self.obs_buf).any(), f"self.obs_buf has Inf: {self.actions, self.obs_buf}"
+        assert not torch.isnan(self.states_buf).any(), f"self.states_buf has NaN: {self.actions, self.states_buf}"
+        assert not torch.isinf(self.states_buf).any(), f"self.states_buf has Inf: {self.actions, self.states_buf}"
+        ########################################
 
     def compute_reward(self) -> None:
         with record_function("$SatelliteVec__compute_reward"):
@@ -296,12 +300,8 @@ class Satellite(VecTask):
                 self.overspeed_ang_vel
             )
 
-            self.reset_buf = torch.where(goal, True, False)
-
-            self.timeout_buf = torch.where(
-                torch.logical_and(
-                    torch.logical_or(timeout, overspeed), torch.logical_not(self.reset_buf)
-                    ), True, False)
+            self.timeout_buf = timeout
+            self.reset_buf = torch.logical_or(timeout, overspeed)
     
     def pre_physics_step(self, actions):
         if self.heartbeat:

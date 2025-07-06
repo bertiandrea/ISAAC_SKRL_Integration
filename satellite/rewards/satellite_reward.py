@@ -72,26 +72,32 @@ class TestReward(RewardFunction):
             )
         )
 
-        # r_omega = self.alpha_omega * (1.0 / (1.0 + omega_err^2))
+        # r_omega = self.alpha_omega * r_q * (1.0 / (1.0 + omega_err^2))
         r_omega  = torch.mul(
-            self.alpha_omega,
-            torch.div(
-                torch.ones_like(omega_err),
-                torch.add(torch.ones_like(omega_err), torch.square(omega_err))
+            r_q,
+            torch.mul(
+                self.alpha_omega,
+                torch.div(
+                    torch.ones_like(omega_err),
+                    torch.add(torch.ones_like(omega_err), torch.square(omega_err))
+                )
             )
         )
 
-        # r_acc = self.alpha_acc * (1.0 / (1.0 + acc_err^2))
+        # r_acc = self.alpha_acc * r_q * (1.0 / (1.0 + acc_err^2))
         r_acc    = torch.mul(
-            self.alpha_acc,  
-            torch.div(
-                torch.ones_like(acc_err),
-                torch.add(torch.ones_like(acc_err), torch.square(acc_err))
+            r_q,
+            torch.mul(
+                self.alpha_acc,  
+                torch.div(
+                    torch.ones_like(acc_err),
+                    torch.add(torch.ones_like(acc_err), torch.square(acc_err))
+                )
             )
         )
 
         reward   = torch.add(torch.add(r_q, r_omega), r_acc)
-
+        
         assert not torch.isnan(reward).any(), "reward has NaN"
         assert not torch.isinf(reward).any(), "reward has Inf"
 
@@ -102,14 +108,16 @@ class TestReward(RewardFunction):
                 self.writer.add_scalar('Reward_policy/acc', r_acc.mean().item(), global_step=self.global_step)
                 self.writer.add_scalar('Reward_policy/total', reward.mean().item(), global_step=self.global_step)
             self.global_step += 1
-        
+
+        print(f"Reward - MAX:{reward.max().item():.2f} MIN: {reward.min().item():.2f}")  # Debugging output
+
         return reward
 
 class TestRewardSmooth(RewardFunction):
     """
     Simple test reward: weighted inverse errors with dynamic scaling.
     """
-    def __init__(self, log_reward, log_reward_interval, alpha_q=4.0, alpha_omega=1.0, alpha_acc=1.0, alpha_smooth=1.0, alpha_spin=1.0):
+    def __init__(self, log_reward, log_reward_interval, alpha_q=1.0, alpha_omega=1.0, alpha_acc=1.0, alpha_smooth=1.0, alpha_spin=1.0):
         super().__init__(log_reward, log_reward_interval)
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
@@ -142,21 +150,27 @@ class TestRewardSmooth(RewardFunction):
             )
         )
 
-        # r_omega = self.alpha_omega * (1.0 / (1.0 + omega_err^2))
+        # r_omega = self.alpha_omega * r_q * (1.0 / (1.0 + omega_err^2))
         r_omega  = torch.mul(
-            self.alpha_omega,
-            torch.div(
-                torch.ones_like(omega_err),
-                torch.add(torch.ones_like(omega_err), torch.square(omega_err))
+            r_q,
+            torch.mul(
+                self.alpha_omega,
+                torch.div(
+                    torch.ones_like(omega_err),
+                    torch.add(torch.ones_like(omega_err), torch.square(omega_err))
+                )
             )
         )
 
-        # r_acc = self.alpha_acc * (1.0 / (1.0 + acc_err^2))
+        # r_acc = self.alpha_acc * r_q * (1.0 / (1.0 + acc_err^2))
         r_acc    = torch.mul(
-            self.alpha_acc,  
-            torch.div(
-                torch.ones_like(acc_err),
-                torch.add(torch.ones_like(acc_err), torch.square(acc_err))
+            r_q,
+            torch.mul(
+                self.alpha_acc,  
+                torch.div(
+                    torch.ones_like(acc_err),
+                    torch.add(torch.ones_like(acc_err), torch.square(acc_err))
+                )
             )
         )
 

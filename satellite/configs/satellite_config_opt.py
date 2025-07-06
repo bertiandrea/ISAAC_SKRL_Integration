@@ -9,9 +9,9 @@ import torch
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
-NUM_ENVS = 16
-ROLLOUTS = 8
-N_EPOCHS = 100
+NUM_ENVS = 4096
+ROLLOUTS = 16
+N_EPOCHS = 1250
 HEADLESS = True
 
 CONFIG = {
@@ -47,15 +47,15 @@ CONFIG = {
         "sensor_noise_std": 0.0,
         "actuation_noise_std": 0.0,
 
-        "threshold_ang_goal": 0.15,
-        "threshold_vel_goal": 0.15,
-        "overspeed_ang_vel": 0.29,
-        "episode_length_s": 120,
+        "threshold_ang_goal": 0.15, # radians
+        "threshold_vel_goal": 0.15, # radians/sec
+        "overspeed_ang_vel": 3.1416,  # radians/sec
+        "episode_length_s": 60,
 
-        "clipActions": 1000,
-        "clipObservations": 1000,
+        "clipActions": 1,
+        "clipObservations": 10,
 
-        "torque_scale": 1,
+        "torque_scale": 10,
 
         "debug_arrows": False,
 
