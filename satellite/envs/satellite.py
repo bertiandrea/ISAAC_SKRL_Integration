@@ -46,6 +46,7 @@ class Satellite(VecTask):
         super().__init__(config=cfg, rl_device=rl_device, sim_device=sim_device, graphics_device_id=graphics_device_id, headless=headless, virtual_screen_capture=virtual_screen_capture, force_render=force_render)
 
         ################# SETUP SIM #################
+        self.gym.refresh_actor_root_state_tensor(self.sim)
         self.actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim)
         self.root_states = gymtorch.wrap_tensor(self.actor_root_state).view(self.num_envs, 13)
         self.satellite_pos     = self.root_states[:, 0:3]
@@ -163,6 +164,7 @@ class Satellite(VecTask):
     def reset_idx(self, ids: torch.Tensor) -> None:
         with record_function("$SatelliteVec__reset_idx__sim"):
             ################# SIM #################
+            self.gym.refresh_actor_root_state_tensor(self.sim)
             self.root_states[ids] = self.initial_root_states[ids]
             idx32 = ids.to(dtype=torch.int32)
             self.gym.set_actor_root_state_tensor_indexed(

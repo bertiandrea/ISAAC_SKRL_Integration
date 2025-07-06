@@ -145,7 +145,7 @@ CONFIG = {
             "num_envs": NUM_ENVS,
             "rollouts": ROLLOUTS,
             "learning_epochs": 8,
-            "mini_batches": 4,
+            "mini_batches": 8,
             
             "experiment": {
                 "write_interval": "auto",

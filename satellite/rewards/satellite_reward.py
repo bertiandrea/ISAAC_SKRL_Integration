@@ -117,12 +117,11 @@ class TestRewardSmooth(RewardFunction):
     """
     Simple test reward: weighted inverse errors with dynamic scaling.
     """
-    def __init__(self, log_reward, log_reward_interval, alpha_q=1.0, alpha_omega=1.0, alpha_acc=1.0, alpha_smooth=1.0, alpha_spin=1.0):
+    def __init__(self, log_reward, log_reward_interval, alpha_q=1.0, alpha_omega=1.0, alpha_acc=1.0, alpha_spin=1.0):
         super().__init__(log_reward, log_reward_interval)
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
         self.alpha_acc = alpha_acc
-        self.alpha_smooth = alpha_smooth
         self.alpha_spin = alpha_spin
         self.prev_actions = None
 
@@ -173,21 +172,6 @@ class TestRewardSmooth(RewardFunction):
                 )
             )
         )
-
-        if self.prev_actions is None:
-            self.prev_actions = actions
-
-        # r_smooth = self.alpha_smooth * (1.0 / (1.0 + smooth_err^2))
-        smooth_err = torch.norm(torch.sub(actions, self.prev_actions), dim=1)
-        r_smooth = torch.mul(
-            self.alpha_smooth,
-            torch.div(
-                torch.ones_like(smooth_err),
-                torch.add(torch.ones_like(smooth_err), torch.square(smooth_err))
-            )
-        )
-
-        self.prev_actions = actions
         
         # r_spin = self.alpha_spin * (1.0 / (1.0 + spin_err^2))
         spin_err = torch.sub(ang_vels[:, 2], goal_ang_vel[:, 2])
@@ -200,7 +184,6 @@ class TestRewardSmooth(RewardFunction):
         )
 
         reward = torch.add(torch.add(r_q, r_omega), r_acc)
-        reward = torch.add(reward, r_smooth)
         reward = torch.add(reward, r_spin)
 
         assert not torch.isnan(reward).any(), "reward has NaN"
@@ -211,7 +194,6 @@ class TestRewardSmooth(RewardFunction):
                 self.writer.add_scalar('Reward_policy/q', r_q.mean().item(), global_step=self.global_step)
                 self.writer.add_scalar('Reward_policy/omega', r_omega.mean().item(), global_step=self.global_step)
                 self.writer.add_scalar('Reward_policy/acc', r_acc.mean().item(), global_step=self.global_step)
-                self.writer.add_scalar('Reward_policy/smooth', r_smooth.mean().item(), global_step=self.global_step)
                 self.writer.add_scalar('Reward_policy/spin', r_spin.mean().item(), global_step=self.global_step)
                 self.writer.add_scalar('Reward_policy/total', reward.mean().item(), global_step=self.global_step)
             self.global_step += 1

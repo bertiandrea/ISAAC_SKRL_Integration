@@ -2,7 +2,7 @@
 
 from satellite.configs.satellite_config import CONFIG
 from satellite.envs.satellite import Satellite
-from satellite.models.custom_model import Policy, Value
+from satellite.models.custom_model import Policy, Value, Shared
 from satellite.envs.wrappers.isaacgym_envs_wrapper import IsaacGymWrapper
 from satellite.CAPS.agent_wrapper_CAPS import PPOWrapperCAPS
 from satellite.rewards.satellite_reward import (
@@ -140,8 +140,8 @@ def main():
     memory = RandomMemory(memory_size=CONFIG["rl"]["memory"]["rollouts"], num_envs=env.num_envs, device=env.device)
 
     models = {}
-    models["policy"] = Policy(env.observation_space, env.action_space, env.device)
-    models["value"] = Value(env.state_space, env.action_space, env.device)
+    models["policy"] = Shared(env.state_space, env.action_space, env.device)
+    models["value"] = models["policy"]  # Shared model for policy and value
    
     CONFIG["rl"]["PPO"]["state_preprocessor_kwargs"] = {
         "size": env.state_space, "device": env.device
