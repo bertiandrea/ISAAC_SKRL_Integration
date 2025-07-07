@@ -41,9 +41,9 @@ CONFIG = {
     "env": {
         "numEnvs": NUM_ENVS,
 
-        "numObservations": 14, # satellite_quats (4) + quat_diff (4) + satellite_angacc (3) + actions (3)
+        "numObservations": 18, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + actions_integral (3)
 
-        "numStates": 17, # satellite_quats (4) + quat_diff (4) + satellite_angacc (3) + actions (3) + satellite_angvels (3)
+        "numStates": 21, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + actions_integral (3) + satellite_angvels (3)
 
         "numActions": 3,
 
@@ -55,12 +55,12 @@ CONFIG = {
         "threshold_ang_goal": 0.15, # radians
         "threshold_vel_goal": 0.15, # radians/sec
         "overspeed_ang_vel": 3.1416,  # radians/sec
-        "episode_length_s": 60,
+        "episode_length_s": 10.0, # seconds
 
-        "clipActions": 1,
-        "clipObservations": 10,
+        "clipActions": 1.0,
+        "clipObservations": 10.0,
 
-        "torque_scale": 10,
+        "torque_scale": 100.0,
 
         "debug_arrows": DEBUG_ARROWS,
         

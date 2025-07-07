@@ -42,18 +42,19 @@ class TestReward(RewardFunction):
     """
     Simple test reward: weighted inverse errors with dynamic scaling.
     """
-    def __init__(self, log_reward, log_reward_interval, alpha_q=1.0, alpha_omega=0.0, alpha_acc=0.0):
+    def __init__(self, log_reward, log_reward_interval, alpha_q=1.0, alpha_omega=0.1, alpha_acc=0.01):
         super().__init__(log_reward, log_reward_interval)
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
         self.alpha_acc = alpha_acc
 
     def compute(self, quats, ang_vels, ang_accs, goal_quat, goal_ang_vel, goal_ang_acc, actions):
-        # attitude error (radians)
-        phi = quat_diff_rad(quats, goal_quat)
-        # angular velocity error (rad/s)
+        # attitude error [0-infinity] (radians)
+        phi_raw = quat_diff_rad(quats, goal_quat)
+        phi = torch.tan(torch.div(phi_raw, 2.0)) # tan(phi/2)
+        # angular velocity error [0-infinity] (rad/s)
         omega_err = torch.norm(torch.sub(ang_vels, goal_ang_vel), dim=1)
-        # angular acceleration error (rad/s^2)
+        # angular acceleration error [0-infinity] (rad/s^2)
         acc_err   = torch.norm(torch.sub(ang_accs, goal_ang_acc), dim=1)
 
         assert not torch.isnan(phi).any(), "phi has NaN"
@@ -124,11 +125,12 @@ class TestRewardSmooth(RewardFunction):
         self.prev_actions = None
 
     def compute(self, quats, ang_vels, ang_accs, goal_quat, goal_ang_vel, goal_ang_acc, actions):
-        # attitude error (radians)
-        phi = quat_diff_rad(quats, goal_quat)
-        # angular velocity error (rad/s)
+        # attitude error [0-infinity] (radians)
+        phi_raw = quat_diff_rad(quats, goal_quat)
+        phi = torch.tan(torch.div(phi_raw, 2.0)) # tan(phi/2)
+        # angular velocity error [0-infinity] (rad/s)
         omega_err = torch.norm(torch.sub(ang_vels, goal_ang_vel), dim=1)
-        # angular acceleration error (rad/s^2)
+        # angular acceleration error [0-infinity] (rad/s^2)
         acc_err   = torch.norm(torch.sub(ang_accs, goal_ang_acc), dim=1)
 
         assert not torch.isnan(phi).any(), "phi has NaN"

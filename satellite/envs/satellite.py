@@ -19,6 +19,8 @@ import numpy as np
 
 from torch.profiler import record_function
 
+from torch.utils.tensorboard import SummaryWriter
+
 BASE_COLORS_SAT  = torch.tensor([[1,0,1], [0,1,1], [1,1,0]], dtype=torch.float32)
 BASE_COLORS_GOAL = torch.tensor([[0,0,1], [0,1,0], [1,0,0]], dtype=torch.float32)
 
@@ -46,7 +48,6 @@ class Satellite(VecTask):
         super().__init__(config=cfg, rl_device=rl_device, sim_device=sim_device, graphics_device_id=graphics_device_id, headless=headless, virtual_screen_capture=virtual_screen_capture, force_render=force_render)
 
         ################# SETUP SIM #################
-        self.gym.refresh_actor_root_state_tensor(self.sim)
         self.actor_root_state = self.gym.acquire_actor_root_state_tensor(self.sim)
         self.root_states = gymtorch.wrap_tensor(self.actor_root_state).view(self.num_envs, 13)
         self.satellite_pos     = self.root_states[:, 0:3]
@@ -58,10 +59,13 @@ class Satellite(VecTask):
         ################# SIM #################
         self.gym.refresh_actor_root_state_tensor(self.sim)
         self.initial_root_states = self.root_states.clone()
-        self.prev_angvel = self.satellite_angvels.clone()
+        print(f"Initial root states: {self.initial_root_states[0]}")
         ########################################
 
-        self.goal_quat = sample_random_quaternion_batch(self.device, self.num_envs)
+        self.prev_angvel = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
+        self.actions_integral = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
+
+        self.goal_quat = torch.tensor([0, 0, 0, 1], dtype=torch.float32, device=self.device).repeat(self.num_envs, 1) #sample_random_quaternion_batch(self.device, self.num_envs)
         self.goal_ang_vel = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
         self.goal_ang_acc = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
 
@@ -93,6 +97,9 @@ class Satellite(VecTask):
 
         if self.debug_arrows:
             self.draw_arrows()
+        
+        self.writer = SummaryWriter(comment="_satellite_reward")
+        self.global_step = 0
 
     def create_sim(self) -> None:
         self.sim = super().create_sim(self.device_id, self.graphics_device_id, self.physics_engine, self.sim_params) # Acquires the sim pointer
@@ -164,7 +171,6 @@ class Satellite(VecTask):
     def reset_idx(self, ids: torch.Tensor) -> None:
         with record_function("$SatelliteVec__reset_idx__sim"):
             ################# SIM #################
-            self.gym.refresh_actor_root_state_tensor(self.sim)
             self.root_states[ids] = self.initial_root_states[ids]
             idx32 = ids.to(dtype=torch.int32)
             self.gym.set_actor_root_state_tensor_indexed(
@@ -172,13 +178,11 @@ class Satellite(VecTask):
             )
             #######################################
 
-            ################# SIM #################
-            self.gym.refresh_actor_root_state_tensor(self.sim)
-            self.prev_angvel = self.satellite_angvels.clone()
-            ########################################
-
         with record_function("$SatelliteVec__reset_idx__reset_buffers"):
-            self.goal_quat[ids] = sample_random_quaternion_batch(self.device, len(ids))
+            self.prev_angvel[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
+            self.actions_integral[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
+
+            self.goal_quat[ids] = torch.tensor([0, 0, 0, 1], dtype=torch.float32, device=self.device).repeat(len(ids), 1) #sample_random_quaternion_batch(self.device, len(ids))
             self.goal_ang_vel[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
             self.goal_ang_acc[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
 
@@ -212,33 +216,45 @@ class Satellite(VecTask):
                 measured_angacc=self.satellite_angacc
             )
         #########################################
-
-        with record_function("$SatelliteVec__apply_torque__noise_and_clamp"):
+        
+        with record_function("$SatelliteVec__apply_torque__noise"):
             if self.actuation_noise_std > 0.0:
                 actions = torch.add(
                     actions,
                     torch.normal(mean=0.0, std=self.actuation_noise_std, size=actions.shape, device=self.device)
                 )
-            
-            self.actions = torch.mul(
-                torch.clamp(actions, -self.clip_actions, self.clip_actions),
-                self.torque_scale
-            )
+
+        with record_function("$SatelliteVec__apply_torque__scale_integrate_clamp"):
+            self.actions = torch.mul(actions, self.torque_scale)
+            self.actions_integral += torch.mul(self.actions, self.dt)
+
+            self.actions = torch.clamp(self.actions, -self.clip_actions * self.torque_scale, self.clip_actions * self.torque_scale)
+            self.actions_integral = torch.clamp(self.actions_integral, -self.clip_actions * self.torque_scale, self.clip_actions * self.torque_scale)
 
         #########################################
-        print(f"Actions - MAX:{self.actions.max().item():.2f} MIN: {self.actions.min().item():.2f}")  # Debugging output
+        self.writer.add_scalar('Actions/action_X', self.actions[0, 0].item(), global_step=self.global_step)
+        self.writer.add_scalar('Actions/action_Y', self.actions[0, 1].item(), global_step=self.global_step)
+        self.writer.add_scalar('Actions/action_Z', self.actions[0, 2].item(), global_step=self.global_step)
+        self.writer.add_scalar('Actions/action_integral_X', self.actions_integral[0, 2].item(), global_step=self.global_step)
+        self.writer.add_scalar('Actions/action_integral_Y', self.actions_integral[0, 2].item(), global_step=self.global_step)
+        self.writer.add_scalar('Actions/action_integral_Z', self.actions_integral[0, 2].item(), global_step=self.global_step)
+
+        self.global_step += 1
+
         assert not torch.isnan(self.actions).any(), f"actions has NaN: {self.actions, self.states_buf}"
         assert not torch.isinf(self.actions).any(), f"actions has Inf: {self.actions, self.states_buf}"
+        assert not torch.isnan(self.actions_integral).any(), f"actions_integral has NaN: {self.actions_integral, self.states_buf}"
+        assert not torch.isinf(self.actions_integral).any(), f"actions_integral has Inf: {self.actions_integral, self.states_buf}"
         #########################################
 
         ################# SIM #################
         with record_function("$SatelliteVec__apply_torque__sim"):
-            self.torque_tensor[self.root_indices] = self.actions
+            self.torque_tensor[self.root_indices] = self.actions_integral
             self.gym.apply_rigid_body_force_tensors(
                 self.sim,
                 gymtorch.unwrap_tensor(self.force_tensor),  
                 gymtorch.unwrap_tensor(self.torque_tensor), 
-                gymapi.ENV_SPACE
+                gymapi.LOCAL_SPACE,
             )
         #######################################
                 
@@ -253,22 +269,19 @@ class Satellite(VecTask):
 
             self.prev_angvel = self.satellite_angvels.clone()
             self.obs_buf = torch.cat(
-                (self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), self.satellite_angacc, self.actions), dim=-1)
+                (self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), 
+                 quat_diff_rad(self.satellite_quats, self.goal_quat).unsqueeze(-1), 
+                 self.satellite_angacc, self.actions, self.actions_integral), dim=-1)
             self.states_buf = torch.cat(
                 (self.obs_buf, self.satellite_angvels), dim=-1)
         ########################################
 
-        with record_function("$SatelliteVec__compute_observations__noise_and_clamp"):
+        with record_function("$SatelliteVec__compute_observations__noise"):
             if self.sensor_noise_std > 0.0:
                 noise = torch.normal(mean=0.0, std=self.sensor_noise_std, size=self.state_space.shape, device=self.device)
                 self.obs_buf = torch.add(self.obs_buf, noise[:, :self.num_observations])
-                # No noise on states
-            
-            self.obs_buf = torch.clamp(self.obs_buf, -self.clip_obs, self.clip_obs)
-            self.states_buf = torch.clamp(self.states_buf, -self.clip_obs, self.clip_obs)
 
         ########################################
-        print(f"States - MAX:{self.states_buf.max().item():.2f} MIN: {self.states_buf.min().item():.2f}")  # Debugging output
         assert not torch.isnan(self.obs_buf).any(), f"self.obs_buf has NaN: {self.actions, self.obs_buf}"
         assert not torch.isinf(self.obs_buf).any(), f"self.obs_buf has Inf: {self.actions, self.obs_buf}"
         assert not torch.isnan(self.states_buf).any(), f"self.states_buf has NaN: {self.actions, self.states_buf}"
