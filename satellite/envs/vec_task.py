@@ -169,7 +169,10 @@ class VecTask(Env):
 
     def step(self, actions: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, Dict[str, Any]]:
         with record_function("#VecTask__STEP"):
-            
+            actions = torch.clamp(actions, -self.clip_actions, self.clip_actions)
+
+            print(f"Actions - MAX:{actions.max().item():.2f} MIN: {actions.min().item():.2f}")  # Debugging output
+
             with record_function("$VecTask__step__pre_physics_step"):
                 self.pre_physics_step(actions)
 
@@ -187,17 +190,23 @@ class VecTask(Env):
             with record_function("$VecTask__step__post_physics_step"):
                 self.post_physics_step()
 
-            self.obs_states_dict["obs"] = self.obs_buf.to(self.rl_device)
-            self.obs_states_dict["states"] = self.states_buf.to(self.rl_device)
+            self.obs_states_dict["obs"] = torch.clamp(self.obs_buf, -self.clip_obs, self.clip_obs).to(self.rl_device)
+            self.obs_states_dict["states"] = torch.clamp(self.states_buf, -self.clip_obs, self.clip_obs).to(self.rl_device)
             
             self.control_steps += 1
             self.extras["time_outs"] = self.timeout_buf.to(self.rl_device)
 
+            print(f"States - MAX:{self.obs_states_dict["states"].max().item():.2f} MIN: {self.obs_states_dict["states"].min().item():.2f}")  # Debugging output
+            print(f"Observations - MAX:{self.obs_states_dict["obs"].max().item():.2f} MIN: {self.obs_states_dict["obs"].min().item():.2f}")  # Debugging output
+            print(f"Reward - MAX:{self.rew_buf.max().item():.2f} MIN: {self.rew_buf.min().item():.2f}")  # Debugging output
+            print(f"Timeouts: {self.timeout_buf.sum().item()}")  # Debugging output
+            print(f"Reset: {self.reset_buf.sum().item()}")  # Debugging output
+
         return self.obs_states_dict, self.rew_buf.to(self.rl_device), self.reset_buf.to(self.rl_device), self.extras
 
     def reset(self):
-        self.obs_states_dict["obs"] = self.obs_buf.to(self.rl_device)
-        self.obs_states_dict["states"] = self.states_buf.to(self.rl_device)
+        self.obs_states_dict["obs"] = torch.clamp(self.obs_buf, -self.clip_obs, self.clip_obs).to(self.rl_device)
+        self.obs_states_dict["states"] = torch.clamp(self.states_buf, -self.clip_obs, self.clip_obs).to(self.rl_device)
 
         return self.obs_states_dict
 
