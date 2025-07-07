@@ -42,7 +42,7 @@ class TestReward(RewardFunction):
     """
     Simple test reward: weighted inverse errors with dynamic scaling.
     """
-    def __init__(self, log_reward, log_reward_interval, alpha_q=1.0, alpha_omega=1.0, alpha_acc=1.0):
+    def __init__(self, log_reward, log_reward_interval, alpha_q=1.0, alpha_omega=0.0, alpha_acc=0.0):
         super().__init__(log_reward, log_reward_interval)
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
@@ -108,8 +108,6 @@ class TestReward(RewardFunction):
                 self.writer.add_scalar('Reward_policy/acc', r_acc.mean().item(), global_step=self.global_step)
                 self.writer.add_scalar('Reward_policy/total', reward.mean().item(), global_step=self.global_step)
             self.global_step += 1
-
-        print(f"Reward - MAX:{reward.max().item():.2f} MIN: {reward.min().item():.2f}")  # Debugging output
 
         return reward
 
