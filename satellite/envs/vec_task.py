@@ -196,8 +196,8 @@ class VecTask(Env):
             self.control_steps += 1
             self.extras["time_outs"] = self.timeout_buf.to(self.rl_device)
 
-            print(f"States - MAX:{self.obs_states_dict["states"].max().item():.2f} MIN: {self.obs_states_dict["states"].min().item():.2f}")  # Debugging output
-            print(f"Observations - MAX:{self.obs_states_dict["obs"].max().item():.2f} MIN: {self.obs_states_dict["obs"].min().item():.2f}")  # Debugging output
+            print(f"States - MAX:{self.obs_states_dict['states'].max().item():.2f} MIN: {self.obs_states_dict['states'].min().item():.2f}")  # Debugging output
+            print(f"Observations - MAX:{self.obs_states_dict['obs'].max().item():.2f} MIN: {self.obs_states_dict['obs'].min().item():.2f}")  # Debugging output
             print(f"Reward - MAX:{self.rew_buf.max().item():.2f} MIN: {self.rew_buf.min().item():.2f}")  # Debugging output
             print(f"Timeouts: {self.timeout_buf.sum().item()}")  # Debugging output
             print(f"Reset: {self.reset_buf.sum().item()}")  # Debugging output
