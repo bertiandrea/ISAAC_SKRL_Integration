@@ -60,7 +60,7 @@ CONFIG = {
         "clipActions": 1.0,
         "clipObservations": 10.0,
 
-        "torque_scale": 100.0,
+        "torque_scale": 10.0,
 
         "debug_arrows": DEBUG_ARROWS,
         

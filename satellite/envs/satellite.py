@@ -189,6 +189,8 @@ class Satellite(VecTask):
             self.timeout_buf[ids] = False
 
             self.rew_buf[ids] = 0.0
+
+            self.actions[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
         
         if self.controller_logic:
             with record_function("$SatelliteVec__reset_idx__reset_controller"):
@@ -206,23 +208,23 @@ class Satellite(VecTask):
             if len(ids) > 0:
                 self.reset_idx(ids)
     
-    def apply_torque(self, actions: torch.Tensor) -> None:
+    def apply_torque(self) -> None:
         ############## CONTROLLER ###############
         if self.controller_logic:
-            actions = self.controller.compute_control(
-                actions=actions, 
+            self.actions = self.controller.compute_control(
+                actions=self.actions, 
                 measured_angacc=self.satellite_angacc
             )
         #########################################
         
         with record_function("$SatelliteVec__apply_torque__scale"):
-            self.actions = torch.mul(actions, self.torque_scale)
+            self.actions = torch.mul(self.actions, self.torque_scale)
 
         with record_function("$SatelliteVec__apply_torque__noise"):
             if self.actuation_noise_std > 0.0:
                 self.actions = torch.add(
                     self.actions,
-                    torch.normal(mean=0.0, std=self.actuation_noise_std, size=actions.shape, device=self.device)
+                    torch.normal(mean=0.0, std=self.actuation_noise_std, size=self.actions.shape, device=self.device)
                 )
 
         #########################################
@@ -311,9 +313,11 @@ class Satellite(VecTask):
         if self.heartbeat:
             return
 
+        self.actions = actions.to(self.device)
+
         self.termination()
 
-        self.apply_torque(actions)
+        self.apply_torque()
 
     def post_physics_step(self):
         self.progress_buf += 1
