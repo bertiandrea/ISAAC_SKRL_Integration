@@ -9,7 +9,7 @@ import torch
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
-NUM_ENVS = 4096
+NUM_ENVS = 1
 N_EPOCHS = 1250
 HEADLESS = False
 FORCE_RENDER = False
@@ -41,9 +41,9 @@ CONFIG = {
     "env": {
         "numEnvs": NUM_ENVS,
 
-        "numObservations": 18, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + actions_integral (3)
+        "numObservations": 15, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3)
 
-        "numStates": 21, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + actions_integral (3) + satellite_angvels (3)
+        "numStates": 18, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + satellite_angvels (3)
 
         "numActions": 3,
 
@@ -71,7 +71,7 @@ CONFIG = {
             "assetName": "satellite",
 
             "init_pos_p": [0, 0, 0],
-            "init_pos_r": [0, 0, 0, 1],
+            "init_pos_r": [0.7071068, 0, 0, 0.7071068],
             
             #"disable_gravity"
             #"collapse_fixed_joints"

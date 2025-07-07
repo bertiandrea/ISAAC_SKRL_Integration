@@ -202,8 +202,7 @@ class VecTask(Env):
             print(f"QuatsDiffRad - MAX:{self.obs_states_dict['states'][:, 8].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 8].min().item():.2f}")  # Debugging output
             print(f"AngAcc - MAX:{self.obs_states_dict['states'][:, 9:11].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 9:11].min().item():.2f}")  # Debugging output
             print(f"Act - MAX:{self.obs_states_dict['states'][:, 12:14].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 12:14].min().item():.2f}")  # Debugging output
-            print(f"ActIntegral - MAX:{self.obs_states_dict['states'][:, 15:17].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 15:17].min().item():.2f}")  # Debugging output
-            print(f"AngVels - MAX:{self.obs_states_dict['states'][:, 18:29].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 18:29].min().item():.2f}")  # Debugging output
+            print(f"AngVels - MAX:{self.obs_states_dict['states'][:, 15:18].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 15:18].min().item():.2f}")  # Debugging output
             print(f"Reward - MAX:{self.rew_buf.max().item():.2f} MIN: {self.rew_buf.min().item():.2f}")  # Debugging output
             print(f"Timeouts: {self.timeout_buf.sum().item()}")  # Debugging output
             print(f"Reset: {self.reset_buf.sum().item()}")  # Debugging output

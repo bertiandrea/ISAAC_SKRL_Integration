@@ -63,7 +63,6 @@ class Satellite(VecTask):
         ########################################
 
         self.prev_angvel = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
-        self.actions_integral = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
 
         self.goal_quat = torch.tensor([0, 0, 0, 1], dtype=torch.float32, device=self.device).repeat(self.num_envs, 1) #sample_random_quaternion_batch(self.device, self.num_envs)
         self.goal_ang_vel = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
@@ -180,7 +179,6 @@ class Satellite(VecTask):
 
         with record_function("$SatelliteVec__reset_idx__reset_buffers"):
             self.prev_angvel[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
-            self.actions_integral[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
 
             self.goal_quat[ids] = torch.tensor([0, 0, 0, 1], dtype=torch.float32, device=self.device).repeat(len(ids), 1) #sample_random_quaternion_batch(self.device, len(ids))
             self.goal_ang_vel[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
@@ -217,39 +215,30 @@ class Satellite(VecTask):
             )
         #########################################
         
+        with record_function("$SatelliteVec__apply_torque__scale"):
+            self.actions = torch.mul(actions, self.torque_scale)
+
         with record_function("$SatelliteVec__apply_torque__noise"):
             if self.actuation_noise_std > 0.0:
-                actions = torch.add(
-                    actions,
+                self.actions = torch.add(
+                    self.actions,
                     torch.normal(mean=0.0, std=self.actuation_noise_std, size=actions.shape, device=self.device)
                 )
-
-        with record_function("$SatelliteVec__apply_torque__scale_integrate_clamp"):
-            self.actions = torch.mul(actions, self.torque_scale)
-            self.actions_integral += torch.mul(self.actions, self.dt)
-
-            self.actions = torch.clamp(self.actions, -self.clip_actions * self.torque_scale, self.clip_actions * self.torque_scale)
-            self.actions_integral = torch.clamp(self.actions_integral, -self.clip_actions * self.torque_scale, self.clip_actions * self.torque_scale)
 
         #########################################
         self.writer.add_scalar('Actions/action_X', self.actions[0, 0].item(), global_step=self.global_step)
         self.writer.add_scalar('Actions/action_Y', self.actions[0, 1].item(), global_step=self.global_step)
         self.writer.add_scalar('Actions/action_Z', self.actions[0, 2].item(), global_step=self.global_step)
-        self.writer.add_scalar('Actions/action_integral_X', self.actions_integral[0, 2].item(), global_step=self.global_step)
-        self.writer.add_scalar('Actions/action_integral_Y', self.actions_integral[0, 2].item(), global_step=self.global_step)
-        self.writer.add_scalar('Actions/action_integral_Z', self.actions_integral[0, 2].item(), global_step=self.global_step)
 
         self.global_step += 1
 
         assert not torch.isnan(self.actions).any(), f"actions has NaN: {self.actions, self.states_buf}"
         assert not torch.isinf(self.actions).any(), f"actions has Inf: {self.actions, self.states_buf}"
-        assert not torch.isnan(self.actions_integral).any(), f"actions_integral has NaN: {self.actions_integral, self.states_buf}"
-        assert not torch.isinf(self.actions_integral).any(), f"actions_integral has Inf: {self.actions_integral, self.states_buf}"
         #########################################
 
         ################# SIM #################
         with record_function("$SatelliteVec__apply_torque__sim"):
-            self.torque_tensor[self.root_indices] = self.actions_integral
+            self.torque_tensor[self.root_indices] = self.actions
             self.gym.apply_rigid_body_force_tensors(
                 self.sim,
                 gymtorch.unwrap_tensor(self.force_tensor),  
@@ -271,7 +260,7 @@ class Satellite(VecTask):
             self.obs_buf = torch.cat(
                 (self.satellite_quats, quat_diff(self.satellite_quats, self.goal_quat), 
                  quat_diff_rad(self.satellite_quats, self.goal_quat).unsqueeze(-1), 
-                 self.satellite_angacc, self.actions, self.actions_integral), dim=-1)
+                 self.satellite_angacc, self.actions), dim=-1)
             self.states_buf = torch.cat(
                 (self.obs_buf, self.satellite_angvels), dim=-1)
         ########################################
