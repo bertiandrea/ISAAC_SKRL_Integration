@@ -9,35 +9,7 @@ from isaacgym import gymapi, gymtorch, gymutil
 import torch
 
 from .vec_task import VecTask
-
-def to_torch(x, dtype=torch.float, device='cuda:0', requires_grad=False):
-    return torch.tensor(x, dtype=dtype, device=device, requires_grad=requires_grad)
-
-@torch.jit.script
-def tensor_clamp(t, min_t, max_t):
-    return torch.max(torch.min(t, max_t), min_t)
-
-@torch.jit.script
-def torch_rand_float(lower: float, upper: float, shape: List[int], device: str) -> torch.Tensor:
-    return (upper - lower) * torch.rand(shape, device=device) + lower
-
-@torch.jit.script
-def quat_rotate(q: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
-    shape = q.shape
-    q_w = q[:, -1]
-    q_vec = q[:, :3]
-    a = v * (2.0 * q_w ** 2 - 1.0).unsqueeze(-1)
-    b = torch.cross(q_vec, v, dim=-1) * q_w.unsqueeze(-1) * 2.0
-    c = q_vec * \
-        torch.bmm(q_vec.view(shape[0], 1, 3), v.view(
-            shape[0], 3, 1)).squeeze(-1) * 2.0
-    return a + b + c
-
-@torch.jit.script
-def quat_axis(q: torch.Tensor, axis: int = 0) -> torch.Tensor:
-    basis_vec = torch.zeros(q.shape[0], 3, device=q.device)
-    basis_vec[:, axis] = 1
-    return quat_rotate(q, basis_vec)
+from satellite.utils.satellite_util import quat_axis
 
 class Quadcopter(VecTask):
 
@@ -136,8 +108,8 @@ class Quadcopter(VecTask):
             self.dof_lower_limits.append(dof_props['lower'][i])
             self.dof_upper_limits.append(dof_props['upper'][i])
 
-        self.dof_lower_limits = to_torch(self.dof_lower_limits, device=self.device)
-        self.dof_upper_limits = to_torch(self.dof_upper_limits, device=self.device)
+        self.dof_lower_limits = torch.tensor(self.dof_lower_limits, dtype=torch.float, device=self.device)
+        self.dof_upper_limits = torch.tensor(self.dof_upper_limits, dtype=torch.float, device=self.device)
         self.dof_ranges = self.dof_upper_limits - self.dof_lower_limits
 
         default_pose = gymapi.Transform()
@@ -179,12 +151,12 @@ class Quadcopter(VecTask):
         actor_indices = self.all_actor_indices[env_ids].flatten()
 
         self.root_states[env_ids] = self.initial_root_states[env_ids]
-        self.root_states[env_ids, 0] += torch_rand_float(-1.5, 1.5, (num_resets, 1), self.device).flatten()
-        self.root_states[env_ids, 1] += torch_rand_float(-1.5, 1.5, (num_resets, 1), self.device).flatten()
-        self.root_states[env_ids, 2] += torch_rand_float(-0.2, 1.5, (num_resets, 1), self.device).flatten()
+        self.root_states[env_ids, 0] += torch.zeros((num_resets, 1), device=self.device).flatten() 
+        self.root_states[env_ids, 1] += torch.zeros((num_resets, 1), device=self.device).flatten()
+        self.root_states[env_ids, 2] += torch.zeros((num_resets, 1), device=self.device).flatten()
         self.gym.set_actor_root_state_tensor_indexed(self.sim, self.root_tensor, gymtorch.unwrap_tensor(actor_indices), num_resets)
 
-        self.dof_positions[env_ids] = torch_rand_float(-0.2, 0.2, (num_resets, 8), self.device)
+        self.dof_positions[env_ids] = torch.zeros((num_resets, self.num_dofs), dtype=torch.float32, device=self.device)
         self.dof_velocities[env_ids] = 0.0
         self.gym.set_dof_state_tensor_indexed(self.sim, self.dof_state_tensor, gymtorch.unwrap_tensor(actor_indices), num_resets)
 
@@ -206,7 +178,7 @@ class Quadcopter(VecTask):
         
         thrust_action_speed_scale = 200
         self.thrusts += self.dt * thrust_action_speed_scale * actions[:, 8:12]
-        self.thrusts[:] = tensor_clamp(self.thrusts, self.thrust_lower_limits, self.thrust_upper_limits)
+        self.thrusts[:] = torch.clamp(self.thrusts, self.thrust_lower_limits, self.thrust_upper_limits)
 
         self.forces[:, 2, 2] = self.thrusts[:, 0]
         self.forces[:, 4, 2] = self.thrusts[:, 1]
@@ -215,7 +187,7 @@ class Quadcopter(VecTask):
 
         dof_action_speed_scale = 8 * math.pi
         self.dof_position_targets += self.dt * dof_action_speed_scale * actions[:, 0:8]
-        self.dof_position_targets[:] = tensor_clamp(self.dof_position_targets, self.dof_lower_limits, self.dof_upper_limits)
+        self.dof_position_targets[:] = torch.clamp(self.dof_position_targets, self.dof_lower_limits, self.dof_upper_limits)
 
         ####################################################################################
 

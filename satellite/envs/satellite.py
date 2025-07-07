@@ -190,8 +190,6 @@ class Satellite(VecTask):
 
             self.rew_buf[ids] = 0.0
 
-            self.actions[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
-        
         if self.controller_logic:
             with record_function("$SatelliteVec__reset_idx__reset_controller"):
                 self.controller.reset(ids)
@@ -204,9 +202,9 @@ class Satellite(VecTask):
                 
     def termination(self) -> None:
         with record_function("$SatelliteVec__termination"):      
-            ids  = torch.nonzero(self.reset_buf, as_tuple=False).flatten()
-            if len(ids) > 0:
-                self.reset_idx(ids)
+            self.reset_ids  = torch.nonzero(self.reset_buf, as_tuple=False).flatten()
+            if len(self.reset_ids) > 0:
+                self.reset_idx(self.reset_ids)
     
     def apply_torque(self) -> None:
         ############## CONTROLLER ###############
@@ -227,6 +225,8 @@ class Satellite(VecTask):
                     torch.normal(mean=0.0, std=self.actuation_noise_std, size=self.actions.shape, device=self.device)
                 )
 
+        self.actions[self.reset_ids] = torch.zeros((len(self.reset_ids), 3), dtype=torch.float, device=self.device)
+        
         #########################################
         self.writer.add_scalar('Actions/action_X', self.actions[0, 0].item(), global_step=self.global_step)
         self.writer.add_scalar('Actions/action_Y', self.actions[0, 1].item(), global_step=self.global_step)

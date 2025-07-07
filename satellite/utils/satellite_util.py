@@ -3,22 +3,16 @@
 import isaacgym #BugFix
 import torch
 
-def sample_random_quaternion_batch(device, n):
+@torch.jit.script
+def sample_random_quaternion_batch(device: str, n: int) -> torch.Tensor:
     if n == 0:
         return torch.empty((0, 4), dtype=torch.float32, device=device)
     quats = torch.randn((n, 4), dtype=torch.float32, device=device)
-    return torch.div(quats, quats.norm(dim=1, keepdim=True))
- 
-def quat_diff(q1, q2):
-    q2_inv = quat_conjugate(q2)
-    return quat_mul(q1, q2_inv)
+    norms = torch.norm(quats, 2.0, [1], keepdim=True)
+    return torch.div(quats, norms)
 
-def quat_conjugate(a):
-    shape = a.shape
-    a = a.reshape(-1, 4)
-    return torch.cat((-a[:, :3], a[:, -1:]), dim=-1).view(shape)
-
-def quat_mul(a, b):
+@torch.jit.script
+def quat_mul(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     assert a.shape == b.shape
     shape = a.shape
     a = a.reshape(-1, 4)
@@ -40,7 +34,19 @@ def quat_mul(a, b):
 
     return quat
 
-def quat_diff_rad(a, b):
+@torch.jit.script
+def quat_conjugate(a: torch.Tensor) -> torch.Tensor:
+    shape = a.shape
+    a = a.reshape(-1, 4)
+    return torch.cat((-a[:, :3], a[:, -1:]), dim=-1).view(shape)
+
+@torch.jit.script
+def quat_diff(q1: torch.Tensor, q2: torch.Tensor) -> torch.Tensor:
+    q2_inv = quat_conjugate(q2)
+    return quat_mul(q1, q2_inv)
+
+@torch.jit.script
+def quat_diff_rad(a: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
     b_conj = quat_conjugate(b)
     mul = quat_mul(a, b_conj)
     return 2.0 * torch.asin(
@@ -50,7 +56,8 @@ def quat_diff_rad(a, b):
                 p=2, dim=-1), max=1.0)
     )
 
-def quat_rotate(q, v):
+@torch.jit.script
+def quat_rotate(q: torch.Tensor, v: torch.Tensor) -> torch.Tensor:
     shape = q.shape
     q_w = q[:, -1]
     q_vec = q[:, :3]
@@ -61,7 +68,8 @@ def quat_rotate(q, v):
             shape[0], 3, 1)).squeeze(-1) * 2.0
     return a + b + c
 
-def quat_axis(q, axis=0):
+@torch.jit.script
+def quat_axis(q: torch.Tensor, axis: int = 0) -> torch.Tensor:
     basis_vec = torch.zeros(q.shape[0], 3, device=q.device)
     basis_vec[:, axis] = 1
     return quat_rotate(q, basis_vec)
