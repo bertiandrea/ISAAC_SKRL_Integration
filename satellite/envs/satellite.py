@@ -64,7 +64,8 @@ class Satellite(VecTask):
 
         self.prev_angvel = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
 
-        self.goal_quat = torch.tensor([0, 0, 0, 1], dtype=torch.float32, device=self.device).repeat(self.num_envs, 1) #sample_random_quaternion_batch(self.device, self.num_envs)
+        #self.goal_quat = torch.tensor([0, 0, 0, 1], dtype=torch.float32, device=self.device).repeat(self.num_envs, 1) 
+        self.goal_quat = sample_random_quaternion_batch(self.device, self.num_envs)
         self.goal_ang_vel = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
         self.goal_ang_acc = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
 
@@ -170,7 +171,9 @@ class Satellite(VecTask):
     def reset_idx(self, ids: torch.Tensor) -> None:
         with record_function("$SatelliteVec__reset_idx__sim"):
             ################# SIM #################
-            self.root_states[ids] = self.initial_root_states[ids]
+            #self.root_states[ids] = self.initial_root_states[ids]
+            self.root_states[ids] = torch.zeros((len(ids), 13), dtype=torch.float32, device=self.device)
+            self.root_states[ids, 3:7] = sample_random_quaternion_batch(self.device, len(ids))
             idx32 = ids.to(dtype=torch.int32)
             self.gym.set_actor_root_state_tensor_indexed(
                 self.sim, self.actor_root_state, gymtorch.unwrap_tensor(idx32), len(idx32)
@@ -180,7 +183,8 @@ class Satellite(VecTask):
         with record_function("$SatelliteVec__reset_idx__reset_buffers"):
             self.prev_angvel[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
 
-            self.goal_quat[ids] = torch.tensor([0, 0, 0, 1], dtype=torch.float32, device=self.device).repeat(len(ids), 1) #sample_random_quaternion_batch(self.device, len(ids))
+            #self.goal_quat[ids] = torch.tensor([0, 0, 0, 1], dtype=torch.float32, device=self.device).repeat(len(ids), 1) 
+            self.goal_quat[ids] = sample_random_quaternion_batch(self.device, len(ids))
             self.goal_ang_vel[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
             self.goal_ang_acc[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
 
@@ -297,8 +301,10 @@ class Satellite(VecTask):
             goal = torch.logical_and(
                 torch.lt(angle_diff, self.threshold_ang_goal),
                 torch.lt(ang_vel_diff, self.threshold_vel_goal)
-            )
+            ).sum(dim=0)
             
+            self.writer.add_scalar('Goal/goal', goal.item(), global_step=self.global_step)
+
             timeout = torch.ge(self.progress_buf, self.max_episode_length)
 
             overspeed = torch.ge(

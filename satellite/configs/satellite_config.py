@@ -9,7 +9,7 @@ import torch
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
-NUM_ENVS = 1
+NUM_ENVS = 4096
 N_EPOCHS = 1250
 HEADLESS = False
 FORCE_RENDER = False
@@ -55,12 +55,12 @@ CONFIG = {
         "threshold_ang_goal": 0.15, # radians
         "threshold_vel_goal": 0.15, # radians/sec
         "overspeed_ang_vel": 3.1416,  # radians/sec
-        "episode_length_s": 10.0, # seconds
+        "episode_length_s": 30.0, # seconds
 
         "clipActions": 1.0,
         "clipObservations": 10.0,
 
-        "torque_scale": 10.0,
+        "torque_scale": 100.0,
 
         "debug_arrows": DEBUG_ARROWS,
         

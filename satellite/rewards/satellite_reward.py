@@ -116,7 +116,7 @@ class TestRewardSmooth(RewardFunction):
     """
     Simple test reward: weighted inverse errors with dynamic scaling.
     """
-    def __init__(self, log_reward, log_reward_interval, alpha_q=1.0, alpha_omega=1.0, alpha_acc=1.0, alpha_spin=1.0):
+    def __init__(self, log_reward, log_reward_interval, alpha_q=10.0, alpha_omega=0.0, alpha_acc=0.0, alpha_spin=1.0):
         super().__init__(log_reward, log_reward_interval)
         self.alpha_q = alpha_q
         self.alpha_omega = alpha_omega
