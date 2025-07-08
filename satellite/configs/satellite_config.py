@@ -15,6 +15,7 @@ HEADLESS = False
 FORCE_RENDER = False
 PROFILE = False
 DEBUG_ARROWS = True
+DEBUG_PRINTS = False
 HEARTBEAT = False
 
 ROLLOUTS = 16
@@ -63,6 +64,8 @@ CONFIG = {
         "torque_scale": 100.0,
 
         "debug_arrows": DEBUG_ARROWS,
+        
+        "debug_prints": DEBUG_PRINTS,
         
         "asset": {
 

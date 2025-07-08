@@ -117,6 +117,8 @@ class VecTask(Env):
 
         self.obs_states_dict = {}
 
+        self.debug_prints = config["env"].get('debug_prints', False)
+
     def set_viewer(self):
         self.enable_viewer_sync = True
         self.viewer = None
@@ -170,8 +172,10 @@ class VecTask(Env):
     def step(self, actions: torch.Tensor) -> Tuple[Dict[str, torch.Tensor], torch.Tensor, torch.Tensor, Dict[str, Any]]:
         with record_function("#VecTask__STEP"):
             actions = torch.clamp(actions, -self.clip_actions, self.clip_actions)
-            print("#" * 50)
-            print(f"Actions - MAX:{actions.max().item():.2f} MIN: {actions.min().item():.2f}")  # Debugging output
+            
+            if self.debug_prints:
+                print("#" * 50)
+                print(f"Actions - MAX:{actions.max().item():.2f} MIN: {actions.min().item():.2f}")  # Debugging output
 
             with record_function("$VecTask__step__pre_physics_step"):
                 self.pre_physics_step(actions)
@@ -196,16 +200,17 @@ class VecTask(Env):
             self.control_steps += 1
             self.extras["time_outs"] = self.timeout_buf.to(self.rl_device)
 
-            print("#" * 50)
-            print(f"Quats - MAX:{self.obs_states_dict['states'][:, 0:3].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 0:3].min().item():.2f}")  # Debugging output
-            print(f"QuatsDiff - MAX:{self.obs_states_dict['states'][:, 4:7].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 4:7].min().item():.2f}")  # Debugging output
-            print(f"QuatsDiffRad - MAX:{self.obs_states_dict['states'][:, 8].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 8].min().item():.2f}")  # Debugging output
-            print(f"AngAcc - MAX:{self.obs_states_dict['states'][:, 9:11].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 9:11].min().item():.2f}")  # Debugging output
-            print(f"Act - MAX:{self.obs_states_dict['states'][:, 12:14].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 12:14].min().item():.2f}")  # Debugging output
-            print(f"AngVels - MAX:{self.obs_states_dict['states'][:, 15:18].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 15:18].min().item():.2f}")  # Debugging output
-            print(f"Reward - MAX:{self.rew_buf.max().item():.2f} MIN: {self.rew_buf.min().item():.2f}")  # Debugging output
-            print(f"Timeouts: {self.timeout_buf.sum().item()}")  # Debugging output
-            print(f"Reset: {self.reset_buf.sum().item()}")  # Debugging output
+            if self.debug_prints:
+                print("#" * 50)
+                print(f"Quats - MAX:{self.obs_states_dict['states'][:, 0:3].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 0:3].min().item():.2f}")  # Debugging output
+                print(f"QuatsDiff - MAX:{self.obs_states_dict['states'][:, 4:7].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 4:7].min().item():.2f}")  # Debugging output
+                print(f"QuatsDiffRad - MAX:{self.obs_states_dict['states'][:, 8].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 8].min().item():.2f}")  # Debugging output
+                print(f"AngAcc - MAX:{self.obs_states_dict['states'][:, 9:11].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 9:11].min().item():.2f}")  # Debugging output
+                print(f"Act - MAX:{self.obs_states_dict['states'][:, 12:14].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 12:14].min().item():.2f}")  # Debugging output
+                print(f"AngVels - MAX:{self.obs_states_dict['states'][:, 15:18].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 15:18].min().item():.2f}")  # Debugging output
+                print(f"Reward - MAX:{self.rew_buf.max().item():.2f} MIN: {self.rew_buf.min().item():.2f}")  # Debugging output
+                print(f"Timeouts: {self.timeout_buf.sum().item()}")  # Debugging output
+                print(f"Reset: {self.reset_buf.sum().item()}")  # Debugging output
 
         return self.obs_states_dict, self.rew_buf.to(self.rl_device), self.reset_buf.to(self.rl_device), self.extras
 
