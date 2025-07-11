@@ -36,9 +36,9 @@ CONFIG = {
     "env": {
         "numEnvs": NUM_ENVS,
 
-        "numObservations": 14,
+        "numObservations": 11, # satellite_quats (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3)
 
-        "numStates": 17,
+        "numStates": 14, # satellite_quats (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + satellite_angvels (3)
 
         "numActions": 3,
 

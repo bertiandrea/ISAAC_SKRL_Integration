@@ -152,29 +152,7 @@ CONFIG = {
         "PPO": {
             "num_envs": NUM_ENVS,
             "rollouts": ROLLOUTS,
-            "learning_epochs": 8,
-            "mini_batches": 8,
-            
-            "learning_rate_scheduler" : KLAdaptiveRL,
-            "learning_rate_scheduler_kwargs" : {"kl_threshold": 0.016},
-            "state_preprocessor" : RunningStandardScaler,
-            "value_preprocessor" : RunningStandardScaler,
-            "rewards_shaper" : lambda rewards, timestep, timesteps: rewards * 0.1,
 
-            "discount_factor" : 0.99, #(γ) Future reward discount; balances immediate versus long-term return.
-            "learning_rate" : 1e-3, #Step size for optimizer (e.g. Adam) when updating policy and value networks.
-            "grad_norm_clip" : 1.0, #Maximum norm value to clip gradients, preventing exploding gradients.
-            "ratio_clip" : 0.2, #(ϵ) PPO’s clipping threshold on the policy probability ratio to constrain updates.
-            "value_clip" : 0.2, #Clipping range for value function targets to stabilize value updates.
-            "clip_predicted_values" : True, #If enabled, clips the new value predictions to lie within the range defined by value_clip around the old predictions.
-            "entropy_loss_scale" : 0.00, #Coefficient multiplying the entropy bonus; encourages exploration when > 0.
-            "value_loss_scale" : 1.0, #Coefficient weighting the value function loss in the total loss.
-            "kl_threshold" : 0, #Optional early-stop threshold on KL divergence between old and new policies (0 disables).
-            "lambda" : 0.95, #(λ) GAE parameter for bias–variance trade-off in advantage estimation.
-
-            "random_timesteps" : 0, #Number of initial timesteps with random actions before learning or policy-driven sampling.
-            "learning_starts" : 0, #Number of environment steps to collect before beginning any gradient updates.
-            
             "experiment": {
                 "write_interval": "auto",
                 "checkpoint_interval": "auto",
@@ -213,55 +191,4 @@ CONFIG = {
         "lambda_spatial_smoothness": 0.0,   # λ_s
         "noise_std": 0.00,                  # σ
     },
-    # --- explosion ---------------------------------------------------------
-    "explosion": {
-        "enabled": False,
-        "explosion_time": 120,  # seconds
-    },
-    # --- randomize masses --------------------------------------------------
-    "randomize_masses": {
-        "enabled": False,
-        "mass_std": 0.0,
-    },
-    # --- dr_randomization -------------------------------------------------
-    "dr_randomization": {
-        "enabled": False,
-        "randomization_params": {
-            "frequency": 600, 
-            "observations": {
-                "range": [0.0, 0.002],
-                "operation": "additive",
-                "distribution": "gaussian"
-            },
-            "actions": {
-                "range": [0.0, 0.02],
-                "operation": "additive",
-                "distribution": "gaussian"
-            },
-            "sim_params": { 
-                "gravity": {
-                    "range": [0.0, 0.4],
-                    "operation": "additive",
-                    "distribution": "gaussian",
-                    "schedule": "linear",
-                    "schedule_steps": 3000
-                }
-            },
-            "actor_params": {
-                "satellite": {
-                    "color": True,
-                    "rigid_body_properties": {
-                        "mass": {
-                            "range": [0.5, 1.5],
-                            "operation": "scaling",
-                            "distribution": "uniform",
-                            "setup_only": True,
-                            "schedule": "linear",
-                            "schedule_steps": 3000
-                        }
-                    }
-                }
-            }
-        }
-    }
 }
