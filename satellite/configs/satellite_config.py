@@ -42,6 +42,8 @@ CONFIG = {
     "env": {
         "numEnvs": NUM_ENVS,
 
+        "numRandomParams" : 2,
+
         "numObservations": 11, # satellite_quats (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3)
 
         "numStates": 14, # satellite_quats (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + satellite_angvels (3)
@@ -225,11 +227,12 @@ CONFIG = {
     },
     # --- dr_randomization -------------------------------------------------
     "dr_randomization": {
-        "enabled": False,
+        "enabled": True,
+        "automatic": True,
         "randomization_params": {
             "frequency": 600, 
             "observations": {
-                "range": [0.0, 0.002],
+                "range": [0.0, 0.02],
                 "operation": "additive",
                 "distribution": "gaussian"
             },
@@ -239,20 +242,13 @@ CONFIG = {
                 "distribution": "gaussian"
             },
             "sim_params": { 
-                "gravity": {
-                    "range": [0.0, 0.4],
-                    "operation": "additive",
-                    "distribution": "gaussian",
-                    "schedule": "linear",
-                    "schedule_steps": 3000
-                }
             },
             "actor_params": {
                 "satellite": {
                     "color": True,
                     "rigid_body_properties": {
                         "mass": {
-                            "range": [0.5, 1.5],
+                            "range": [200, 800],
                             "operation": "scaling",
                             "distribution": "uniform",
                             "setup_only": True,
@@ -260,6 +256,26 @@ CONFIG = {
                             "schedule_steps": 3000
                         }
                     }
+                }
+            }
+        },
+        "adr" : {
+            "update_adr_ranges": True,
+            "clear_other_queues": False,
+            "adr_extended_boundary_sample": False,
+            "worker_adr_boundary_fraction": 0.4,
+            "adr_queue_threshold_length": 256,
+            "adr_objective_threshold_low": 5,
+            "adr_objective_threshold_high": 20,
+            "adr_rollout_perf_alpha": 0.99,
+            "adr_load_from_checkpoint": False,
+            "params": {
+                "object_mass": {
+                    "range_path": 'actor_params.satellite.rigid_body_properties.mass.range',
+                    "init_range": [400, 600],
+                    "limits": [200, 800],
+                    "delta": 10,
+                    "delta_style": 'additive',
                 }
             }
         }
