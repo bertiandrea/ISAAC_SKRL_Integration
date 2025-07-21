@@ -121,7 +121,7 @@ class Satellite(ADRVecTask):
         ###################################################
 
     def create_envs(self, spacing, num_per_row: int) -> None:
-        asset = self.load_asset()
+        self.asset = self.load_asset()
         env_lower = gymapi.Vec3(-spacing, -spacing, -spacing)
         env_upper = gymapi.Vec3(spacing, spacing, spacing)
 
@@ -134,7 +134,7 @@ class Satellite(ADRVecTask):
             self.sat_glob_pos[i] = torch.tensor([origin.x, origin.y, origin.z],
                                                 dtype=torch.float,
                                                 device=self.device)
-            actor_handle = self.create_actor(i, env, asset, self.asset_init_pos_p, self.asset_init_pos_r, 1, self.asset_name)
+            actor_handle = self.create_actor(i, env, self.asset, self.asset_init_pos_p, self.asset_init_pos_r, 1, self.asset_name)
             ###################################################
             if self.randomize_masses:
                 self.randomize_actor_bodies(env, actor_handle)
