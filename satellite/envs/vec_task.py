@@ -695,7 +695,7 @@ class ADRVecTask(VecTask):
                 env_dr_params = dr_params
         ####################################################################    
             for actor, actor_properties in dr_params["actor_params"].items():
-                if self.first_randomization and i_ % 1000 == 0:
+                if i_ % 1000 == 0:
                     print(f'Initializing domain randomization for {actor} env={i_}')                 
                 ####################################################################
                 for prop_name, prop_attrs in actor_properties.items():
@@ -722,7 +722,7 @@ class ADRVecTask(VecTask):
                                     original_randomization_params = env_dr_params['actor_params'][actor][prop_name][attr]
                                     ####################################################################
                                     apply_random_samples(p, og_p, attr, attr_randomization_params, self.last_step, None, bucketing_randomization_params=original_randomization_params)
-                                    if self.first_randomization and i_ % 1000 == 0:
+                                    if i_ % 1000 == 0:
                                         print(f'  [_randomize_actor_properties] List prop "{prop_name}"[{idx}].{attr}: {og_p[attr]} -> {getattr(p, attr)}')
                                 else:
                                     set_random_properties = False
@@ -740,7 +740,7 @@ class ADRVecTask(VecTask):
                                 original_randomization_params = env_dr_params['actor_params'][actor][prop_name][attr]
                                 ####################################################################
                                 apply_random_samples(p, og_p, attr, attr_randomization_params, self.last_step, None, bucketing_randomization_params=original_randomization_params)
-                                if self.first_randomization and i_ % 1000 == 0:
+                                if i_ % 1000 == 0:
                                     print(f'  [_randomize_actor_properties] Scalar prop "{prop_name}".{attr}: {getattr(og_p, attr)} -> {getattr(p, attr)}')
                             else:
                                 set_random_properties = False

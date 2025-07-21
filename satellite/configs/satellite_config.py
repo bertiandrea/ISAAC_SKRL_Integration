@@ -226,7 +226,7 @@ CONFIG = {
     },
     # --- dr_randomization -------------------------------------------------
     "dr_randomization": {
-        "enabled": False,
+        "enabled": True,
         "automatic": False,
         "dr_params": {
             "observations": {
@@ -249,9 +249,8 @@ CONFIG = {
                             "range": [200, 800],
                             "operation": "scaling",
                             "distribution": "uniform",
-                            "setup_only": True,
                             "schedule": "linear",
-                            "schedule_steps": 3000
+                            "schedule_steps": 10000,
                         }
                     }
                 }
