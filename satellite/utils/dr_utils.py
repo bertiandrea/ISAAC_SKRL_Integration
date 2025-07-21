@@ -123,10 +123,20 @@ def apply_random_samples(prop, og_prop, attr, attr_randomization_params, curr_gy
     else:
         sample = generate_random_samples(attr_randomization_params, 1, curr_gym_step_count, extern_sample)
         cur_attr_val = og_prop[attr]
-        if attr_randomization_params['operation'] == 'scaling':
-            new_prop_val = cur_attr_val * sample
-        elif attr_randomization_params['operation'] == 'additive':
-            new_prop_val = cur_attr_val + sample
+        ##########################################################################################
+        if isinstance(cur_attr_val, gymapi.Mat33):
+            rx, ry, rz = cur_attr_val.x, cur_attr_val.y, cur_attr_val.z
+            scaled = gymapi.Mat33()
+            scaled.x.x, scaled.x.y, scaled.x.z = rx.x * sample, rx.y * sample, rx.z * sample
+            scaled.y.x, scaled.y.y, scaled.y.z = ry.x * sample, ry.y * sample, ry.z * sample
+            scaled.z.x, scaled.z.y, scaled.z.z = rz.x * sample, rz.y * sample, rz.z * sample
+            new_prop_val = scaled
+        ##########################################################################################
+        else:
+            if attr_randomization_params['operation'] == 'scaling':
+                new_prop_val = cur_attr_val * sample
+            elif attr_randomization_params['operation'] == 'additive':
+                new_prop_val = cur_attr_val + sample
         if 'num_buckets' in attr_randomization_params and attr_randomization_params['num_buckets'] > 0:
             if bucketing_randomization_params is None:
                 new_prop_val = get_bucketed_val(new_prop_val, attr_randomization_params)
