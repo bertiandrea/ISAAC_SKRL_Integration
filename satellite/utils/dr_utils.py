@@ -2,7 +2,10 @@
 
 import numpy as np
 from bisect import bisect
-from isaacgym import gymapi
+
+import isaacgym #BugFix
+import torch
+from isaacgym import gymtorch, gymapi
 
 def get_property_setter_map(gym):
     property_to_setters = {
@@ -155,3 +158,41 @@ def check_buckets(gym, envs, dr_params):
             if actor_name in dr_params["actor_params"] and 'rigid_shape_properties' in dr_params["actor_params"][actor_name]:
                 shape_ct += gym.get_actor_rigid_shape_count(env, actor_handle)
     assert shape_ct <= 64000 or total_num_buckets > 0, 'Explicit material bucketing is not used but the total number of shapes exceeds material limit. Please specify bucketing to limit material count.'
+
+
+def nested_dict_set_attr(d, key, val):
+    pre, _, post = key.partition('.')
+    if post:
+        nested_dict_set_attr(d[pre], post, val)
+    else:
+        d[key] = val
+
+def modify_adr_param(param, direction, adr_param_dict, param_limit=None):
+    op = adr_param_dict["delta_style"]
+    delta = adr_param_dict["delta"]
+    if direction == 'up':
+        if op == "additive":
+            new_val = param + delta
+        elif op == "multiplicative":
+            assert delta > 1.0, "Must have delta>1 for multiplicative ADR update."
+            new_val = param * delta
+        else:
+            raise NotImplementedError
+        if param_limit is not None:
+            new_val = min(new_val, param_limit)
+        changed = abs(new_val - param) > 1e-9
+        return new_val, changed
+    elif direction == 'down':
+        if op == "additive":
+            new_val = param - delta
+        elif op == "multiplicative":
+            assert delta > 1.0, "Must have delta>1 for multiplicative ADR update."
+            new_val = param / delta
+        else:
+            raise NotImplementedError
+        if param_limit is not None:
+            new_val = max(new_val, param_limit)
+        changed = abs(new_val - param) > 1e-9
+        return new_val, changed
+    else:
+        raise NotImplementedError

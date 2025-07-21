@@ -14,8 +14,6 @@ from skrl.utils import set_seed
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
-import argparse
-
 HEADLESS = False
 FORCE_RENDER = False
 NUM_ENVS = 4096

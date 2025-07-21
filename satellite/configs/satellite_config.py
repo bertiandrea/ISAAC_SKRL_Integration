@@ -9,13 +9,13 @@ import torch
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
-NUM_ENVS = 4096
+NUM_ENVS = 1
 N_EPOCHS = 1250
 HEADLESS = False
 FORCE_RENDER = False
 PROFILE = False
 DEBUG_ARROWS = True
-DEBUG_PRINTS = False
+DEBUG_PRINTS = True
 HEARTBEAT = False
 
 ROLLOUTS = 16
@@ -42,8 +42,6 @@ CONFIG = {
     "env": {
         "numEnvs": NUM_ENVS,
 
-        "numRandomParams" : 2,
-
         "numObservations": 11, # satellite_quats (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3)
 
         "numStates": 14, # satellite_quats (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + satellite_angvels (3)
@@ -58,7 +56,7 @@ CONFIG = {
         "threshold_ang_goal": 0.15, # radians
         "threshold_vel_goal": 0.15, # radians/sec
         "overspeed_ang_vel": 3.1416,  # radians/sec
-        "episode_length_s": 30.0, # seconds
+        "episode_length_s": 5.0, # seconds
 
         "clipActions": 1.0,
         "clipObservations": 10.0,
@@ -76,7 +74,7 @@ CONFIG = {
             "assetName": "satellite",
 
             "init_pos_p": [0, 0, 0],
-            "init_pos_r": [0.7071068, 0, 0, 0.7071068],
+            "init_pos_r": [0, 0, 0, 1],
             
             #"disable_gravity"
             #"collapse_fixed_joints"
@@ -181,6 +179,7 @@ CONFIG = {
                 "write_interval": "auto",
                 "checkpoint_interval": "auto",
                 "directory": "./runs/satellite",
+                "experiment_name": "satellite_test",
                 "wandb": False,
             },
         },
@@ -205,7 +204,7 @@ CONFIG = {
     },
     # --- logging -----------------------------------------------------------
     "log_reward": {
-        "log_reward": True,
+        "log_reward": False,
         "log_reward_interval": 100,
     },
     # --- CAPS --------------------------------------------------------------
@@ -218,19 +217,18 @@ CONFIG = {
     # --- explosion ---------------------------------------------------------
     "explosion": {
         "enabled": False,
-        "explosion_time": 120,  # seconds
+        "explosion_time": 3,  # seconds
     },
     # --- randomize masses --------------------------------------------------
     "randomize_masses": {
-        "enabled": False,
-        "mass_std": 0.0,
+        "enabled": True,
+        "mass_std": 0.2,
     },
     # --- dr_randomization -------------------------------------------------
     "dr_randomization": {
         "enabled": True,
         "automatic": True,
-        "randomization_params": {
-            "frequency": 600, 
+        "dr_params": {
             "observations": {
                 "range": [0.0, 0.02],
                 "operation": "additive",
@@ -263,13 +261,17 @@ CONFIG = {
             "update_adr_ranges": True,
             "clear_other_queues": False,
             "adr_extended_boundary_sample": False,
+            "adr_load_from_checkpoint": False,
+
             "worker_adr_boundary_fraction": 0.4,
+
             "adr_queue_threshold_length": 256,
+
             "adr_objective_threshold_low": 5,
             "adr_objective_threshold_high": 20,
+
             "adr_rollout_perf_alpha": 0.99,
-            "adr_load_from_checkpoint": False,
-            "params": {
+            "adr_params": {
                 "object_mass": {
                     "range_path": 'actor_params.satellite.rigid_body_properties.mass.range',
                     "init_range": [400, 600],

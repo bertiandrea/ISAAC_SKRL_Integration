@@ -52,12 +52,14 @@ CONFIG = {
         "overspeed_ang_vel": 3.1416,  # radians/sec
         "episode_length_s": 60,
 
-        "clipActions": 1,
-        "clipObservations": 10,
+        "clipActions": 1.0,
+        "clipObservations": 10.0,
 
-        "torque_scale": 10,
+        "torque_scale": 100.0,
 
         "debug_arrows": False,
+
+        "debug_prints": False,
 
         "asset": {
 
@@ -171,19 +173,20 @@ CONFIG = {
     "controller": {
         "controller_logic": False
     },
-    "pid": {
-        "rate": {"kp": 0.5, "ki": 0.0, "kd": 0.1},
-    },
     # --- logging -----------------------------------------------------------
     "log_reward": {
-        "log_reward": False,
-        "log_reward_interval": 100,
+        "log_reward": False
     },
     # --- CAPS --------------------------------------------------------------
     "CAPS": {
-        "enabled": False,
-        "lambda_temporal_smoothness": 0.0,  # λ_t
-        "lambda_spatial_smoothness": 0.0,   # λ_s
-        "noise_std": 0.00,                  # σ
+        "enabled": False
     },
+    # --- randomize masses --------------------------------------------------
+    "randomize_masses": {
+        "enabled": False
+    },
+    # --- dr_randomization -------------------------------------------------
+    "dr_randomization": {
+        "enabled": False
+    }
 }

@@ -12,12 +12,7 @@ from skrl.resources.schedulers.torch import KLAdaptiveRL
 NUM_ENVS = 4096
 N_EPOCHS = 1250
 HEADLESS = False
-FORCE_RENDER = False
-PROFILE = False
 DEBUG_ARROWS = True
-DEBUG_PRINTS = False
-HEARTBEAT = False
-
 ROLLOUTS = 16
 
 CONFIG = {
@@ -32,11 +27,11 @@ CONFIG = {
     "graphics_device_id": 0,
     "headless": HEADLESS,
     "virtual_screen_capture": False,
-    "force_render": FORCE_RENDER,
+    "force_render": False,
 
-    "profile": PROFILE,
+    "profile": False,
 
-    "heartbeat": HEARTBEAT,
+    "heartbeat": False,
 
     # --- env section -------------------------------------------------------
     "env": {
@@ -65,7 +60,7 @@ CONFIG = {
 
         "debug_arrows": DEBUG_ARROWS,
         
-        "debug_prints": DEBUG_PRINTS,
+        "debug_prints": False,
         
         "asset": {
 
@@ -157,6 +152,7 @@ CONFIG = {
                 "write_interval": "auto",
                 "checkpoint_interval": "auto",
                 "directory": "./runs/satellite",
+                "experiment_name": "satellite_test",
                 "wandb": False,
             },
         },
@@ -176,19 +172,25 @@ CONFIG = {
     "controller": {
         "controller_logic": False
     },
-    "pid": {
-        "rate": {"kp": 0.5, "ki": 0.0, "kd": 0.1},
-    },
     # --- logging -----------------------------------------------------------
     "log_reward": {
-        "log_reward": True,
-        "log_reward_interval": 100,
+        "log_reward": False
     },
     # --- CAPS --------------------------------------------------------------
     "CAPS": {
-        "enabled": False,
-        "lambda_temporal_smoothness": 0.0,  # λ_t
-        "lambda_spatial_smoothness": 0.0,   # λ_s
-        "noise_std": 0.00,                  # σ
+        "enabled": False
     },
+    # --- explosion ---------------------------------------------------------
+    "explosion": {
+        "enabled": True,
+        "explosion_time": 3,  # seconds
+    },
+    # --- randomize masses --------------------------------------------------
+    "randomize_masses": {
+        "enabled": False
+    },
+    # --- dr_randomization -------------------------------------------------
+    "dr_randomization": {
+        "enabled": False
+    }
 }

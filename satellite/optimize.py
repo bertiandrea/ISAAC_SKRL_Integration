@@ -32,7 +32,6 @@ import json
 import optuna
 from optuna.pruners import MedianPruner
 from optuna.samplers import TPESampler
-from tensorboard.backend.event_processing import event_accumulator
 TENSORBOARD_TAG = "Reward / Instantaneous reward (mean)"
 N_TRIALS = 25
 # ──────────────────────────────────────────────────────────────────────────────
@@ -100,7 +99,6 @@ def objective(trial: optuna.Trial) -> float:
     }
     
     cfg_ppo = PPO_DEFAULT_CONFIG.copy()
-    
     cfg_ppo.update(CONFIG["rl"]["PPO"])
 
     hp = sample_ppo_params(trial)
