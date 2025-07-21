@@ -246,9 +246,9 @@ CONFIG = {
                     "color": True,
                     "rigid_body_properties": {
                         "mass": {
-                            "range": [200, 800],
-                            "operation": "scaling",
                             "distribution": "uniform",
+                            "operation": "scaling",
+                            "range": [0.5, 1.5],
                             "schedule": "linear",
                             "schedule_steps": 10000,
                         }
