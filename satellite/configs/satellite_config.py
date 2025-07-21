@@ -56,7 +56,8 @@ CONFIG = {
         "threshold_ang_goal": 0.15, # radians
         "threshold_vel_goal": 0.15, # radians/sec
         "overspeed_ang_vel": 0.50,  # radians/sec
-        "episode_length_s": 30.0, # seconds
+        "goal_time": 10, # seconds
+        "episode_length_s": 120.0, # seconds
 
         "clipActions": 1.0,
         "clipObservations": 10.0,
@@ -203,7 +204,7 @@ CONFIG = {
     },
     # --- logging -----------------------------------------------------------
     "log_reward": {
-        "log_reward": False,
+        "log_reward": True,
         "log_reward_interval": 100,
     },
     # --- CAPS --------------------------------------------------------------
@@ -220,8 +221,8 @@ CONFIG = {
     },
     # --- randomize masses --------------------------------------------------
     "randomize_masses": {
-        "enabled": False,
-        "mass_std": 0.2,
+        "enabled": True,
+        "mass_std": 5,
     },
     # --- dr_randomization -------------------------------------------------
     "dr_randomization": {

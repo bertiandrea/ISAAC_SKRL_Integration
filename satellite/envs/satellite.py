@@ -38,6 +38,7 @@ class Satellite(ADRVecTask):
         self.torque_scale = cfg["env"].get('torque_scale', 1.0)
         self.threshold_ang_goal = cfg["env"].get('threshold_ang_goal', 0.01745)  # radians
         self.threshold_vel_goal = cfg["env"].get('threshold_vel_goal', 0.01745)  # radians/sec
+        self.goal_time = cfg["env"].get('goal_time', 10) / self.dt  # seconds
         self.overspeed_ang_vel = cfg["env"].get('overspeed_ang_vel', 0.78540)  # radians/sec
         self.max_episode_length = cfg["env"].get('episode_length_s', 120) / self.dt  # seconds
         self.debug_arrows = cfg["env"].get('debug_arrows', False)
@@ -107,6 +108,8 @@ class Satellite(ADRVecTask):
             self.draw_arrows()
         
         self.writer = SummaryWriter(comment="_satellite_reward")
+
+        self.in_goal_buf = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
 
     def create_sim(self) -> None:
         self.sim = super().create_sim(self.device_id, self.graphics_device_id, self.physics_engine, self.sim_params) # Acquires the sim pointer
@@ -242,6 +245,8 @@ class Satellite(ADRVecTask):
 
             self.rew_buf[ids] = 0.0
 
+            self.in_goal_buf[ids] = 0
+
         if self.controller_logic:
             with record_function("$SatelliteVec__reset_idx__reset_controller"):
                 self.controller.reset(ids)
@@ -360,8 +365,13 @@ class Satellite(ADRVecTask):
                 torch.lt(angle_diff, self.threshold_ang_goal),
                 torch.lt(ang_vel_diff, self.threshold_vel_goal)
             )
+
+            self.in_goal_buf = torch.add(self.in_goal_buf, goal.to(torch.long))
+            goal_reached = torch.ge(self.in_goal_buf, self.goal_time)
             
+            self.writer.add_scalar('Goal/angle_diff', angle_diff.mean().item(), global_step=self.control_steps)
             self.writer.add_scalar('Goal/goal', goal.sum(dim=0).item(), global_step=self.control_steps)
+            self.writer.add_scalar('Goal/goal_reached', goal_reached.sum(dim=0).item(), global_step=self.control_steps)
 
             timeout = torch.ge(self.progress_buf, self.max_episode_length)
 

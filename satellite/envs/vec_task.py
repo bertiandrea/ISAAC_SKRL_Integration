@@ -202,7 +202,7 @@ class VecTask(Env):
             
             if self.debug_prints:
                 print("#" * 50)
-                print(f"Actions         MAX: {actions.max().item():.2f} MIN: {actions.min().item():.2f}")  # Debugging output
+                print(f"Actions         MAX: {actions.max().item():.2f} MIN: {actions.min().item():.2f} MEAN: {actions.mean().item():.2f} STD: {actions.std().item():.2f}")  # Debugging output
 
             with record_function("$VecTask__step__pre_physics_step"):
                 self.pre_physics_step(actions)
@@ -239,18 +239,18 @@ class VecTask(Env):
             if self.debug_prints:
                 num_quats = 4; num_quat_diff = 4; num_quat_diff_rad = 1; num_angacc = 3; num_actions = 3; num_angvels = 3
                 l_index = 0; h_index = num_quats
-                print(f"Quats           MAX: {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f}")  # Debugging outpu
+                print(f"Quats           MAX: {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f} MEAN: {self.obs_states_dict['states'][:, l_index:h_index].mean().item():.2f} STD: {self.obs_states_dict['states'][:, l_index:h_index].std().item():.2f}")  # Debugging output
                 l_index = num_quats; h_index = num_quats + num_quat_diff
-                print(f"QuatsDiff       MAX: {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f}")  # Debugging output
+                print(f"QuatsDiff       MAX: {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f} MEAN: {self.obs_states_dict['states'][:, l_index:h_index].mean().item():.2f} STD: {self.obs_states_dict['states'][:, l_index:h_index].std().item():.2f}")  # Debugging output
                 l_index = num_quats + num_quat_diff; h_index = num_quats + num_quat_diff + num_quat_diff_rad
-                print(f"QuatsDiffRad    MAX: {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f}")  # Debugging output
+                print(f"QuatsDiffRad    MAX: {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f} MEAN: {self.obs_states_dict['states'][:, l_index:h_index].mean().item():.2f} STD: {self.obs_states_dict['states'][:, l_index:h_index].std().item():.2f}")  # Debugging output
                 l_index = num_quats + num_quat_diff + num_quat_diff_rad; h_index = num_quats + num_quat_diff + num_quat_diff_rad + num_angacc
-                print(f"AngAcc          MAX: {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f}")  # Debugging output
+                print(f"AngAcc          MAX: {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f} MEAN: {self.obs_states_dict['states'][:, l_index:h_index].mean().item():.2f} STD: {self.obs_states_dict['states'][:, l_index:h_index].std().item():.2f}")  # Debugging output
                 l_index = num_quats + num_quat_diff + num_quat_diff_rad + num_angacc; h_index = num_quats + num_quat_diff + num_quat_diff_rad + num_angacc + num_actions
-                print(f"Act             MAX: {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f}")  # Debugging output
+                print(f"Act             MAX: {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f} MEAN: {self.obs_states_dict['states'][:, l_index:h_index].mean().item():.2f} STD: {self.obs_states_dict['states'][:, l_index:h_index].std().item():.2f}")  # Debugging output
                 l_index = num_quats + num_quat_diff + num_quat_diff_rad + num_angacc + num_actions; h_index = num_quats + num_quat_diff + num_quat_diff_rad + num_angacc + num_actions + num_angvels
-                print(f"AngVels         MAX: {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f}")  # Debugging output
-                print(f"Reward          MAX: {self.rew_buf.max().item():.2f} MIN: {self.rew_buf.min().item():.2f}")  # Debugging output
+                print(f"AngVels         MAX: {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f} MEAN: {self.obs_states_dict['states'][:, l_index:h_index].mean().item():.2f} STD: {self.obs_states_dict['states'][:, l_index:h_index].std().item():.2f}")  # Debugging output
+                print(f"Reward          MAX: {self.rew_buf.max().item():.2f} MIN: {self.rew_buf.min().item():.2f} MEAN: {self.rew_buf.mean().item():.2f} STD: {self.rew_buf.std().item():.2f}")  # Debugging output
 
                 print(f"Timeouts:       {self.timeout_buf.sum().item()}")  # Debugging output
                 print(f"Reset:          {self.reset_buf.sum().item()}")  # Debugging output
