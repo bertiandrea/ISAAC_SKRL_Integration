@@ -237,16 +237,24 @@ class VecTask(Env):
             self.extras["time_outs"] = self.timeout_buf.to(self.rl_device)
 
             if self.debug_prints:
-                print("#" * 50)
-                print(f"Quats - MAX:{self.obs_states_dict['states'][:, 0:4].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 0:4].min().item():.2f}")  # Debugging output
-                print(f"QuatsDiffRad - MAX:{self.obs_states_dict['states'][:, 4:5].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 4:5].min().item():.2f}")  # Debugging output
-                print(f"AngAcc - MAX:{self.obs_states_dict['states'][:, 5:8].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 5:8].min().item():.2f}")  # Debugging output
-                print(f"Act - MAX:{self.obs_states_dict['states'][:, 8:11].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 8:11].min().item():.2f}")  # Debugging output
-                print(f"AngVels - MAX:{self.obs_states_dict['states'][:, 11:14].max().item():.2f} MIN: {self.obs_states_dict['states'][:, 11:14].min().item():.2f}")  # Debugging output
-                print(f"Reward - MAX:{self.rew_buf.max().item():.2f} MIN: {self.rew_buf.min().item():.2f}")  # Debugging output
-                print(f"Timeouts: {self.timeout_buf.sum().item()}")  # Debugging output
-                print(f"Reset: {self.reset_buf.sum().item()}")  # Debugging output
-                print(f"Extras: {self.extras}")  # Debugging output
+                num_quats = 4; num_quat_diff = 4; num_quat_diff_rad = 1; num_angacc = 3; num_actions = 3; num_angvels = 3
+                l_index = 0; h_index = num_quats
+                print(f"Quats - MAX:        {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f}")  # Debugging outpu
+                l_index = num_quats; h_index = num_quats + num_quat_diff
+                print(f"QuatsDiff - MAX:    {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f}")  # Debugging output
+                l_index = num_quats + num_quat_diff; h_index = num_quats + num_quat_diff + num_quat_diff_rad
+                print(f"QuatsDiffRad - MAX: {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f}")  # Debugging output
+                l_index = num_quats + num_quat_diff + num_quat_diff_rad; h_index = num_quats + num_quat_diff + num_quat_diff_rad + num_angacc
+                print(f"AngAcc - MAX:       {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f}")  # Debugging output
+                l_index = num_quats + num_quat_diff + num_quat_diff_rad + num_angacc; h_index = num_quats + num_quat_diff + num_quat_diff_rad + num_angacc + num_actions
+                print(f"Act - MAX:          {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f}")  # Debugging output
+                l_index = num_quats + num_quat_diff + num_quat_diff_rad + num_angacc + num_actions; h_index = num_quats + num_quat_diff + num_quat_diff_rad + num_angacc + num_actions + num_angvels
+                print(f"AngVels - MAX:      {self.obs_states_dict['states'][:, l_index:h_index].max().item():.2f} MIN: {self.obs_states_dict['states'][:, l_index:h_index].min().item():.2f}")  # Debugging output
+                
+                print(f"Reward - MAX:       {self.rew_buf.max().item():.2f} MIN: {self.rew_buf.min().item():.2f}")  # Debugging output
+                print(f"Timeouts:           {self.timeout_buf.sum().item()}")  # Debugging output
+                print(f"Reset:              {self.reset_buf.sum().item()}")  # Debugging output
+                print(f"Extras:             {self.extras}")  # Debugging output
 
         return self.obs_states_dict, self.rew_buf.to(self.rl_device), self.reset_buf.to(self.rl_device), self.extras
 

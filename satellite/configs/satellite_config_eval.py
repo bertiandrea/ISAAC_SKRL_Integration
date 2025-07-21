@@ -151,8 +151,7 @@ CONFIG = {
             "experiment": {
                 "write_interval": "auto",
                 "checkpoint_interval": "auto",
-                "directory": "./runs/satellite",
-                "experiment_name": "satellite_test",
+                "directory": "./runs",
                 "wandb": False,
             },
         },

@@ -148,8 +148,7 @@ def check_buckets(gym, envs, dr_params):
                 else:
                     cur_num_buckets = prop_attrs['friction']['num_buckets']
             total_num_buckets += cur_num_buckets
-    assert total_num_buckets <= 64000, 'Explicit material bucketing has been specified, but the provided total bucket count exceeds 64K: {} specified buckets'.format(
-        total_num_buckets)
+    assert total_num_buckets <= 64000, 'Explicit material bucketing has been specified, but the provided total bucket count exceeds 64K: {} specified buckets'.format(total_num_buckets)
     shape_ct = 0
     for env in envs:
         for i in range(gym.get_actor_count(env)):

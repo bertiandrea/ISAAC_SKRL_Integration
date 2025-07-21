@@ -15,7 +15,7 @@ HEADLESS = False
 FORCE_RENDER = False
 PROFILE = False
 DEBUG_ARROWS = True
-DEBUG_PRINTS = False
+DEBUG_PRINTS = True
 HEARTBEAT = False
 
 ROLLOUTS = 16
@@ -42,26 +42,26 @@ CONFIG = {
     "env": {
         "numEnvs": NUM_ENVS,
 
-        "numObservations": 11, # satellite_quats (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3)
+        "numObservations": 15, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3)
 
-        "numStates": 14, # satellite_quats (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + satellite_angvels (3)
+        "numStates": 14 + 4, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + satellite_angvels (3)
 
         "numActions": 3,
 
         "envSpacing": 3.0,
         
-        "sensor_noise_std": 0.0,
-        "actuation_noise_std": 0.0,
+        #"sensor_noise_std": 0.0,
+        #"actuation_noise_std": 0.0,
 
         "threshold_ang_goal": 0.15, # radians
         "threshold_vel_goal": 0.15, # radians/sec
-        "overspeed_ang_vel": 3.1416,  # radians/sec
-        "episode_length_s": 5.0, # seconds
+        "overspeed_ang_vel": 0.50,  # radians/sec
+        "episode_length_s": 30.0, # seconds
 
         "clipActions": 1.0,
         "clipObservations": 10.0,
 
-        "torque_scale": 100.0,
+        "torque_scale": 1000.0,
 
         "debug_arrows": DEBUG_ARROWS,
         
@@ -178,8 +178,7 @@ CONFIG = {
             "experiment": {
                 "write_interval": "auto",
                 "checkpoint_interval": "auto",
-                "directory": "./runs/satellite",
-                "experiment_name": "satellite_test",
+                "directory": "./runs",
                 "wandb": False,
             },
         },
@@ -230,12 +229,12 @@ CONFIG = {
         "automatic": False,
         "dr_params": {
             "observations": {
-                "range": [-0.02, 0.02],
+                "range": [-0.01, 0.01],
                 "operation": "additive",
                 "distribution": "gaussian"
             },
             "actions": {
-                "range": [-0.02, 0.02],
+                "range": [-0.01, 0.01],
                 "operation": "additive",
                 "distribution": "gaussian"
             },
