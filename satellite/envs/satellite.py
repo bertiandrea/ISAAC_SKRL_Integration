@@ -217,7 +217,7 @@ class Satellite(ADRVecTask):
         with record_function("$SatelliteVec__reset_idx__dr_randomizations"):
             ###################################################
             if self.randomize:
-                self.apply_randomizations(ids, self.dr_params, self.rew_buf[ids])
+                self.apply_randomizations(ids, self.dr_params, self.rew_buf)
             ###################################################
 
         with record_function("$SatelliteVec__reset_idx__sim"):

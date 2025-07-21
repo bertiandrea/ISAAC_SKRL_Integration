@@ -227,7 +227,7 @@ CONFIG = {
     # --- dr_randomization -------------------------------------------------
     "dr_randomization": {
         "enabled": True,
-        "automatic": False,
+        "automatic": True,
         "dr_params": {
             "observations": {
                 "range": [-0.01, 0.01],
@@ -250,8 +250,15 @@ CONFIG = {
                             "operation": "scaling",
                             "range": [0.5, 1.5],
                             "schedule": "linear",
-                            "schedule_steps": 10000,
-                        }
+                            "schedule_steps": 1,
+                        },
+                        "inertia": {
+                            "distribution": "uniform",
+                            "operation": "scaling",
+                            "range": [0.5, 1.5],
+                            "schedule": "linear",
+                            "schedule_steps": 1,
+                        },
                     }
                 }
             }
@@ -273,10 +280,17 @@ CONFIG = {
             "adr_params": {
                 "object_mass": {
                     "range_path": 'actor_params.satellite.rigid_body_properties.mass.range',
-                    "init_range": [400, 600],
-                    "limits": [200, 800],
-                    "delta": 10,
-                    "delta_style": 'additive',
+                    "init_range": [0.8, 1.2],
+                    "limits": [0.5, 1.5],
+                    "delta": 1.1,
+                    "delta_style": 'multiplicative',
+                },
+                "object_inertia": {
+                    "range_path": 'actor_params.satellite.rigid_body_properties.inertia.range',
+                    "init_range": [0.8, 1.2],
+                    "limits": [0.5, 1.5],
+                    "delta": 1.1,
+                    "delta_style": 'multiplicative',
                 }
             }
         }
