@@ -324,8 +324,6 @@ class Satellite(ADRVecTask):
                 self.dt
             )
 
-            self.satellite_quats = torch.div(self.satellite_quats, self.satellite_quats.norm(dim=1, keepdim=True))
-
             self.prev_angvel = self.satellite_angvels.clone()
             self.obs_buf = torch.cat(
                 (self.satellite_quats, quat_diff_rad(self.satellite_quats, self.goal_quat).unsqueeze(-1), 
