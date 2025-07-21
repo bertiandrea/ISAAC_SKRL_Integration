@@ -44,7 +44,7 @@ CONFIG = {
 
         "numObservations": 15, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3)
 
-        "numStates": 14 + 4, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + satellite_angvels (3)
+        "numStates": 18, # satellite_quats (4) + quat_diff (4) + quat_diff_rad (1) + satellite_angacc (3) + actions (3) + satellite_angvels (3)
 
         "numActions": 3,
 
@@ -61,7 +61,7 @@ CONFIG = {
         "clipActions": 1.0,
         "clipObservations": 10.0,
 
-        "torque_scale": 1000.0,
+        "torque_scale": 100.0,
 
         "debug_arrows": DEBUG_ARROWS,
         
