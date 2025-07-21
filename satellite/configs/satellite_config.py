@@ -14,8 +14,8 @@ N_EPOCHS = 1250
 HEADLESS = False
 FORCE_RENDER = False
 PROFILE = False
-DEBUG_ARROWS = True
-DEBUG_PRINTS = True
+DEBUG_ARROWS = False
+DEBUG_PRINTS = False
 HEARTBEAT = False
 
 ROLLOUTS = 16
@@ -271,10 +271,10 @@ CONFIG = {
 
             "worker_adr_boundary_fraction": 0.4,
 
-            "adr_queue_threshold_length": 256,
+            "adr_queue_threshold_length": NUM_ENVS // 64,  # Number of samples to accumulate before adjusting the range
 
-            "adr_objective_threshold_low": 5,
-            "adr_objective_threshold_high": 20,
+            "adr_objective_threshold_low": 2.0,
+            "adr_objective_threshold_high": 8.0,
 
             "adr_rollout_perf_alpha": 0.99,
             "adr_params": {
