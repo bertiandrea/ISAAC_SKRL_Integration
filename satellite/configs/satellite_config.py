@@ -9,13 +9,13 @@ import torch
 from skrl.resources.preprocessors.torch import RunningStandardScaler
 from skrl.resources.schedulers.torch import KLAdaptiveRL
 
-NUM_ENVS = 1
+NUM_ENVS = 4096
 N_EPOCHS = 1250
 HEADLESS = False
 FORCE_RENDER = False
 PROFILE = False
 DEBUG_ARROWS = True
-DEBUG_PRINTS = True
+DEBUG_PRINTS = False
 HEARTBEAT = False
 
 ROLLOUTS = 16
@@ -187,7 +187,7 @@ CONFIG = {
             "rollouts": ROLLOUTS,
             "n_epochs": N_EPOCHS,
             "timesteps": ROLLOUTS * N_EPOCHS,
-            "disable_progressbar": False,
+            "disable_progressbar": DEBUG_PRINTS,
             "headless": HEADLESS,
         },
         "memory": {
@@ -221,21 +221,21 @@ CONFIG = {
     },
     # --- randomize masses --------------------------------------------------
     "randomize_masses": {
-        "enabled": True,
+        "enabled": False,
         "mass_std": 0.2,
     },
     # --- dr_randomization -------------------------------------------------
     "dr_randomization": {
-        "enabled": True,
-        "automatic": True,
+        "enabled": False,
+        "automatic": False,
         "dr_params": {
             "observations": {
-                "range": [0.0, 0.02],
+                "range": [-0.02, 0.02],
                 "operation": "additive",
                 "distribution": "gaussian"
             },
             "actions": {
-                "range": [0.0, 0.02],
+                "range": [-0.02, 0.02],
                 "operation": "additive",
                 "distribution": "gaussian"
             },
