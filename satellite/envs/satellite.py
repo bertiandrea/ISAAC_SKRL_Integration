@@ -107,7 +107,6 @@ class Satellite(ADRVecTask):
             self.draw_arrows()
         
         self.writer = SummaryWriter(comment="_satellite_reward")
-        self.global_step = 0
 
     def create_sim(self) -> None:
         self.sim = super().create_sim(self.device_id, self.graphics_device_id, self.physics_engine, self.sim_params) # Acquires the sim pointer
@@ -283,18 +282,16 @@ class Satellite(ADRVecTask):
         self.actions[self.reset_ids] = torch.zeros((len(self.reset_ids), 3), dtype=torch.float, device=self.device)
         
         #########################################
-        self.writer.add_scalar('Actions/action_X', self.actions[0, 0].item(), global_step=self.global_step)
-        self.writer.add_scalar('Actions/action_Y', self.actions[0, 1].item(), global_step=self.global_step)
-        self.writer.add_scalar('Actions/action_Z', self.actions[0, 2].item(), global_step=self.global_step)
-
-        self.global_step += 1
+        self.writer.add_scalar('Actions/action_X', self.actions[0, 0].item(), global_step=self.control_steps)
+        self.writer.add_scalar('Actions/action_Y', self.actions[0, 1].item(), global_step=self.control_steps)
+        self.writer.add_scalar('Actions/action_Z', self.actions[0, 2].item(), global_step=self.control_steps)
 
         assert not torch.isnan(self.actions).any(), f"actions has NaN: {self.actions, self.states_buf}"
         assert not torch.isinf(self.actions).any(), f"actions has Inf: {self.actions, self.states_buf}"
         #########################################
 
         impulse = torch.zeros_like(self.actions, device=self.device)
-        if self.explosion and self.global_step == self.explosion_time:
+        if self.explosion and self.control_steps == self.explosion_time:
             mag = torch.normal(mean=100000.0, std=1.0, size=(self.num_envs,), device=self.device).clamp(min=1e-3)
             dirs = torch.randn_like(self.actions)
             dirs = dirs / dirs.norm(dim=1, keepdim=True)
@@ -364,7 +361,7 @@ class Satellite(ADRVecTask):
                 torch.lt(ang_vel_diff, self.threshold_vel_goal)
             )
             
-            self.writer.add_scalar('Goal/goal', goal.sum(dim=0).item(), global_step=self.global_step)
+            self.writer.add_scalar('Goal/goal', goal.sum(dim=0).item(), global_step=self.control_steps)
 
             timeout = torch.ge(self.progress_buf, self.max_episode_length)
 
@@ -397,9 +394,6 @@ class Satellite(ADRVecTask):
         self.compute_reward()
 
         self.check_termination()
-
-        if self.debug_prints:
-            print(f"Global Step: {self.global_step}")
         
         if self.debug_arrows:
             with record_function("$SatelliteVec__post_physics_step__draw_arrows"):
