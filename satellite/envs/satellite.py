@@ -1,10 +1,9 @@
 # satellite.py
 
-from satellite.utils.satellite_util import sample_random_quaternion_batch, quat_diff, quat_diff_rad, quat_axis
+from satellite.utils.satellite_util import get_euler_xyz, quat_from_euler_xyz, sample_random_quaternion_batch, quat_diff, quat_diff_rad, quat_axis, quat_mul
 from satellite.envs.vec_task import VecTask, ADRVecTask
 from satellite.rewards.satellite_reward import (
     TestReward,
-    TestRewardSmooth,
     RewardFunction
 )
 from satellite.pid.pid import PID
@@ -19,41 +18,52 @@ import numpy as np
 
 from torch.profiler import record_function
 
-from torch.utils.tensorboard import SummaryWriter
-
 BASE_COLORS_SAT  = torch.tensor([[1,0,1], [0,1,1], [1,1,0]], dtype=torch.float)
 BASE_COLORS_GOAL = torch.tensor([[0,0,1], [0,1,0], [1,0,0]], dtype=torch.float)
 
 class Satellite(ADRVecTask):
     def __init__(self, cfg, rl_device, sim_device, graphics_device_id, headless, virtual_screen_capture, force_render, reward_fn: RewardFunction = None):
-        self.dt = cfg["sim"].get('dt', 1 / 60.0)  # seconds
-        self.env_spacing = cfg["env"].get('envSpacing', 0.0)
-        self.asset_name = cfg["env"]["asset"].get('assetName', 'satellite')
-        self.asset_root = cfg["env"]["asset"].get('assetRoot', str(Path(__file__).resolve().parent.parent))
-        self.asset_file = cfg["env"]["asset"].get('assetFileName', 'satellite.urdf')
-        self.asset_init_pos_p = cfg["env"]["asset"].get('init_pos_p', [0.0, 0.0, 0.0])
-        self.asset_init_pos_r = cfg["env"]["asset"].get('init_pos_r', [0.0, 0.0, 0.0, 1.0])
-        self.actuation_noise_std = cfg["env"].get('actuation_noise_std', 0.0)
-        self.sensor_noise_std = cfg["env"].get('sensor_noise_std', 0.0)
-        self.torque_scale = cfg["env"].get('torque_scale', 1.0)
-        self.threshold_ang_goal = cfg["env"].get('threshold_ang_goal', 0.01745)  # radians
-        self.threshold_vel_goal = cfg["env"].get('threshold_vel_goal', 0.01745)  # radians/sec
-        self.goal_time = cfg["env"].get('goal_time', 10) / self.dt  # seconds
-        self.overspeed_ang_vel = cfg["env"].get('overspeed_ang_vel', 0.78540)  # radians/sec
-        self.max_episode_length = cfg["env"].get('episode_length_s', 120) / self.dt  # seconds
-        self.debug_arrows = cfg["env"].get('debug_arrows', False)
-        self.heartbeat = cfg.get('heartbeat', False)
+        self.dt =                   cfg["sim"].get('dt', 1 / 60.0)                          # seconds
+        self.max_episode_length =   int(cfg["env"].get('episode_length_s', 120) / self.dt)  # seconds
+
+        self.env_spacing =          cfg["env"].get('envSpacing', 0.0)                       # meters
+        self.asset_name =           cfg["env"]["asset"].get('assetName', 'satellite')
+        self.asset_root =           cfg["env"]["asset"].get('assetRoot', str(Path(__file__).resolve().parent.parent))
+        self.asset_file =           cfg["env"]["asset"].get('assetFileName', 'satellite.urdf')
+        self.asset_init_pos_p =     cfg["env"]["asset"].get('init_pos_p', [0.0, 0.0, 0.0])
+        self.asset_init_pos_r =     cfg["env"]["asset"].get('init_pos_r', [0.0, 0.0, 0.0, 1.0])
+        self.actuation_noise_std =  cfg["env"].get('actuation_noise_std', 0.0)
+        self.sensor_noise_std =     cfg["env"].get('sensor_noise_std', 0.0)
+        self.torque_scale =         cfg["env"].get('torque_scale', 1.0)
+        self.threshold_ang_goal =   cfg["env"].get('threshold_ang_goal', 0.01745)           # radians
+        self.threshold_vel_goal =   cfg["env"].get('threshold_vel_goal', 0.01745)           # radians/sec
+        self.goal_time =            cfg["env"].get('goal_time', 10) / self.dt               # seconds
+        self.overspeed_ang_vel =    cfg["env"].get('overspeed_ang_vel', 0.78540)            # radians/sec
+        self.debug_arrows =         cfg["env"].get('debug_arrows', False)
+        self.debug_prints =         cfg["env"].get('debug_prints', False)
+        self.heartbeat =            cfg.get('heartbeat', False)
 
         ###################################################
         self.randomize_masses = cfg["randomize_masses"].get('enabled', False)
-        self.mass_std = cfg["randomize_masses"].get('mass_std', 0.0)
+        self.mass_std =         cfg["randomize_masses"].get('mass_std', 0.0)
         ###################################################
 
         ###################################################
-        self.explosion = cfg["explosion"].get('enabled', False)
-        self.explosion_time = int(cfg["explosion"].get('explosion_time', 120) / self.dt)
+        self.explosion =        cfg["explosion"].get('enabled', False)
+        self.explosion_time =   int(cfg["explosion"].get('explosion_time', 120) / self.dt)
         ###################################################
         
+        ##################################################
+        self.asteroid_enabled = cfg["asteroid"].get('enabled', False)
+        self.object_mass =      cfg["asteroid"].get('object_mass', 0.0)
+        self.object_mass_std =  cfg["asteroid"].get('object_mass_std', 0.0)
+        self.object_mass_time = int(cfg["asteroid"].get('object_mass_time', 120) / self.dt)
+        ##################################################
+
+        ##################################################
+        self.discretize_starting_pos = cfg["env"].get('discretize_starting_pos', False)
+        ##################################################
+
         super().__init__(config=cfg, rl_device=rl_device, sim_device=sim_device, graphics_device_id=graphics_device_id, headless=headless, virtual_screen_capture=virtual_screen_capture, force_render=force_render)
 
         ################# SETUP SIM #################
@@ -73,8 +83,10 @@ class Satellite(ADRVecTask):
 
         self.prev_angvel = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
 
-        #self.goal_quat = torch.tensor([0, 0, 0, 1], dtype=torch.float, device=self.device).repeat(self.num_envs, 1) 
-        self.goal_quat = sample_random_quaternion_batch(self.device, self.num_envs)
+        if self.discretize_starting_pos:
+            self.goal_quat = sample_random_quaternion_batch(self.device, 1).repeat(self.num_envs, 1)
+        else:
+            self.goal_quat = sample_random_quaternion_batch(self.device, self.num_envs)
         self.goal_ang_vel = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
         self.goal_ang_acc = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
 
@@ -103,13 +115,13 @@ class Satellite(ADRVecTask):
                 num_envs=self.num_envs,
                 device=self.device,
             )
-
-        if self.debug_arrows:
-            self.draw_arrows()
         
-        self.writer = SummaryWriter(comment="_satellite_reward")
-
+        ###################################################
         self.in_goal_buf = torch.zeros(self.num_envs, dtype=torch.long, device=self.device)
+        self.already_tested = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+        self.goal_reached = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
+        self.impulse = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
+        ###################################################
 
     def create_sim(self) -> None:
         self.sim = super().create_sim(self.device_id, self.graphics_device_id, self.physics_engine, self.sim_params) # Acquires the sim pointer
@@ -130,13 +142,23 @@ class Satellite(ADRVecTask):
         self.envs = []
         self.actor_handles = []
         self.sat_glob_pos = torch.zeros((self.num_envs, 3), dtype=torch.float, device=self.device)
+        
+        if self.discretize_starting_pos:
+            self.asset_init_pos_p_all = self.get_discretized_orientations(self.goal_quat)
+        
         for i in range(self.num_envs):
             env = self.gym.create_env(self.sim, env_lower, env_upper, num_per_row)
             origin = self.gym.get_env_origin(env)
             self.sat_glob_pos[i] = torch.tensor([origin.x, origin.y, origin.z],
                                                 dtype=torch.float,
                                                 device=self.device)
-            actor_handle = self.create_actor(i, env, self.asset, self.asset_init_pos_p, self.asset_init_pos_r, 1, self.asset_name)
+            ###################################################
+            if self.discretize_starting_pos:
+                asset_init_pos_p = self.asset_init_pos_p_all[i]
+            else:
+                asset_init_pos_p = self.asset_init_pos_p
+            ###################################################
+            actor_handle = self.create_actor(i, env, self.asset, asset_init_pos_p, self.asset_init_pos_r, 1, self.asset_name)
             ###################################################
             if self.randomize_masses:
                 self.randomize_actor_bodies(env, actor_handle)
@@ -190,7 +212,23 @@ class Satellite(ADRVecTask):
         )
 
     ################################################################################################################################
+    def get_discretized_orientations(self, base_quat: torch.Tensor) -> torch.Tensor:
+        if self.num_envs == 1:
+            # if only one environment, return the conjugate of the base quaternion (inverse rotation)
+            # The conjugate of a quaternion [x, y, z, w] is [-x, -y, -z, w]
+            return base_quat * torch.tensor([-1, -1, -1, 1], dtype=base_quat.dtype, device=base_quat.device)
 
+        pts = int(round(self.num_envs ** (1/3)))
+        if pts ** 3 != self.num_envs:
+            raise ValueError("num_envs must be a perfect cube for discretized orientations.")
+
+        angles = torch.linspace(0, 2 * torch.pi, pts, device=self.device)
+        angles_i, angles_j, angles_k = torch.meshgrid(angles, angles, angles, indexing='ij')
+        orientations = quat_from_euler_xyz(angles_i.flatten(), angles_j.flatten(), angles_k.flatten())
+        orientations = quat_mul(base_quat.repeat(self.num_envs, 1), orientations)
+        orientations = orientations / torch.norm(orientations, dim=1, keepdim=True)
+        return orientations
+   
     def randomize_actor_bodies(self, env, actor_handle):
         body_props = self.gym.get_actor_rigid_body_properties(env, actor_handle)
         for idx, body_prop in enumerate(body_props):
@@ -212,19 +250,58 @@ class Satellite(ADRVecTask):
         self.gym.set_actor_rigid_body_properties(env, actor_handle, body_props)
     
     ################################################################################################################################
+
+    def random_object_mass(self, env, actor_handle):
+        body_props = self.gym.get_actor_rigid_body_properties(env, actor_handle)
+        for idx, body_prop in enumerate(body_props):
+                original_mass = body_prop.mass
+                randomized_object_mass = torch.normal(mean=self.object_mass, std=self.object_mass_std, size=(), device=self.device).clamp(min=1e-3).item()
+                scale = (original_mass + randomized_object_mass) / original_mass
+                body_prop.mass = (original_mass + randomized_object_mass)
+                body_prop.inertia.x.x *= scale
+                body_prop.inertia.x.y *= scale
+                body_prop.inertia.x.z *= scale
+                body_prop.inertia.y.x *= scale
+                body_prop.inertia.y.y *= scale
+                body_prop.inertia.y.z *= scale
+                body_prop.inertia.z.x *= scale
+                body_prop.inertia.z.y *= scale
+                body_prop.inertia.z.z *= scale
+                body_props[idx] = body_prop
+                print(f"[random_object_mass] Body {idx}: original_mass={original_mass:.2f}, object_mass={randomized_object_mass:.2f}, total_mass={(original_mass + randomized_object_mass):.2f}")
+        self.gym.set_actor_rigid_body_properties(env, actor_handle, body_props)
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" * 15)
+        print(f"!!!!!!!!!!!!!!!!!!!!!!! ASTEROID MASS {randomized_object_mass:.2f} kg !!!!!!!!!!!!!!!!!!!!!!!\n")
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" * 15)
+
+    def explosion_impulse(self, impulse: torch.Tensor) -> None:
+        mag = torch.normal(mean=100000.0, std=1.0, size=(self.num_envs,), device=self.device).clamp(min=1e-3)
+        dirs = torch.randn_like(impulse, device=self.device)
+        dirs = dirs / dirs.norm(dim=1, keepdim=True)
+        impulse = dirs * mag.unsqueeze(-1)
+        self.explosion = False
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" * 15)
+        print(f"!!!!!!!!!!!!!!!!!!!!!!! EXPLOSION {impulse[0, 0].item():.2f} {impulse[0, 1].item():.2f} {impulse[0, 2].item():.2f} !!!!!!!!!!!!!!!!!!!!!!!\n")
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" * 15)
+        return impulse
+    
+    ################################################################################################################################
            
     def reset_idx(self, ids: torch.Tensor) -> None:
-        with record_function("$SatelliteVec__reset_idx__dr_randomizations"):
-            ###################################################
-            if self.randomize:
+        ###################################################
+        if self.randomize:
+            with record_function("$SatelliteVec__reset_idx__dr_randomizations"):
                 self.apply_randomizations(ids, self.dr_params, self.rew_buf)
-            ###################################################
+        ###################################################
 
         with record_function("$SatelliteVec__reset_idx__sim"):
             ################# SIM #################
-            #self.root_states[ids] = self.initial_root_states[ids]
-            self.root_states[ids] = torch.zeros((len(ids), 13), dtype=torch.float32, device=self.device)
-            self.root_states[ids, 3:7] = sample_random_quaternion_batch(self.device, len(ids))
+            if self.discretize_starting_pos:
+                # if discretizing starting positions, use the precomputed positions
+                self.root_states[ids] = self.initial_root_states[ids]
+            else:
+                self.root_states[ids] = torch.zeros((len(ids), 13), dtype=torch.float32, device=self.device)
+                self.root_states[ids, 3:7] = sample_random_quaternion_batch(self.device, len(ids))
             idx32 = ids.to(dtype=torch.int32)
             self.gym.set_actor_root_state_tensor_indexed(
                 self.sim, self.actor_root_state, gymtorch.unwrap_tensor(idx32), len(idx32)
@@ -234,8 +311,9 @@ class Satellite(ADRVecTask):
         with record_function("$SatelliteVec__reset_idx__reset_buffers"):
             self.prev_angvel[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
 
-            #self.goal_quat[ids] = torch.tensor([0, 0, 0, 1], dtype=torch.float, device=self.device).repeat(len(ids), 1) 
-            self.goal_quat[ids] = sample_random_quaternion_batch(self.device, len(ids))
+            if not self.discretize_starting_pos:
+                # if not discretizing sample random quaternions, else use initial goal quaternions
+                self.goal_quat[ids] = sample_random_quaternion_batch(self.device, len(ids))
             self.goal_ang_vel[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
             self.goal_ang_acc[ids] = torch.zeros((len(ids), 3), dtype=torch.float, device=self.device)
 
@@ -244,16 +322,25 @@ class Satellite(ADRVecTask):
             self.timeout_buf[ids] = False
 
             self.rew_buf[ids] = 0.0
+            self.episode_rew_buf[ids] = 0.0
 
             self.in_goal_buf[ids] = 0
 
+        ###################################################
         if self.controller_logic:
             with record_function("$SatelliteVec__reset_idx__reset_controller"):
                 self.controller.reset(ids)
-        
-        if self.debug_arrows:
-            with record_function("$SatelliteVec__reset_idx__draw_arrows"):
-                self.draw_arrows()
+        ###################################################
+
+        ###################################################
+        if self.asteroid_enabled:
+            with record_function("$SatelliteVec__reset_idx__random_object_mass"):
+                for i in ids:
+                    if not self.already_tested[i.item()] and self.control_steps >= self.object_mass_time:
+                        self.random_object_mass(self.envs[i.item()], self.actor_handles[i.item()])
+                        self.already_tested[i.item()] = True
+        ###################################################
+
 
     ################################################################################################################################
                 
@@ -266,14 +353,17 @@ class Satellite(ADRVecTask):
     def apply_torque(self) -> None:
         ############## CONTROLLER ###############
         if self.controller_logic:
-            self.actions = self.controller.compute_control(
-                actions=self.actions, 
-                measured_angacc=self.satellite_angacc
-            )
+            with record_function("$SatelliteVec__apply_torque__controller"):
+                pid_actions = self.controller.compute_control(
+                    measure=get_euler_xyz(self.satellite_quats),
+                    target=get_euler_xyz(self.goal_quat)
+                )
+            self.writer.add_scalar('Actions/PID_action_X', pid_actions[0, 0].item(), global_step=self.control_steps)
+            self.writer.add_scalar('Actions/PID_action_Y', pid_actions[0, 1].item(), global_step=self.control_steps)
+            self.writer.add_scalar('Actions/PID_action_Z', pid_actions[0, 2].item(), global_step=self.control_steps)
         #########################################
         
-        with record_function("$SatelliteVec__apply_torque__scale"):
-            self.actions = torch.mul(self.actions, self.torque_scale)
+        self.actions = torch.mul(self.actions, self.torque_scale)
 
         #with record_function("$SatelliteVec__apply_torque__noise"):
         #    if self.actuation_noise_std > 0.0:
@@ -295,27 +385,21 @@ class Satellite(ADRVecTask):
         assert not torch.isinf(self.actions).any(), f"actions has Inf: {self.actions, self.states_buf}"
         #########################################
 
-        impulse = torch.zeros_like(self.actions, device=self.device)
+        #########################################
         if self.explosion and self.control_steps == self.explosion_time:
-            mag = torch.normal(mean=100000.0, std=1.0, size=(self.num_envs,), device=self.device).clamp(min=1e-3)
-            dirs = torch.randn_like(self.actions)
-            dirs = dirs / dirs.norm(dim=1, keepdim=True)
-            impulse = dirs * mag.unsqueeze(-1)
-            self.explosion = False
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" * 15)
-            print(f"!!!!!!!!!!!!!!!!!!!!!!! EXPLOSION {impulse[0, 0].item():.2f} {impulse[0, 1].item():.2f} {impulse[0, 2].item():.2f} !!!!!!!!!!!!!!!!!!!!!!!\n")
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n" * 15)
+            self.impulse = self.explosion_impulse(self.impulse)
+        #########################################
 
-        ################# SIM #################
+        ################## SIM ##################
         with record_function("$SatelliteVec__apply_torque__sim"):
-            self.torque_tensor[self.root_indices] = self.actions + impulse
+            self.torque_tensor[self.root_indices] = self.actions + self.impulse
             self.gym.apply_rigid_body_force_tensors(
                 self.sim,
                 gymtorch.unwrap_tensor(self.force_tensor),  
                 gymtorch.unwrap_tensor(self.torque_tensor), 
                 gymapi.LOCAL_SPACE,
             )
-        #######################################
+        #########################################
                 
     def compute_observations(self) -> None:
         ################# SIM #################
@@ -353,9 +437,12 @@ class Satellite(ADRVecTask):
                 self.goal_quat, self.goal_ang_vel, self.goal_ang_acc,
                 self.actions
             )
+            self.episode_rew_buf += self.rew_buf
+            self.writer.add_scalar('Reward_policy/total_episode', self.episode_rew_buf.mean().item(), global_step=self.control_steps)
 
     def check_termination(self) -> None:
         with record_function("$SatelliteVec__check_termination"):
+            #########################################
             angle_diff = quat_diff_rad(self.satellite_quats, self.goal_quat)
             ang_vel_diff = torch.norm(
                 torch.sub(self.satellite_angvels, self.goal_ang_vel),
@@ -365,16 +452,21 @@ class Satellite(ADRVecTask):
                 torch.lt(angle_diff, self.threshold_ang_goal),
                 torch.lt(ang_vel_diff, self.threshold_vel_goal)
             )
+            #########################################
 
+            #########################################
             self.in_goal_buf = torch.add(self.in_goal_buf, goal.to(torch.long))
-            goal_reached = torch.ge(self.in_goal_buf, self.goal_time)
-            
+            self.goal_reached = torch.ge(self.in_goal_buf, self.goal_time)
+            #########################################
+
+            #########################################
             self.writer.add_scalar('Goal/angle_diff', angle_diff.mean().item(), global_step=self.control_steps)
             self.writer.add_scalar('Goal/goal', goal.sum(dim=0).item(), global_step=self.control_steps)
-            self.writer.add_scalar('Goal/goal_reached', goal_reached.sum(dim=0).item(), global_step=self.control_steps)
+            self.writer.add_scalar('Goal/goal_reached', self.goal_reached.sum(dim=0).item(), global_step=self.control_steps)
+            #########################################
 
+            #########################################
             timeout = torch.ge(self.progress_buf, self.max_episode_length)
-
             overspeed = torch.ge(
                 torch.norm(self.satellite_angvels, dim=1),
                 self.overspeed_ang_vel
@@ -382,6 +474,7 @@ class Satellite(ADRVecTask):
 
             self.timeout_buf = timeout
             self.reset_buf = torch.logical_or(timeout, overspeed)
+            #########################################
     
     def pre_physics_step(self, actions):
         if self.heartbeat:

@@ -3,8 +3,6 @@
 import isaacgym #BugFix
 import torch
 
-from satellite.pid.pid import PID
-
 class SatelliteAttitudeController:
     def __init__(self, torque_tau, pid, num_envs, device):
         self.num_envs = num_envs
@@ -13,8 +11,8 @@ class SatelliteAttitudeController:
         self.pid = pid
         self.prev_torque = torch.zeros((num_envs, 3), dtype=torch.float, device=device)
 
-    def compute_control(self, actions: torch.Tensor, measured_angacc: torch.Tensor) -> torch.Tensor:
-        error = torch.sub(actions, measured_angacc)
+    def compute_control(self, measure: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        error = torch.sub(measure, target)
         raw_torque = self.pid.update(error)
         
         # Apply low-pass filter to the torque command

@@ -16,6 +16,7 @@ from abc import ABC
 from gym import spaces
 
 from torch.profiler import record_function
+from torch.utils.tensorboard import SummaryWriter
 
 import copy
 import random
@@ -94,6 +95,8 @@ class Env(ABC):
         self.record_frames: bool = False
         self.record_frames_dir = join("recorded_frames", datetime.now().strftime("%Y-%m-%d_%H-%M-%S"))
 
+        self.writer = SummaryWriter(comment="_satellite")
+
 class VecTask(Env):
 
     metadata = {"render.modes": ["human", "rgb_array"], "video.frames_per_second": 24}
@@ -135,8 +138,6 @@ class VecTask(Env):
 
         self.obs_states_dict = {}
 
-        self.debug_prints = config["env"].get('debug_prints', False)
-
     def set_viewer(self):
         self.enable_viewer_sync = True
         self.viewer = None
@@ -168,6 +169,8 @@ class VecTask(Env):
         self.states_buf = torch.zeros(
             (self.num_envs, self.num_states), device=self.device, dtype=torch.float)
         self.rew_buf = torch.zeros(
+            self.num_envs, device=self.device, dtype=torch.float)
+        self.episode_rew_buf = torch.zeros(
             self.num_envs, device=self.device, dtype=torch.float)
         self.reset_buf = torch.ones(
             self.num_envs, device=self.device, dtype=torch.long)
@@ -364,17 +367,25 @@ class ADRVecTask(VecTask):
 
         if self.randomize and self.use_adr:
             self.adr_cfg = config["dr_randomization"].get("adr", {})
+
             self.worker_adr_boundary_fraction = self.adr_cfg["worker_adr_boundary_fraction"]
             self.adr_queue_threshold_length = self.adr_cfg["adr_queue_threshold_length"]
+
             self.adr_objective_threshold_low = self.adr_cfg["adr_objective_threshold_low"]
             self.adr_objective_threshold_high = self.adr_cfg["adr_objective_threshold_high"]
+
             self.adr_extended_boundary_sample = self.adr_cfg["adr_extended_boundary_sample"]
+
             self.adr_rollout_perf_alpha = self.adr_cfg["adr_rollout_perf_alpha"]
+
             self.update_adr_ranges = self.adr_cfg["update_adr_ranges"]
+
             self.adr_clear_other_queues = self.adr_cfg["clear_other_queues"]
+
             self.adr_load_from_checkpoint = self.adr_cfg["adr_load_from_checkpoint"]
+
+            ################################################
             self.adr_params = self.adr_cfg["adr_params"]
-            self.num_adr_params = len(self.adr_params)
             self.adr_params_keys = list(self.adr_params.keys())
             ################################################
             self.adr_rollout_perf_last = None
@@ -384,7 +395,6 @@ class ADRVecTask(VecTask):
             self.worker_types = torch.zeros(config["env"]["numEnvs"], dtype=torch.long, device=sim_device)
             self.adr_modes = torch.zeros(config["env"]["numEnvs"], dtype=torch.long, device=sim_device)
 
-            self.adr_objective_queues = [deque(maxlen=self.adr_queue_threshold_length) for _ in range(2 * self.num_adr_params)]
             ################################################
             for k in self.adr_params:
                 self.adr_params[k]["range"] = self.adr_params[k]["init_range"]
@@ -404,7 +414,12 @@ class ADRVecTask(VecTask):
                     dtype = torch.long if param_type == "categorical" else torch.float
                     self.adr_tensor_values[k] = torch.zeros(self.cfg["env"]["numEnvs"], device=sim_device, dtype=dtype)
                 ################################################
-        
+            
+            self.num_adr_params = len(self.adr_params)
+            self.adr_objective_queues = []
+            for _ in range(2 * self.num_adr_params):
+                self.adr_objective_queues.append(deque(maxlen=self.adr_queue_threshold_length))
+            
         super().__init__(config, rl_device, sim_device, graphics_device_id, headless, virtual_screen_capture, force_render)
 
     def get_current_adr_params(self, dr_params):
@@ -418,7 +433,9 @@ class ADRVecTask(VecTask):
         if env_type == RolloutWorkerModes.ADR_ROLLOUT:
             return current_adr_params
         elif env_type == RolloutWorkerModes.ADR_BOUNDARY:
+            ####################################################
             adr_mode = int(self.adr_modes[env_id])
+
             env_adr_params = copy.deepcopy(current_adr_params)
             param_name = self.adr_params_keys[adr_mode // 2]
             
@@ -429,10 +446,12 @@ class ADRVecTask(VecTask):
                 boundary_value = self.adr_params[param_name]["next_limits"][adr_mode % 2] 
             else:
                 boundary_value = self.adr_params[param_name]["range"][adr_mode % 2]
-            
             new_range = [boundary_value, boundary_value]
+
             nested_dict_set_attr(env_adr_params, self.adr_params[param_name]["range_path"], new_range)
+            
             return env_adr_params
+            ####################################################
         elif env_type == RolloutWorkerModes.TEST_ENV:
             return default_dr_params
         else:
@@ -447,17 +466,17 @@ class ADRVecTask(VecTask):
         param_type = self.adr_params[param_name].get("type", "uniform")
 
         n = self.adr_params_keys.index(param_name)
-        low_idx = 2 * n
-        high_idx = 2 * n + 1
 
-        adr_workers_low_mask = (self.worker_types == RolloutWorkerModes.ADR_BOUNDARY) & (self.adr_modes == low_idx) & sample_mask
-        adr_workers_high_mask = (self.worker_types == RolloutWorkerModes.ADR_BOUNDARY) & (self.adr_modes == high_idx) & sample_mask
+        adr_workers_low_mask = (self.worker_types == RolloutWorkerModes.ADR_BOUNDARY) & (self.adr_modes == (2 * n)) & sample_mask
+        adr_workers_high_mask = (self.worker_types == RolloutWorkerModes.ADR_BOUNDARY) & (self.adr_modes == (2 * n + 1)) & sample_mask
+        
         rollout_workers_mask = (~adr_workers_low_mask) & (~adr_workers_high_mask) & sample_mask
         rollout_workers_env_ids = torch.nonzero(rollout_workers_mask, as_tuple=False).squeeze(-1)
 
         if param_type == "uniform":
             result = torch.zeros((len(env_ids),), device=self.device, dtype=torch.float)
             uniform_noise_rollout_workers = torch.rand((rollout_workers_env_ids.shape[0],), device=self.device, dtype=torch.float) * (param_range[1] - param_range[0]) + param_range[0]
+            
             result[rollout_workers_mask[env_ids]] = uniform_noise_rollout_workers
             if self.adr_extended_boundary_sample:
                 result[adr_workers_low_mask[env_ids]] = next_limits[0]
@@ -469,6 +488,7 @@ class ADRVecTask(VecTask):
         elif param_type == "categorical":
             result = torch.zeros((len(env_ids), ), device=self.device, dtype=torch.long)
             uniform_noise_rollout_workers = torch.randint(int(param_range[0]), int(param_range[1])+1, size=(rollout_workers_env_ids.shape[0]), device=self.device)
+            
             result[rollout_workers_mask[env_ids]] = uniform_noise_rollout_workers
             result[adr_workers_low_mask[env_ids]] = int(next_limits[0] if self.adr_extended_boundary_sample else param_range[0])
             result[adr_workers_high_mask[env_ids]] = int(next_limits[1] if self.adr_extended_boundary_sample else param_range[1])
@@ -477,91 +497,142 @@ class ADRVecTask(VecTask):
             raise NotImplementedError(f"Unknown distribution type {param_type}")
         
         self.adr_tensor_values[param_name][env_ids] = result
+
         return result
 
     def recycle_envs(self, recycle_envs):
         worker_types_rand = torch.rand(len(recycle_envs), device=self.device, dtype=torch.float)
 
         new_worker_types = torch.zeros(len(recycle_envs), device=self.device, dtype=torch.long)
+
         new_worker_types[(worker_types_rand < self.worker_adr_boundary_fraction)] = RolloutWorkerModes.ADR_ROLLOUT
         new_worker_types[(worker_types_rand >= self.worker_adr_boundary_fraction)] = RolloutWorkerModes.ADR_BOUNDARY
 
         self.worker_types[recycle_envs] = new_worker_types
+
         self.adr_modes[recycle_envs] = torch.randint(0, self.num_adr_params * 2, (len(recycle_envs),), dtype=torch.long, device=self.device)
 
     def adr_update(self, rand_envs, adr_objective):
         """
         Performs ADR update step (implements algorithm 1 from https://arxiv.org/pdf/1910.07113.pdf).
+        ADR (Automatic Domain Randomization) adjusts environment parameters to match a target objective.
         """
+        # Create a boolean mask for environments selected for ADR update in this batch
         rand_env_mask = torch.zeros(self.num_envs, dtype=torch.bool, device=self.device)
         rand_env_mask[rand_envs] = True
-        total_nats = 0.0
+        total_nats = 0.0  # accumulate information gain measure (in nats) across parameters
 
         if self.update_adr_ranges:
 
+            # Randomize order of ADR parameters for unbiased updates
             adr_params_iter = list(enumerate(self.adr_params))
             random.shuffle(adr_params_iter)
-            already_recycled = False
+            already_recycled = False  # track if envs have been recycled after a parameter change
 
+            # Loop through each ADR parameter in random order
             for n, adr_param_name in adr_params_iter:
+                # Identify workers on lower-bound exploration for this param
                 adr_workers_low = (self.worker_types == RolloutWorkerModes.ADR_BOUNDARY) & (self.adr_modes == 2 * n)
+                # Identify workers on upper-bound exploration for this param
                 adr_workers_high = (self.worker_types == RolloutWorkerModes.ADR_BOUNDARY) & (self.adr_modes == 2 * n + 1)
+                # Identify workers that are currently rolling out (not in ADR mode)
+                adr_workers_rollout = (self.worker_types == RolloutWorkerModes.ADR_ROLLOUT)
 
+                ################################################################
+                self.writer.add_scalar('ADR/workers_low', adr_workers_low.sum().item(), global_step=self.control_steps)
+                self.writer.add_scalar('ADR/workers_high', adr_workers_high.sum().item(), global_step=self.control_steps)
+                self.writer.add_scalar('ADR/workers_others', adr_workers_rollout.sum().item(), global_step=self.control_steps)
+                self.writer.add_scalar('ADR/total_workers', (adr_workers_low | adr_workers_high | adr_workers_rollout).sum().item(), global_step=self.control_steps)
+                ################################################################
+
+                # Filter to those that were sampled in this batch
                 adr_done_low = rand_env_mask & adr_workers_low
                 adr_done_high = rand_env_mask & adr_workers_high
 
+                # Collect performance objectives for boundary samples
                 objective_low_bounds = adr_objective[adr_done_low]
                 objective_high_bounds = adr_objective[adr_done_high]
 
+                # Append observed objectives to respective queues for stats
                 self.adr_objective_queues[2 * n].extend(objective_low_bounds.cpu().numpy().tolist())
                 self.adr_objective_queues[2 * n + 1].extend(objective_high_bounds.cpu().numpy().tolist())
                 
                 low_queue = self.adr_objective_queues[2 * n]
                 high_queue = self.adr_objective_queues[2 * n + 1]
                 
+                # Compute mean performance at each boundary
                 mean_low = np.mean(low_queue) if len(low_queue) > 0 else 0.
                 mean_high = np.mean(high_queue) if len(high_queue) > 0 else 0.
 
+                ################################################################
+                self.writer.add_scalar('ADR/mean_low', mean_low, global_step=self.control_steps)
+                self.writer.add_scalar('ADR/mean_high', mean_high, global_step=self.control_steps)
+                print(f'ADR Parameter: {adr_param_name} | Low Mean: {mean_low:.2f} | High Mean: {mean_high:.2f}')
+                ################################################################
+
+                # Fetch current range and limits for this ADR parameter
                 current_range = self.adr_params[adr_param_name]["range"]
                 range_lower = current_range[0]
                 range_upper = current_range[1]
-                
-                range_limits = self.adr_params[adr_param_name]["limits"]
-                init_range = self.adr_params[adr_param_name]["init_range"]
+                range_limits = self.adr_params[adr_param_name]["limits"]    # absolute allowed bounds
+                init_range = self.adr_params[adr_param_name]["init_range"]  # initial default range
 
+                # Retrieve or initialize next step limits placeholders
                 [next_limit_lower, next_limit_upper] = self.adr_params[adr_param_name].get("next_limits", [None, None])
 
-                changed_low, changed_high = False, False
+                changed_low, changed_high = False, False  # track adjustments to the range
 
+                # Adjust lower bound if enough samples accumulated
                 if len(low_queue) >= self.adr_queue_threshold_length:
-                    changed_low = False
+                    # If performance too low, increase lower bound (make task easier)
                     if mean_low < self.adr_objective_threshold_low:
                         range_lower, changed_low = modify_adr_param(range_lower, 'up', self.adr_params[adr_param_name], param_limit=init_range[0])
+                        if not changed_low:
+                            print('RAISING LOWER BOUND FAILED (EASIER): Init Range lower bound (', init_range[0] ,') already reached.')
+                    # If performance too high, decrease lower bound (make task harder)
                     elif mean_low > self.adr_objective_threshold_high:
+                        print(f'Low boundary performance HIGH: {mean_low} > {self.adr_objective_threshold_high}.')
                         range_lower, changed_low = modify_adr_param(range_lower, 'down', self.adr_params[adr_param_name], param_limit=range_limits[0])
                     
                     if changed_low:
-                        print(f'Changing {adr_param_name} lower bound. Queue length {len(self.adr_objective_queues[2 * n])}. Mean perf: {mean_low}. Old val: {current_range[0]}. New val: {range_lower}')
+                        print(f'Changing {adr_param_name} lower bound. Queue length {len(low_queue)}. Mean perf: {mean_low}. Old val: {current_range[0]}. New val: {range_lower}')
                         self.adr_objective_queues[2 * n].clear()
+                        # Switch boundary workers back to rollout mode
                         self.worker_types[adr_workers_low] = RolloutWorkerModes.ADR_ROLLOUT
                 
+                # Adjust upper bound if enough samples accumulated
                 if len(high_queue) >= self.adr_queue_threshold_length:
+                    # If performance too low, decrease upper bound (make task easier)
                     if mean_high < self.adr_objective_threshold_low:
                         range_upper, changed_high = modify_adr_param(range_upper, 'down', self.adr_params[adr_param_name], param_limit=init_range[1])
+                        if not changed_high:
+                            print('LOWERING UPPER BOUND FAILED (EASIER): Init Range lower bound (', init_range[1] ,') already reached.')
+                    # If performance too high, increase upper bound (make task harder)
                     elif mean_high > self.adr_objective_threshold_high:
+                        print(f'Upper boundary performance HIGH: {mean_high} > {self.adr_objective_threshold_high}.')
                         range_upper, changed_high = modify_adr_param(range_upper, 'up', self.adr_params[adr_param_name], param_limit=range_limits[1])
                     
                     if changed_high:
-                        print(f'Changing upper bound {adr_param_name}. Queue length {len(self.adr_objective_queues[2 * n + 1])}. Mean perf {mean_high}. Old val: {current_range[1]}. New val: {range_upper}')
+                        print(f'Changing {adr_param_name} upper bound. Queue length {len(high_queue)}. Mean perf: {mean_high}. Old val: {current_range[1]}. New val: {range_upper}')
                         self.adr_objective_queues[2 * n + 1].clear()
+                        # Switch boundary workers back to rollout mode
                         self.worker_types[adr_workers_high] = RolloutWorkerModes.ADR_ROLLOUT
-                
+
+                # Compute "next_limits" heuristically for sampling
                 if changed_low or next_limit_lower is None:
                     next_limit_lower, _ = modify_adr_param(range_lower, 'down', self.adr_params[adr_param_name], param_limit=range_limits[0])
                 if changed_high or next_limit_upper is None:
                     next_limit_upper, _ = modify_adr_param(range_upper, 'up', self.adr_params[adr_param_name], param_limit=range_limits[1])
-                
+
+                # Save updated range back into parameters
                 self.adr_params[adr_param_name]["range"] = [range_lower, range_upper]
+
+                ################################################################
+                self.writer.add_scalar(f'ADR/range_lower', range_lower, global_step=self.control_steps)
+                self.writer.add_scalar(f'ADR/range_upper', range_upper, global_step=self.control_steps)
+                ################################################################
+
+                # Accumulate information gain (entropy) for reporting
                 if not self.adr_params[adr_param_name]["delta"] < 1e-9:
                     upper_lower_delta = range_upper - range_lower
                     if upper_lower_delta < 1e-3:
@@ -570,6 +641,7 @@ class ADRVecTask(VecTask):
                     total_nats += nats
                 self.adr_params[adr_param_name]["next_limits"] = [next_limit_lower, next_limit_upper]
 
+                # Log telemetry if available (every 100 steps or on change)
                 if hasattr(self, 'extras') and ((changed_high or changed_low) or self.last_step % 100 == 0):
                     self.extras[f'adr/params/{adr_param_name}/lower'] = range_lower
                     self.extras[f'adr/params/{adr_param_name}/upper'] = range_upper
@@ -578,31 +650,35 @@ class ADRVecTask(VecTask):
                     self.extras[f'adr/objective_perf/boundary/{adr_param_name}/upper/value'] = mean_high
                     self.extras[f'adr/objective_perf/boundary/{adr_param_name}/upper/queue_len'] = len(high_queue)
                 
+                # If clearing other queues on change, recycle all environments once
                 if self.adr_clear_other_queues and (changed_low or changed_high):
                     for q in self.adr_objective_queues:
                         q.clear()
                     recycle_envs = torch.nonzero((self.worker_types == RolloutWorkerModes.ADR_BOUNDARY), as_tuple=False).squeeze(-1)
                     self.recycle_envs(recycle_envs)
-                    already_recycled = True
+                    already_recycled = True  # skip additional recycling below
                     break
 
+            # After looping params, optionally log rollout performance stats
             if hasattr(self, 'extras') and self.last_step % 100 == 0:
                 mean_perf = adr_objective[rand_env_mask & (self.worker_types == RolloutWorkerModes.ADR_ROLLOUT)].mean()
-                
+                # Exponentially-weighted moving average of rollout performance
                 if self.adr_rollout_perf_last is None:
                     self.adr_rollout_perf_last = mean_perf
                 else:
-                    self.adr_rollout_perf_last = self.adr_rollout_perf_last * self.adr_rollout_perf_alpha + mean_perf * (1-self.adr_rollout_perf_alpha)
-                
+                    self.adr_rollout_perf_last = self.adr_rollout_perf_last * self.adr_rollout_perf_alpha + mean_perf * (1 - self.adr_rollout_perf_alpha)
                 self.extras[f'adr/objective_perf/rollouts'] = self.adr_rollout_perf_last
                 self.extras[f'adr/npd'] = total_nats / len(self.adr_params)
-            
-            if not already_recycled: 
+
+            # Recycle environments not yet recycled in boundary changes
+            if not already_recycled:
                 self.recycle_envs(rand_envs)
-            
+
         else:
+            # If ADR range updates disabled, simply mark these envs for rollout
             self.worker_types[rand_envs] = RolloutWorkerModes.ADR_ROLLOUT
-        
+
+        # Always resample ADR tensors for the selected environments
         for k in self.adr_tensor_values:
             self.sample_adr_tensor(k, rand_envs)
 
@@ -613,7 +689,6 @@ class ADRVecTask(VecTask):
                 op_type = dr_params[nonphysical_param]["operation"]
                 sched_type = dr_params[nonphysical_param]["schedule"] if "schedule" in dr_params[nonphysical_param] else None
                 sched_step = dr_params[nonphysical_param]["schedule_steps"] if "schedule" in dr_params[nonphysical_param] else None
-                ####################################################################
                 op = operator.add if op_type == 'additive' else operator.mul
                 ####################################################################
                 if sched_type == 'linear':
@@ -647,7 +722,8 @@ class ADRVecTask(VecTask):
                         corr = corr * params['var_corr'] + params['mu_corr']
                         return op(tensor, corr + torch.randn_like(tensor) * params['var'] + params['mu'])
                     ####################################################################
-                    self.dr_randomizations[nonphysical_param] = {'mu': mu, 'var': var, 'mu_corr': mu_corr, 'var_corr': var_corr, 'noise_lambda': noise_lambda}
+                    self.dr_randomizations[nonphysical_param] = {
+                        'mu': mu, 'var': var, 'mu_corr': mu_corr, 'var_corr': var_corr, 'noise_lambda': noise_lambda}
                     ####################################################################
                 elif dist == 'uniform':
                     lo, hi = dr_params[nonphysical_param]["range"]
@@ -673,7 +749,8 @@ class ADRVecTask(VecTask):
                         corr = corr * (params['hi_corr'] - params['lo_corr']) + params['lo_corr']
                         return op(tensor, corr + torch.rand_like(tensor) * (params['hi'] - params['lo']) + params['lo'])
                     ####################################################################
-                    self.dr_randomizations[nonphysical_param] = {'lo': lo, 'hi': hi, 'lo_corr': lo_corr, 'hi_corr': hi_corr, 'noise_lambda': noise_lambda}
+                    self.dr_randomizations[nonphysical_param] = {
+                        'lo': lo, 'hi': hi, 'lo_corr': lo_corr, 'hi_corr': hi_corr, 'noise_lambda': noise_lambda}
                     ####################################################################
 
     def _randomize_sim_params(self, dr_params):
@@ -694,9 +771,7 @@ class ADRVecTask(VecTask):
             else:
                 env_dr_params = dr_params
         ####################################################################    
-            for actor, actor_properties in dr_params["actor_params"].items():
-                if i_ % 1000 == 0:
-                    print(f'Initializing domain randomization for {actor} env={i_}')                 
+            for actor, actor_properties in env_dr_params["actor_params"].items():
                 ####################################################################
                 for prop_name, prop_attrs in actor_properties.items():
                     ####################################################################
@@ -722,8 +797,8 @@ class ADRVecTask(VecTask):
                                     original_randomization_params = env_dr_params['actor_params'][actor][prop_name][attr]
                                     ####################################################################
                                     apply_random_samples(p, og_p, attr, attr_randomization_params, self.last_step, None, bucketing_randomization_params=original_randomization_params)
-                                    if i_ % 1000 == 0:
-                                        print(f'  [_randomize_actor_properties] List prop "{prop_name}"[{idx}].{attr}: {og_p[attr]} -> {getattr(p, attr)}')
+                                    #if i_ % 1000 == 0:
+                                    #    print(f'  [_randomize_actor_properties] List prop "{prop_name}"[{idx}].{attr}: {og_p[attr]} -> {getattr(p, attr)}')
                                 else:
                                     set_random_properties = False
                     ####################################################################
@@ -740,8 +815,8 @@ class ADRVecTask(VecTask):
                                 original_randomization_params = env_dr_params['actor_params'][actor][prop_name][attr]
                                 ####################################################################
                                 apply_random_samples(p, og_p, attr, attr_randomization_params, self.last_step, None, bucketing_randomization_params=original_randomization_params)
-                                if i_ % 1000 == 0:
-                                    print(f'  [_randomize_actor_properties] Scalar prop "{prop_name}".{attr}: {getattr(og_p, attr)} -> {getattr(p, attr)}')
+                                #if i_ % 1000 == 0:
+                                #    print(f'  [_randomize_actor_properties] Scalar prop "{prop_name}".{attr}: {getattr(og_p, attr)} -> {getattr(p, attr)}')
                             else:
                                 set_random_properties = False
                     ####################################################################
@@ -751,16 +826,15 @@ class ADRVecTask(VecTask):
                         setter(self.envs[env_id], self.gym.find_actor_handle(self.envs[env_id], actor), prop, *default_args)
                     
     def apply_randomizations(self, env_ids, dr_params, adr_objective=None):
+        self.last_step = self.gym.get_frame_count(self.sim)
+
         if self.first_randomization:
             self._randomize_non_physical_params(dr_params)
-
-        print("DR params:", dr_params)
 
         current_adr_params = None
         if self.use_adr:
             self.adr_update(env_ids, adr_objective)
             current_adr_params = self.get_current_adr_params(dr_params)
-            print(f"Current ADR params: {current_adr_params}")
         
         param_maps = {
             "getters": get_property_getter_map(self.gym),
@@ -773,7 +847,5 @@ class ADRVecTask(VecTask):
         #self._randomize_sim_params(dr_params)
 
         self._randomize_actor_properties(dr_params, env_ids, param_maps, current_adr_params)
-
-        print("DONE: randomizing actor properties")
 
         self.first_randomization = False

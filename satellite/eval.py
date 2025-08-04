@@ -7,7 +7,8 @@ from satellite.envs.wrappers.isaacgym_envs_wrapper import IsaacGymWrapper
 from satellite.CAPS.agent_wrapper_CAPS import PPOWrapperCAPS
 from satellite.rewards.satellite_reward import (
     TestReward,
-    TestRewardSmooth,
+    TestRewardSpin,
+    TestRewardCurriculum,
     WeightedSumReward,
     TwoPhaseReward,
     ExponentialStabilizationReward,
@@ -27,7 +28,8 @@ import argparse
 
 REWARD_MAP = {
     "test": TestReward,
-    "test_smooth": TestRewardSmooth,
+    "test_spin": TestRewardSpin,
+    "test_curriculum": TestRewardCurriculum,
     "weighted_sum": WeightedSumReward,
     "two_phase": TwoPhaseReward,
     "exp_stabilization": ExponentialStabilizationReward,

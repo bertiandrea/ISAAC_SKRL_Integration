@@ -23,7 +23,7 @@ class PID():
         self.clamp_d = clamp_d
         self.clamp_u = clamp_u
     
-    def update(self, error: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+    def update(self, error: torch.Tensor) -> torch.Tensor:
         # Proportional action
         p_term = torch.matmul(self.Kp, error)
         

@@ -17,6 +17,7 @@ PROFILE = False
 DEBUG_ARROWS = False
 DEBUG_PRINTS = False
 HEARTBEAT = False
+TESTING = False
 
 ROLLOUTS = 16
 
@@ -68,6 +69,8 @@ CONFIG = {
         
         "debug_prints": DEBUG_PRINTS,
         
+        "discretize_starting_pos": TESTING,
+
         "asset": {
 
             "assetRoot": str(Path(__file__).resolve().parent.parent),
@@ -216,12 +219,19 @@ CONFIG = {
     },
     # --- explosion ---------------------------------------------------------
     "explosion": {
-        "enabled": False,
+        "enabled": TESTING,
         "explosion_time": 3,  # seconds
+    },
+    # --- asteroid ----------------------------------------------------------
+    "asteroid": {
+        "enabled": TESTING,
+        "object_mass": 0.0,  # kg
+        "object_mass_std": 0.0,  # kg
+        "object_mass_time": 120,  # seconds
     },
     # --- randomize masses --------------------------------------------------
     "randomize_masses": {
-        "enabled": True,
+        "enabled": False,
         "mass_std": 5,
     },
     # --- dr_randomization -------------------------------------------------
@@ -271,23 +281,23 @@ CONFIG = {
 
             "worker_adr_boundary_fraction": 0.4,
 
-            "adr_queue_threshold_length": NUM_ENVS // 64,  # Number of samples to accumulate before adjusting the range
+            "adr_queue_threshold_length": NUM_ENVS // 2,  # Number of samples to accumulate before adjusting the range
 
             "adr_objective_threshold_low": 2.0,
-            "adr_objective_threshold_high": 8.0,
+            "adr_objective_threshold_high": 5.0,
 
             "adr_rollout_perf_alpha": 0.99,
             "adr_params": {
                 "object_mass": {
                     "range_path": 'actor_params.satellite.rigid_body_properties.mass.range',
-                    "init_range": [0.8, 1.2],
+                    "init_range": [0.9, 1.1],
                     "limits": [0.5, 1.5],
                     "delta": 1.1,
                     "delta_style": 'multiplicative',
                 },
                 "object_inertia": {
                     "range_path": 'actor_params.satellite.rigid_body_properties.inertia.range',
-                    "init_range": [0.8, 1.2],
+                    "init_range": [0.9, 1.1],
                     "limits": [0.5, 1.5],
                     "delta": 1.1,
                     "delta_style": 'multiplicative',
