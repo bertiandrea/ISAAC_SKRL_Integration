@@ -98,7 +98,7 @@ class Satellite(VecTask):
         if self.debug_arrows:
             self.draw_arrows()
         
-        self.writer = SummaryWriter(comment="_satellite_reward")
+        self.writer = SummaryWriter(comment="_satellite_goal_and_actions")
         self.global_step = 0
 
     def create_sim(self) -> None:
